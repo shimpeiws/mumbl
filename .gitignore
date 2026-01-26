@@ -41,8 +41,5 @@ coverage/
 *.temp
 .cache/
 
-# Claude Code configuration and custom commands
-.claude/
-
 # Project documentation (Claude Code instructions)
 CLAUDE.md
