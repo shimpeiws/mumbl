@@ -1,0 +1,33 @@
+{
+  "name": "mumbl",
+  "version": "0.1.0",
+  "description": "Git worktree management utilities for parallel issue development",
+  "type": "module",
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "tsx --watch src/index.ts",
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "lint": "biome lint src/",
+    "format": "biome format --write src/",
+    "check": "biome check --write src/",
+    "ci:check": "biome ci src/"
+  },
+  "keywords": [
+    "git",
+    "worktree",
+    "workflow",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^25.0.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
