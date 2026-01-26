@@ -59,7 +59,7 @@ fi
 if [[ "$IDENTIFIER" =~ ^[0-9]+$ ]]; then
     # It's a number, need to find the matching branch
     BRANCH_PATTERN="issue-${IDENTIFIER}-"
-    MATCHING_BRANCHES=$(git branch --list "${BRANCH_PATTERN}*" | sed 's/^[* ]*//')
+    MATCHING_BRANCHES=$(git branch --list "${BRANCH_PATTERN}*" | sed 's/^[*+ ]*//')
 
     if [ -z "$MATCHING_BRANCHES" ]; then
         echo "Error: No branch found matching issue #${IDENTIFIER}" >&2
