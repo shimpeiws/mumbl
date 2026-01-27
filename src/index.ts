@@ -2,8 +2,12 @@
  * mumbl - AI-powered communication tool
  */
 
-function main(): void {
+export function main(): void {
   console.log('Hello, mumbl!');
 }
 
-main();
+// Only run main when executed directly (not imported for testing)
+/* v8 ignore next 3 */
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main();
+}

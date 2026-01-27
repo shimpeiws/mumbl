@@ -5,7 +5,7 @@
   "type": "module",
   "packageManager": "pnpm@9.15.4",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "scripts": {
     "dev": "tsx --watch src/index.ts",
@@ -14,7 +14,14 @@
     "lint": "biome lint src/",
     "format": "biome format --write src/",
     "check": "biome check --write src/",
-    "ci:check": "biome ci src/"
+    "ci:check": "biome ci src/",
+    "test": "vitest",
+    "test:unit": "vitest run src/",
+    "test:integration": "vitest run test/integration/",
+    "test:e2e": "vitest run test/e2e/",
+    "test:coverage": "vitest run --coverage",
+    "ci:test": "vitest run --coverage --reporter=verbose",
+    "ci:all": "pnpm type-check && pnpm ci:check && pnpm ci:test"
   },
   "keywords": [
     "git",
@@ -27,7 +34,12 @@
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@types/node": "^25.0.10",
+    "@vitest/coverage-v8": "^2.1.0",
+    "@vitest/ui": "^2.1.0",
+    "memfs": "^4.15.0",
+    "msw": "^2.6.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.0"
   }
 }
