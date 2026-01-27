@@ -1,0 +1,94 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import Database from 'better-sqlite3';
+import { DatabaseError } from './errors.js';
+import { initializeSchema } from './schema.js';
+
+/**
+ * Default storage directory
+ */
+export const DEFAULT_STORAGE_DIR = path.join(os.homedir(), '.mumbl');
+
+/**
+ * Default database filename
+ */
+export const DEFAULT_DB_FILE = 'mumbl.db';
+
+/**
+ * Get database path
+ */
+export function getDatabasePath(dir = DEFAULT_STORAGE_DIR, file = DEFAULT_DB_FILE): string {
+  return path.join(dir, file);
+}
+
+/**
+ * Ensure storage directory exists
+ */
+export function ensureStorageDir(dir = DEFAULT_STORAGE_DIR): void {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
+
+/**
+ * Initialize database with WAL mode and proper configuration
+ */
+export function initializeDatabase(dbPath?: string): Database.Database {
+  try {
+    const path = dbPath ?? getDatabasePath();
+
+    // Ensure directory exists
+    ensureStorageDir(dbPath ? path.split('/').slice(0, -1).join('/') : undefined);
+
+    // Create database connection
+    const db = new Database(path);
+
+    // Enable WAL mode for concurrent access
+    db.pragma('journal_mode = WAL');
+
+    // Set busy timeout for automatic retry on lock contention
+    db.pragma('busy_timeout = 5000');
+
+    // Enable foreign key constraints
+    db.pragma('foreign_keys = ON');
+
+    // Balance between safety and performance
+    db.pragma('synchronous = NORMAL');
+
+    // Initialize schema
+    initializeSchema(db);
+
+    return db;
+  } catch (error) {
+    throw new DatabaseError(
+      'Failed to initialize database',
+      error instanceof Error ? error : undefined,
+    );
+  }
+}
+
+/**
+ * Singleton database instance
+ */
+let dbInstance: Database.Database | null = null;
+
+/**
+ * Get singleton database instance
+ */
+export function getDatabase(): Database.Database {
+  if (!dbInstance) {
+    dbInstance = initializeDatabase();
+  }
+  return dbInstance;
+}
+
+/**
+ * Close database connection (for testing)
+ */
+export function closeDatabase(): void {
+  if (dbInstance) {
+    dbInstance.close();
+    dbInstance = null;
+  }
+}
