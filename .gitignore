@@ -41,5 +41,9 @@ coverage/
 *.temp
 .cache/
 
+# Nodemon
+nodemon.json.backup
+.nodemon_*
+
 # Project documentation (Claude Code instructions)
 CLAUDE.md

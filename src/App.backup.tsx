@@ -1,17 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 
 export const App = () => {
   const { exit } = useApp();
-  const [uptime, setUptime] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setUptime((t) => t + 1);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   useInput((input, key) => {
     if (input === 'q' || (key.ctrl && input === 'c')) {
@@ -30,7 +21,7 @@ export const App = () => {
         <Text>Press 'q' or CTRL+C to exit</Text>
       </Box>
       <Box>
-        <Text dimColor>Status: Ready (uptime: {uptime}s)</Text>
+        <Text dimColor>Status: Ready</Text>
       </Box>
     </Box>
   );
