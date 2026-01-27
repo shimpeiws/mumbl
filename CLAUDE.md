@@ -33,7 +33,24 @@ This repository uses git worktrees to enable working on multiple issues simultan
 
 ## Initial Setup
 
-No special setup is required. The scripts are ready to use immediately. However, for easier navigation, consider adding this shell function to your `~/.bashrc` or `~/.zshrc`:
+### Prerequisites
+
+- **Git** >= 2.5.0 (for worktree support)
+- **Node.js** >= 20.0.0 (for TypeScript development)
+- **pnpm** >= 9.0.0 (package manager)
+
+### Quick Start
+
+The bash scripts are ready to use immediately without any setup. However, if you plan to contribute to the TypeScript codebase, you'll need to install dependencies:
+
+```bash
+cd /Users/shin/src/github.com/shimpeiws/mumbl
+pnpm install
+```
+
+### Shell Integration
+
+For easier navigation, consider adding this shell function to your `~/.bashrc` or `~/.zshrc`:
 
 ```bash
 # Quick worktree navigation
@@ -498,6 +515,511 @@ mv ../mumbl-issue-123-feature ../new-location/mumbl-issue-123-feature
 # Update git's reference
 git worktree repair ../new-location/mumbl-issue-123-feature
 ```
+
+## Development Environment
+
+This project is transitioning to TypeScript while maintaining the bash script interface as the primary user-facing tool.
+
+### Technology Stack
+
+- **TypeScript** 5.7+ with strict mode enabled
+- **Biome** for linting and formatting (replaces ESLint + Prettier)
+- **tsx** for development and testing
+- **pnpm** as package manager
+
+### Project Structure
+
+```
+mumbl/
+├── .gitignore          # Version control exclusions
+├── package.json        # Project metadata and scripts
+├── pnpm-lock.yaml      # Dependency lockfile
+├── tsconfig.json       # TypeScript configuration
+├── biome.json          # Linting and formatting rules
+├── README.md           # User-facing documentation
+├── CLAUDE.md           # This file - workflow documentation
+├── scripts/            # Bash worktree management utilities
+│   ├── wt-create.sh
+│   ├── wt-list.sh
+│   ├── wt-goto.sh
+│   └── wt-remove.sh
+├── src/                # TypeScript source code
+│   ├── index.ts        # Entry point
+│   └── types/          # Type definitions
+│       └── index.ts
+└── dist/               # Compiled output (gitignored)
+```
+
+### Development Scripts
+
+All development commands are available via pnpm:
+
+#### Development Mode
+```bash
+pnpm dev
+```
+Runs TypeScript code with watch mode. Automatically restarts when files change.
+
+#### Type Checking
+```bash
+pnpm type-check
+```
+Validates TypeScript types without emitting files. Useful for CI/CD.
+
+#### Building
+```bash
+pnpm build
+```
+Compiles TypeScript to JavaScript in the `dist/` directory.
+
+#### Linting
+```bash
+pnpm lint
+```
+Runs Biome linter on the `src/` directory.
+
+#### Formatting
+```bash
+pnpm format
+```
+Formats code using Biome's formatter.
+
+#### Combined Check
+```bash
+pnpm check
+```
+Runs both linting and formatting with auto-fix.
+
+#### CI Validation
+```bash
+pnpm ci:check
+```
+Validates code quality without auto-fixing. Used in CI/CD pipelines.
+
+### Code Quality Standards
+
+The project enforces strict TypeScript and code quality standards:
+
+- **Strict TypeScript**: All strict compiler options enabled
+- **No implicit any**: Type annotations required
+- **Unused variables**: Not allowed
+- **Index access**: Must be checked for undefined
+- **Line width**: 100 characters maximum
+- **Formatting**: Single quotes, 2-space indent, trailing commas
+
+### Development Workflow
+
+1. **Install dependencies**:
+   ```bash
+   pnpm install
+   ```
+
+2. **Make changes**:
+   - Edit TypeScript files in `src/`
+   - Follow existing code patterns
+
+3. **Run checks during development**:
+   ```bash
+   pnpm dev  # Watch mode
+   ```
+
+4. **Before committing**:
+   ```bash
+   pnpm type-check  # Ensure no type errors
+   pnpm check       # Lint and format
+   pnpm build       # Verify it compiles
+   ```
+
+5. **Commit changes**:
+   - Use conventional commit messages
+   - Ensure all checks pass
+   - See Commit Guidelines below for details
+
+### Commit Guidelines
+
+When creating commits for this project:
+
+#### Message Format
+
+Use clear, descriptive commit messages that explain what changed and why:
+
+```
+Add TypeScript and Biome setup with project infrastructure
+
+Implement issue #1 by setting up TypeScript development environment.
+
+Changes:
+- Add package.json with TypeScript, Biome, and tsx dependencies
+- Add tsconfig.json with strict mode configuration
+- Add biome.json for code quality and formatting
+- Add README.md with project overview and usage guide
+```
+
+#### Important Rules
+
+- **DO NOT** include `Co-Authored-By` lines in commit messages
+- Use imperative mood in subject line ("Add feature" not "Added feature")
+- Keep subject line under 72 characters
+- Separate subject from body with blank line
+- Wrap body at 72 characters
+- Reference issue numbers when applicable (e.g., "Implement issue #1")
+
+#### Examples
+
+**Good:**
+```
+Fix branch matching to handle '+' marker in git output
+
+Update wt-goto.sh and wt-remove.sh to strip both '*' and '+'
+markers from git branch output when matching issue numbers.
+```
+
+**Bad:**
+```
+fixed stuff
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+```
+
+### Pull Request Guidelines
+
+When creating pull requests:
+
+#### PR Description Format
+
+Structure your PR description with clear sections:
+
+```markdown
+## Summary
+
+Brief overview of what this PR does and which issue it addresses.
+
+- Key change 1
+- Key change 2
+- Key change 3
+
+## Changes
+
+- **file1.ts**: Description of changes
+- **file2.ts**: Description of changes
+
+## Test plan
+
+- [ ] Test item 1
+- [ ] Test item 2
+```
+
+#### Important Rules
+
+- **DO NOT** include signature lines like "🤖 Generated with Claude Code" or similar AI-generated footers
+- Reference the issue number in the summary (e.g., "Implements issue #1")
+- List all significant file changes
+- Include a test plan with verification steps
+- Keep descriptions concise but complete
+
+#### Examples
+
+**Good:**
+```markdown
+## Summary
+
+Implements issue #1 by setting up TypeScript infrastructure.
+
+- TypeScript with strict mode
+- Biome for linting and formatting
+- Complete project documentation
+
+## Test plan
+
+- [x] pnpm install completes successfully
+- [x] All type checks pass
+```
+
+**Bad:**
+```markdown
+Added some stuff
+
+🤖 Generated with Claude Code
+```
+
+### Contributing to TypeScript Codebase
+
+The TypeScript implementation is in early stages. The roadmap includes:
+
+- TypeScript API for worktree operations
+- CLI interface with command-line parser
+- Configuration file support (e.g., `.mumblrc`)
+- Interactive worktree selection
+- Cross-platform compatibility improvements
+
+When contributing:
+- Maintain backward compatibility with bash scripts
+- Add tests for new functionality
+- Update documentation for user-facing changes
+- Follow existing code patterns and conventions
+
+## Testing Guidelines
+
+The project uses [Vitest](https://vitest.dev/) for comprehensive testing with strict coverage requirements.
+
+### Test Organization
+
+Tests follow a co-location strategy inspired by Go:
+
+```
+mumbl/
+├── src/
+│   ├── index.ts              # Source file
+│   ├── index.test.ts         # Co-located unit test
+│   └── worktree/             # Future: worktree module
+│       ├── create.ts
+│       ├── create.test.ts    # Co-located test
+│       ├── list.ts
+│       └── list.test.ts      # Co-located test
+├── test/
+│   ├── integration/          # Cross-module integration tests
+│   ├── e2e/                  # End-to-end CLI/TUI tests
+│   ├── fixtures/             # Test data and fixtures
+│   └── helpers/              # Shared test utilities
+└── coverage/                 # Generated coverage reports (gitignored)
+```
+
+**Why Co-location?**
+- Easy to find tests (right next to the source)
+- Clear 1:1 relationship between source and test
+- Reduces context switching during development
+- Tests included in IDE file navigation
+
+### Test Types
+
+**Unit Tests** (`*.test.ts` co-located with source)
+- Test individual functions and classes in isolation
+- Mock external dependencies
+- Fast execution (< 100ms per test)
+- Example: `src/index.test.ts`
+
+**Integration Tests** (`test/integration/`)
+- Test interactions between multiple modules
+- Use in-memory mocks (memfs for filesystem)
+- Verify complete workflows
+- Example: `test/integration/worktree-flow.test.ts`
+
+**E2E Tests** (`test/e2e/`)
+- Test complete user journeys through CLI/TUI
+- Use ink-testing-library for TUI testing (when implemented)
+- Verify end-user experience
+- Example: `test/e2e/cli-commands.test.ts`
+
+### Writing Tests
+
+**Basic Test Structure**
+
+```typescript
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { functionToTest } from './module.js';
+
+describe('functionToTest', () => {
+  it('should perform expected behavior', () => {
+    // Arrange: Set up test data
+    const input = 'test';
+
+    // Act: Execute the function
+    const result = functionToTest(input);
+
+    // Assert: Verify the result
+    expect(result).toBe('expected');
+  });
+});
+```
+
+**Mocking**
+
+```typescript
+// Mock console.log
+const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+// Mock shell commands (use test utilities)
+import { mockExecSync } from '../helpers/test-utils.js';
+const execSpy = mockExecSync('git status', 'output');
+
+// Clean up after test
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+```
+
+**Using Test Utilities**
+
+```typescript
+import { createMockGitRepo, cleanupMockFs } from '../helpers/test-utils.js';
+
+describe('git operations', () => {
+  let cleanup: () => void;
+
+  beforeEach(() => {
+    // Create mock git repository
+    cleanup = createMockGitRepo('/test-repo');
+  });
+
+  afterEach(() => {
+    // Clean up mock filesystem
+    cleanup();
+    cleanupMockFs();
+  });
+
+  it('should work with mock repo', () => {
+    // Test git operations using mock filesystem
+  });
+});
+```
+
+### Test Commands
+
+```bash
+# Development (watch mode)
+pnpm test
+
+# Run specific test types
+pnpm test:unit          # Unit tests only (src/)
+pnpm test:integration   # Integration tests
+pnpm test:e2e           # E2E tests
+
+# Coverage
+pnpm test:coverage      # Generate coverage report
+open coverage/index.html # View coverage in browser
+
+# CI mode
+pnpm ci:test            # Tests with coverage for CI
+pnpm ci:all             # All checks (type-check + lint + test)
+```
+
+### Coverage Requirements
+
+Strict coverage thresholds enforced by Vitest:
+- **Lines**: 70%
+- **Functions**: 70%
+- **Branches**: 70%
+- **Statements**: 70%
+
+**Coverage will fail the build if thresholds are not met.**
+
+### Best Practices
+
+**1. Test Naming**
+- Use descriptive test names that explain behavior
+- Start with "should" for behavior tests
+- Use "it.todo" for placeholder tests
+
+```typescript
+// Good
+it('should create worktree with valid issue number', () => {});
+it('should throw error when branch already exists', () => {});
+
+// Bad
+it('test 1', () => {});
+it('worktree', () => {});
+```
+
+**2. Test Organization**
+- Group related tests with `describe` blocks
+- Use `beforeEach`/`afterEach` for setup/cleanup
+- Keep tests independent (no shared state)
+
+**3. Assertions**
+- Use specific assertions (`toBe`, `toEqual`, `toThrow`)
+- Test both success and error cases
+- Verify error messages, not just that errors occur
+
+```typescript
+// Good
+expect(() => createWorktree(-1)).toThrow('Issue number must be positive');
+
+// Bad
+expect(() => createWorktree(-1)).toThrow();
+```
+
+**4. Mocking Guidelines**
+- Mock external dependencies (filesystem, network, etc.)
+- Use real implementations for internal modules when possible
+- Clean up mocks after each test
+
+**5. Test Data**
+- Use fixtures for complex test data (`test/fixtures/`)
+- Use factory functions for test object creation
+- Keep test data minimal and focused
+
+**6. Async Testing**
+- Use `async`/`await` for async tests
+- Set appropriate timeouts (default: 10000ms)
+- Test error handling in async code
+
+```typescript
+it('should handle async operations', async () => {
+  const result = await asyncFunction();
+  expect(result).toBe('expected');
+});
+```
+
+### Running Tests in CI
+
+GitHub Actions runs tests automatically on push and PR:
+
+**Jobs:**
+1. **Type Check** - Validates TypeScript types
+2. **Lint** - Runs Biome linter
+3. **Test** - Matrix: Node 20, 22 with coverage
+4. **Build** - Verifies successful build
+
+**Coverage:**
+- Uploaded to Codecov (requires `CODECOV_TOKEN` secret)
+- Archived as GitHub Actions artifact
+
+### Debugging Tests
+
+**Run specific test file:**
+```bash
+pnpm vitest src/index.test.ts
+```
+
+**Run tests matching pattern:**
+```bash
+pnpm vitest -t "should create worktree"
+```
+
+**Debug with VS Code:**
+Add to `.vscode/launch.json`:
+```json
+{
+  "type": "node",
+  "request": "launch",
+  "name": "Debug Vitest Tests",
+  "runtimeExecutable": "pnpm",
+  "runtimeArgs": ["test:run"],
+  "console": "integratedTerminal"
+}
+```
+
+### Continuous Testing
+
+Use watch mode during development:
+```bash
+pnpm test
+```
+
+Vitest will:
+- Re-run tests when files change
+- Show only failed tests after first run
+- Provide instant feedback
+
+### Future Enhancements
+
+**Planned improvements:**
+- ink-testing-library for TUI testing
+- Snapshot tests for TUI components
+- Performance benchmarks using Vitest bench
+- Pre-commit hooks with Husky
+- Mutation testing with Stryker
+- Visual regression testing
 
 ## Help
 

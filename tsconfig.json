@@ -29,8 +29,11 @@
 
     /* Interop Constraints */
     "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+
+    /* Testing */
+    "types": ["vitest/globals"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "scripts"]
+  "exclude": ["node_modules", "dist", "scripts", "coverage", "**/*.test.ts"]
 }
