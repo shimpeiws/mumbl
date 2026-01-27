@@ -40,14 +40,12 @@ export function initializeSchema(db: { exec: (sql: string) => void }): void {
   db.exec(CREATE_TIMESTAMP_INDEX);
   db.exec(CREATE_CREATED_AT_INDEX);
 
-  // Store schema version for future migrations
   db.exec(`
     CREATE TABLE IF NOT EXISTS schema_version (
       version INTEGER PRIMARY KEY
     )
   `);
 
-  // Insert version if not exists
   db.exec(`
     INSERT OR IGNORE INTO schema_version (version) VALUES (${SCHEMA_VERSION})
   `);

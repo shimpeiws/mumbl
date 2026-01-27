@@ -140,7 +140,6 @@ export class EntryRepository {
       timestamp?: Date;
     },
   ): JournalEntry {
-    // First check if entry exists
     const existing = this.findById(id);
     if (!existing) {
       throw new EntryNotFoundError(id);
@@ -164,11 +163,9 @@ export class EntryRepository {
       params.push(Math.floor(updates.timestamp.getTime() / 1000));
     }
 
-    // Always update updated_at
     fields.push('updated_at = ?');
     params.push(Math.floor(Date.now() / 1000));
 
-    // Add ID at the end for WHERE clause
     params.push(id);
 
     const sql = `
@@ -180,7 +177,6 @@ export class EntryRepository {
     const stmt = this.db.prepare(sql);
     stmt.run(...params);
 
-    // Return updated entry
     const updated = this.findById(id);
     if (!updated) {
       throw new EntryNotFoundError(id);

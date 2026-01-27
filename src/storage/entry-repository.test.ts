@@ -10,7 +10,6 @@ describe('EntryRepository', () => {
   let repository: EntryRepository;
 
   beforeEach(() => {
-    // Create in-memory database for testing
     db = new Database(':memory:');
     initializeSchema(db);
     repository = new EntryRepository(db);
@@ -84,7 +83,6 @@ describe('EntryRepository', () => {
 
   describe('findAll', () => {
     beforeEach(() => {
-      // Insert test entries
       repository.insert({
         ...createTestEntry(),
         id: 'entry-1',

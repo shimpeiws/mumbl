@@ -38,25 +38,18 @@ export function initializeDatabase(dbPath?: string): Database.Database {
   try {
     const path = dbPath ?? getDatabasePath();
 
-    // Ensure directory exists
     ensureStorageDir(dbPath ? path.split('/').slice(0, -1).join('/') : undefined);
 
-    // Create database connection
     const db = new Database(path);
 
-    // Enable WAL mode for concurrent access
     db.pragma('journal_mode = WAL');
 
-    // Set busy timeout for automatic retry on lock contention
     db.pragma('busy_timeout = 5000');
 
-    // Enable foreign key constraints
     db.pragma('foreign_keys = ON');
 
-    // Balance between safety and performance
     db.pragma('synchronous = NORMAL');
 
-    // Initialize schema
     initializeSchema(db);
 
     return db;
