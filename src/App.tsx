@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
+import React, { useEffect, useState } from 'react';
 
 export const App = () => {
   const { exit } = useApp();
