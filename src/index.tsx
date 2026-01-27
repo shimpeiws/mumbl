@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { render } from 'ink';
 import React from 'react';
-import { App } from './App.js';
+import { App } from './ui/App.js';
 
 (async () => {
   if (!process.stdin.isTTY) {

@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3';
-import { EntryNotFoundError, InvalidEntryError } from './errors.js';
+import { EntryNotFoundError, InvalidEntryError } from '../infrastructure/errors/domain-errors.js';
 import type { EntryRow, JournalEntry } from './types.js';
 
 /**
@@ -95,7 +95,6 @@ export class EntryRepository {
 
     const params: (number | undefined)[] = [];
 
-    // Add date filters
     const conditions: string[] = [];
     if (options?.since) {
       conditions.push('timestamp >= ?');
@@ -112,10 +111,9 @@ export class EntryRepository {
 
     sql += ` ORDER BY ${sortColumn} ${order}`;
 
-    // OFFSET requires LIMIT in SQLite
     if (options?.limit || options?.offset) {
       sql += ' LIMIT ?';
-      params.push(options?.limit ?? -1); // -1 means unlimited in SQLite
+      params.push(options?.limit ?? -1);
     }
 
     if (options?.offset) {

@@ -1,8 +1,8 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { initializeSchema } from '../infrastructure/database/schema.js';
+import { EntryNotFoundError, InvalidEntryError } from '../infrastructure/errors/domain-errors.js';
 import { EntryRepository } from './entry-repository.js';
-import { EntryNotFoundError, InvalidEntryError } from './errors.js';
-import { initializeSchema } from './schema.js';
 import type { JournalEntry } from './types.js';
 
 describe('EntryRepository', () => {
@@ -185,11 +185,11 @@ describe('EntryRepository', () => {
     });
 
     it('should update updatedAt timestamp', () => {
-      const before = Math.floor(Date.now() / 1000) * 1000; // Round down to seconds
+      const before = Math.floor(Date.now() / 1000) * 1000;
       const updated = repository.update('test-id-123', {
         content: 'Updated',
       });
-      const after = Math.ceil(Date.now() / 1000) * 1000; // Round up to seconds
+      const after = Math.ceil(Date.now() / 1000) * 1000;
 
       expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(before);
       expect(updated.updatedAt.getTime()).toBeLessThanOrEqual(after);

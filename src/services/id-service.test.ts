@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { generateEntryId, isValidEntryId } from './id-generator.js';
+import { generateEntryId, isValidEntryId } from './id-service.js';
 
-describe('id-generator', () => {
+describe('id-service', () => {
   describe('generateEntryId', () => {
     it('should generate a UUID v4', () => {
       const id = generateEntryId();

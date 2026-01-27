@@ -1,17 +1,17 @@
 import type { Database as DatabaseType } from 'better-sqlite3';
-import { EntryRepository } from '../storage/entry-repository.js';
+import { EntryRepository } from '../repositories/entry-repository.js';
 import type {
   CreateEntryOptions,
   JournalEntry,
   ListEntriesOptions,
   UpdateEntryOptions,
-} from '../storage/types.js';
-import { generateEntryId } from './id-generator.js';
+} from '../repositories/types.js';
+import { generateEntryId } from './id-service.js';
 
 /**
  * High-level API for managing journal entries
  */
-export class EntryManager {
+export class EntryService {
   private repository: EntryRepository;
 
   constructor(db: DatabaseType) {
@@ -59,7 +59,6 @@ export class EntryManager {
     try {
       return this.repository.update(id, options);
     } catch (error) {
-      // If entry not found, return null instead of throwing
       if (error instanceof Error && error.name === 'EntryNotFoundError') {
         return null;
       }

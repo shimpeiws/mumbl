@@ -1,16 +1,16 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { initializeSchema } from '../storage/schema.js';
-import { EntryManager } from './entry-manager.js';
+import { initializeSchema } from '../infrastructure/database/schema.js';
+import { EntryService } from './entry-service.js';
 
-describe('EntryManager', () => {
+describe('EntryService', () => {
   let db: Database.Database;
-  let manager: EntryManager;
+  let service: EntryService;
 
   beforeEach(() => {
     db = new Database(':memory:');
     initializeSchema(db);
-    manager = new EntryManager(db);
+    service = new EntryService(db);
   });
 
   afterEach(() => {
@@ -19,7 +19,7 @@ describe('EntryManager', () => {
 
   describe('create', () => {
     it('should create a new entry with auto-generated ID', () => {
-      const entry = manager.create({
+      const entry = service.create({
         content: 'Test content',
       });
 
@@ -30,7 +30,7 @@ describe('EntryManager', () => {
 
     it('should use provided timestamp', () => {
       const timestamp = new Date('2024-01-01');
-      const entry = manager.create({
+      const entry = service.create({
         content: 'Test',
         timestamp,
       });
@@ -40,7 +40,7 @@ describe('EntryManager', () => {
 
     it('should use current time if timestamp not provided', () => {
       const before = Date.now();
-      const entry = manager.create({ content: 'Test' });
+      const entry = service.create({ content: 'Test' });
       const after = Date.now();
 
       expect(entry.timestamp.getTime()).toBeGreaterThanOrEqual(before);
@@ -48,7 +48,7 @@ describe('EntryManager', () => {
     });
 
     it('should save metadata', () => {
-      const entry = manager.create({
+      const entry = service.create({
         content: 'Test',
         metadata: { tags: ['work', 'project'] },
       });
@@ -59,53 +59,53 @@ describe('EntryManager', () => {
 
   describe('getById', () => {
     it('should retrieve created entry', () => {
-      const created = manager.create({ content: 'Test' });
-      const retrieved = manager.getById(created.id);
+      const created = service.create({ content: 'Test' });
+      const retrieved = service.getById(created.id);
 
       expect(retrieved).not.toBeNull();
       expect(retrieved?.id).toBe(created.id);
     });
 
     it('should return null for non-existent ID', () => {
-      const retrieved = manager.getById('non-existent');
+      const retrieved = service.getById('non-existent');
       expect(retrieved).toBeNull();
     });
   });
 
   describe('list', () => {
     beforeEach(() => {
-      manager.create({
+      service.create({
         content: 'First',
         timestamp: new Date('2024-01-01'),
       });
-      manager.create({
+      service.create({
         content: 'Second',
         timestamp: new Date('2024-01-02'),
       });
-      manager.create({
+      service.create({
         content: 'Third',
         timestamp: new Date('2024-01-03'),
       });
     });
 
     it('should list all entries', () => {
-      const entries = manager.list();
+      const entries = service.list();
       expect(entries).toHaveLength(3);
     });
 
     it('should respect limit', () => {
-      const entries = manager.list({ limit: 2 });
+      const entries = service.list({ limit: 2 });
       expect(entries).toHaveLength(2);
     });
 
     it('should respect offset', () => {
-      const entries = manager.list({ offset: 1, order: 'asc' });
+      const entries = service.list({ offset: 1, order: 'asc' });
       expect(entries).toHaveLength(2);
       expect(entries[0]?.content).toBe('Second');
     });
 
     it('should filter by date range', () => {
-      const entries = manager.list({
+      const entries = service.list({
         since: new Date('2024-01-02'),
         until: new Date('2024-01-02'),
       });
@@ -117,8 +117,8 @@ describe('EntryManager', () => {
 
   describe('update', () => {
     it('should update entry content', () => {
-      const created = manager.create({ content: 'Original' });
-      const updated = manager.update(created.id, {
+      const created = service.create({ content: 'Original' });
+      const updated = service.update(created.id, {
         content: 'Updated',
       });
 
@@ -127,19 +127,19 @@ describe('EntryManager', () => {
     });
 
     it('should return null for non-existent ID', () => {
-      const updated = manager.update('non-existent', {
+      const updated = service.update('non-existent', {
         content: 'Updated',
       });
       expect(updated).toBeNull();
     });
 
     it('should preserve unchanged fields', () => {
-      const created = manager.create({
+      const created = service.create({
         content: 'Original',
         metadata: { tags: ['test'] },
       });
 
-      const updated = manager.update(created.id, {
+      const updated = service.update(created.id, {
         content: 'Updated',
       });
 
@@ -149,45 +149,45 @@ describe('EntryManager', () => {
 
   describe('delete', () => {
     it('should delete entry', () => {
-      const created = manager.create({ content: 'Test' });
-      const result = manager.delete(created.id);
+      const created = service.create({ content: 'Test' });
+      const result = service.delete(created.id);
 
       expect(result).toBe(true);
-      expect(manager.getById(created.id)).toBeNull();
+      expect(service.getById(created.id)).toBeNull();
     });
 
     it('should return false for non-existent ID', () => {
-      const result = manager.delete('non-existent');
+      const result = service.delete('non-existent');
       expect(result).toBe(false);
     });
   });
 
   describe('count', () => {
     it('should count entries', () => {
-      expect(manager.count()).toBe(0);
+      expect(service.count()).toBe(0);
 
-      manager.create({ content: 'First' });
-      expect(manager.count()).toBe(1);
+      service.create({ content: 'First' });
+      expect(service.count()).toBe(1);
 
-      manager.create({ content: 'Second' });
-      expect(manager.count()).toBe(2);
+      service.create({ content: 'Second' });
+      expect(service.count()).toBe(2);
     });
   });
 
   describe('search', () => {
     beforeEach(() => {
-      manager.create({ content: 'The quick brown fox' });
-      manager.create({ content: 'jumps over the lazy dog' });
-      manager.create({ content: 'brown fox runs fast' });
+      service.create({ content: 'The quick brown fox' });
+      service.create({ content: 'jumps over the lazy dog' });
+      service.create({ content: 'brown fox runs fast' });
     });
 
     it('should find matching entries', () => {
-      const results = manager.search('fox');
+      const results = service.search('fox');
       expect(results).toHaveLength(2);
     });
 
     it('should return empty array when no matches', () => {
-      const results = manager.search('elephant');
+      const results = service.search('elephant');
       expect(results).toHaveLength(0);
     });
   });
