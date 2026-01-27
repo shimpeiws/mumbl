@@ -7,8 +7,12 @@
   "engines": {
     "node": ">=20.0.0"
   },
+  "bin": {
+    "mumbl": "./dist/index.js"
+  },
   "scripts": {
-    "dev": "tsx --watch src/index.ts",
+    "dev": "tsx src/index.tsx",
+    "start": "node dist/index.js",
     "build": "tsc",
     "type-check": "tsc --noEmit",
     "lint": "biome lint src/",
@@ -34,6 +38,7 @@
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@types/node": "^25.0.10",
+    "@types/react": "^19.2.9",
     "@vitest/coverage-v8": "^2.1.0",
     "@vitest/ui": "^2.1.0",
     "memfs": "^4.15.0",
@@ -41,5 +46,9 @@
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.0"
+  },
+  "dependencies": {
+    "ink": "^6.6.0",
+    "react": "^19.2.4"
   }
 }

@@ -28,7 +28,8 @@
       "quoteStyle": "single",
       "trailingCommas": "all",
       "semicolons": "always"
-    }
+    },
+    "jsxRuntime": "reactClassic"
   },
   "files": {
     "ignore": [

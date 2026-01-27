@@ -15,6 +15,8 @@ export default defineConfig({
         'test/**',
         '*.config.ts',
         '*.config.js',
+        'src/App.tsx', // TUI component, requires special testing
+        'src/index.tsx', // TUI entry point, requires special testing
       ],
       thresholds: {
         lines: 70,
