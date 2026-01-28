@@ -14,6 +14,46 @@ This repository uses git worktrees to enable working on multiple issues simultan
 - **Shared git history**: All worktrees share the same `.git` directory, saving disk space
 - **Clean state**: Each issue maintains its own uncommitted changes
 
+## Claude Code Skills Workflow
+
+**CRITICAL**: This repository uses Claude Code skills for git operations. You MUST use these skills instead of raw git commands.
+
+### Automated Workflow
+
+When working with code changes, **ALWAYS** follow this workflow automatically:
+
+1. **After making code changes** → Use `/wt-commit` to commit
+2. **After committing** → Use `/wt-push` to push to remote
+3. **To complete an issue** → Use `/wt-finish` to commit + push + create PR
+
+### Available Skills
+
+- **`/wt-commit`** - Stage and commit with auto-generated message
+  - Use this instead of `git add` + `git commit`
+  - Automatically generates meaningful commit messages
+
+- **`/wt-push`** - Push with quality checks (lint + tests)
+  - Use this instead of `git push`
+  - Runs type-check, linting, and tests before pushing
+  - Blocks push if any check fails
+
+- **`/wt-finish`** - Complete workflow (commit + push + PR)
+  - Use this to finish work on an issue
+  - Commits, pushes, and creates GitHub PR in one step
+
+- **`/wt-create`** - Create new worktree for an issue
+- **`/wt-list`** - List all worktrees
+- **`/wt-goto`** - Navigate to a worktree
+- **`/wt-remove`** - Remove a worktree
+- **`/wt-pr`** - Create pull request
+
+### Important Rules
+
+1. **NEVER use raw `git commit` or `git push` commands** - Always use the skills
+2. **Automatically commit after completing work** - Don't wait for user to ask
+3. **Automatically push after committing** - Ensure work is backed up on remote
+4. **Use `/wt-finish` for complete issue workflow** - One command for commit + push + PR
+
 ## Directory Structure
 
 ```
