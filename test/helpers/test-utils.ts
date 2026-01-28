@@ -39,10 +39,7 @@ export function createMockGitRepo(basePath = '/mock-repo'): () => void {
  * @param output - The output to return
  * @returns Spy object for assertions
  */
-export function mockExecSync(
-  command: string,
-  output: string,
-): ReturnType<typeof vi.spyOn> {
+export function mockExecSync(_command: string, output: string): ReturnType<typeof vi.spyOn> {
   const execSync = vi.fn(() => output);
   return vi.spyOn({ execSync }, 'execSync').mockImplementation(execSync);
 }
