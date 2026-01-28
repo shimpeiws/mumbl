@@ -27,12 +27,7 @@
     "ci:test": "vitest run --coverage --reporter=verbose",
     "ci:all": "pnpm type-check && pnpm ci:check && pnpm ci:test"
   },
-  "keywords": [
-    "git",
-    "worktree",
-    "workflow",
-    "cli"
-  ],
+  "keywords": ["git", "worktree", "workflow", "cli"],
   "author": "",
   "license": "MIT",
   "devDependencies": {

@@ -5,8 +5,8 @@
  * including creation, listing, navigation, and removal.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createMockGitRepo, cleanupMockFs } from '../helpers/test-utils.js';
+import { afterEach, beforeEach, describe, it } from 'vitest';
+import { cleanupMockFs, createMockGitRepo } from '../helpers/test-utils.js';
 
 describe('Worktree Flow Integration', () => {
   let cleanup: () => void;
