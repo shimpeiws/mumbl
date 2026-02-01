@@ -15,8 +15,10 @@ export default defineConfig({
         'test/**',
         '*.config.ts',
         '*.config.js',
-        'src/App.tsx', // TUI component, requires special testing
         'src/index.tsx', // TUI entry point, requires special testing
+        'src/ui/**/*.tsx', // TUI components, require ink-testing-library
+        'src/ui/hooks/**', // TUI hooks, require ink-testing-library
+        'src/ui/context/**', // TUI context, require ink-testing-library
       ],
       thresholds: {
         lines: 70,

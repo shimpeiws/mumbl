@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 import { render } from 'ink';
 import React from 'react';
+import { closeDatabase, getDatabase } from './infrastructure/database/client.js';
+import { EntryService } from './services/entry-service.js';
 import { App } from './ui/App.js';
+import { ServiceProvider } from './ui/context/ServiceContext.js';
 
 (async () => {
   if (!process.stdin.isTTY) {
@@ -14,6 +17,15 @@ import { App } from './ui/App.js';
     process.exit(0);
   }
 
-  const instance = render(<App />);
+  const db = getDatabase();
+  const entryService = new EntryService(db);
+
+  const instance = render(
+    <ServiceProvider entryService={entryService}>
+      <App />
+    </ServiceProvider>,
+  );
+
   await instance.waitUntilExit();
+  closeDatabase();
 })();
