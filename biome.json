@@ -32,12 +32,6 @@
     "jsxRuntime": "reactClassic"
   },
   "files": {
-    "ignore": [
-      "node_modules",
-      "dist",
-      "build",
-      "coverage",
-      "*.sh"
-    ]
+    "ignore": ["node_modules", "dist", "build", "coverage", "*.sh"]
   }
 }

@@ -27,16 +27,12 @@
     "ci:test": "vitest run --coverage --reporter=verbose",
     "ci:all": "pnpm type-check && pnpm ci:check && pnpm ci:test"
   },
-  "keywords": [
-    "git",
-    "worktree",
-    "workflow",
-    "cli"
-  ],
+  "keywords": ["git", "worktree", "workflow", "cli"],
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.0.10",
     "@types/react": "^19.2.9",
     "@vitest/coverage-v8": "^2.1.0",
@@ -48,6 +44,7 @@
     "vitest": "^2.1.0"
   },
   "dependencies": {
+    "better-sqlite3": "^12.6.2",
     "ink": "^6.6.0",
     "react": "^19.2.4"
   }

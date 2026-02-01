@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 import { render } from 'ink';
 import React from 'react';
-import { App } from './App.js';
+import { App } from './ui/App.js';
 
 (async () => {
-  // Check if running in TTY environment
   if (!process.stdin.isTTY) {
-    // Non-TTY mode: Simple console output and exit
     console.log('mumbl - AI-powered communication tool');
     console.log('');
     console.log('Running in non-interactive mode (no TTY detected)');
@@ -16,7 +14,6 @@ import { App } from './App.js';
     process.exit(0);
   }
 
-  // TTY mode: Full interactive Ink app
   const instance = render(<App />);
   await instance.waitUntilExit();
 })();
