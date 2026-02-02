@@ -3,6 +3,13 @@ import { EntryNotFoundError, InvalidEntryError } from '../infrastructure/errors/
 import type { EntryRow, JournalEntry } from './types.js';
 
 /**
+ * Convert Date to Unix timestamp in seconds
+ */
+function toUnixSeconds(date: Date): number {
+  return Math.floor(date.getTime() / 1000);
+}
+
+/**
  * Repository for journal entry database operations
  */
 export class EntryRepository {
@@ -41,14 +48,19 @@ export class EntryRepository {
     try {
       stmt.run(
         entry.id,
-        Math.floor(entry.timestamp.getTime() / 1000),
+        toUnixSeconds(entry.timestamp),
         entry.content,
         JSON.stringify(entry.metadata),
-        Math.floor(entry.createdAt.getTime() / 1000),
-        Math.floor(entry.updatedAt.getTime() / 1000),
+        toUnixSeconds(entry.createdAt),
+        toUnixSeconds(entry.updatedAt),
       );
     } catch (error) {
-      if (error instanceof Error && error.message.includes('UNIQUE constraint failed')) {
+      // better-sqlite3 errors have a 'code' property for SQLite error codes
+      const sqliteError = error as { code?: string; message?: string };
+      const isConstraintError =
+        sqliteError.code?.includes('SQLITE_CONSTRAINT') ||
+        sqliteError.message?.includes('UNIQUE constraint failed');
+      if (isConstraintError) {
         throw new InvalidEntryError(`Entry with ID ${entry.id} already exists`);
       }
       throw error;
@@ -98,11 +110,11 @@ export class EntryRepository {
     const conditions: string[] = [];
     if (options?.since) {
       conditions.push('timestamp >= ?');
-      params.push(Math.floor(options.since.getTime() / 1000));
+      params.push(toUnixSeconds(options.since));
     }
     if (options?.until) {
       conditions.push('timestamp <= ?');
-      params.push(Math.floor(options.until.getTime() / 1000));
+      params.push(toUnixSeconds(options.until));
     }
 
     if (conditions.length > 0) {
@@ -158,11 +170,11 @@ export class EntryRepository {
 
     if (updates.timestamp !== undefined) {
       fields.push('timestamp = ?');
-      params.push(Math.floor(updates.timestamp.getTime() / 1000));
+      params.push(toUnixSeconds(updates.timestamp));
     }
 
     fields.push('updated_at = ?');
-    params.push(Math.floor(Date.now() / 1000));
+    params.push(toUnixSeconds(new Date()));
 
     params.push(id);
 

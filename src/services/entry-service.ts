@@ -1,4 +1,5 @@
 import type { Database as DatabaseType } from 'better-sqlite3';
+import { EntryNotFoundError } from '../infrastructure/errors/domain-errors.js';
 import { EntryRepository } from '../repositories/entry-repository.js';
 import type {
   CreateEntryOptions,
@@ -59,7 +60,7 @@ export class EntryService {
     try {
       return this.repository.update(id, options);
     } catch (error) {
-      if (error instanceof Error && error.name === 'EntryNotFoundError') {
+      if (error instanceof EntryNotFoundError) {
         return null;
       }
       throw error;
