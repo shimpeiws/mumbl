@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   MUMBL_SYSTEM_PROMPT,
-  createBriefResponsePrompt,
   createChatMessages,
-  createReactionPrompt,
   createReflectionPrompt,
   createSummaryPrompt,
-  createTrendPrompt,
 } from './prompts.js';
 import type { Message } from './types.js';
 
@@ -20,26 +17,25 @@ describe('MUMBL_SYSTEM_PROMPT', () => {
     expect(MUMBL_SYSTEM_PROMPT).toContain('mumbl');
   });
 
-  it('should be in English', () => {
-    expect(MUMBL_SYSTEM_PROMPT).toMatch(
-      /^[^\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf]+$/,
-    );
-  });
-
   it('should include minimal response philosophy', () => {
-    expect(MUMBL_SYSTEM_PROMPT).toContain('.');
-    expect(MUMBL_SYSTEM_PROMPT).toContain('...');
+    expect(MUMBL_SYSTEM_PROMPT).toContain('minimal');
+    expect(MUMBL_SYSTEM_PROMPT).toContain('1-2 sentences');
   });
 
   it('should include mumbl-specific phrases', () => {
-    expect(MUMBL_SYSTEM_PROMPT).toContain('pluto');
+    expect(MUMBL_SYSTEM_PROMPT).toContain('pluto mode');
     expect(MUMBL_SYSTEM_PROMPT).toContain('la di da di da');
-    expect(MUMBL_SYSTEM_PROMPT).toContain('mask off');
+    expect(MUMBL_SYSTEM_PROMPT).toContain('freebandz');
   });
 
   it('should prohibit giving advice', () => {
     expect(MUMBL_SYSTEM_PROMPT).toContain('No lectures');
-    expect(MUMBL_SYSTEM_PROMPT.toLowerCase()).toContain('advice');
+    expect(MUMBL_SYSTEM_PROMPT).toContain('no advice');
+  });
+
+  it('should include safety guidelines', () => {
+    expect(MUMBL_SYSTEM_PROMPT).toContain('Safety');
+    expect(MUMBL_SYSTEM_PROMPT).toContain('No medical advice');
   });
 });
 
@@ -110,6 +106,13 @@ describe('createSummaryPrompt', () => {
     expect(messages).toHaveLength(2);
     expect(messages[1].role).toBe('user');
   });
+
+  it('should emphasize pattern noticing without judgment', () => {
+    const messages = createSummaryPrompt(['test']);
+
+    expect(messages[0].content).toContain('patterns');
+    expect(messages[0].content).toContain('No advice');
+  });
 });
 
 describe('createReflectionPrompt', () => {
@@ -131,94 +134,18 @@ describe('createReflectionPrompt', () => {
 
     expect(messages[1].content).toContain('Completed a big project today!');
   });
-});
 
-describe('createTrendPrompt', () => {
-  it('should create messages for detecting patterns in entries', () => {
-    const entries = ['Work was stressful', 'Boss gave feedback', 'Team meeting went long'];
+  it('should emphasize minimal responses', () => {
+    const messages = createReflectionPrompt('test');
 
-    const messages = createTrendPrompt(entries);
-
-    expect(messages).toHaveLength(2);
-    expect(messages[0].role).toBe('system');
-    expect(messages[0].content).toContain('pattern');
-    expect(messages[1].role).toBe('user');
+    expect(messages[0].content).toContain('One short observation');
+    expect(messages[0].content).toContain("Don't dig");
   });
 
-  it('should format entries with numbers', () => {
-    const entries = ['Entry A', 'Entry B'];
+  it('should include good and bad examples', () => {
+    const messages = createReflectionPrompt('test');
 
-    const messages = createTrendPrompt(entries);
-
-    expect(messages[1].content).toContain('1. Entry A');
-    expect(messages[1].content).toContain('2. Entry B');
-  });
-
-  it('should be the same as createSummaryPrompt (legacy)', () => {
-    const entries = ['test entry'];
-
-    const trendMessages = createTrendPrompt(entries);
-    const summaryMessages = createSummaryPrompt(entries);
-
-    expect(trendMessages).toEqual(summaryMessages);
-  });
-});
-
-describe('createReactionPrompt', () => {
-  it('should create messages for choosing minimal reaction', () => {
-    const entry = 'Just feeling tired today';
-
-    const messages = createReactionPrompt(entry);
-
-    expect(messages).toHaveLength(2);
-    expect(messages[0].role).toBe('system');
-    expect(messages[1].role).toBe('user');
-    expect(messages[1].content).toBe(entry);
-  });
-
-  it('should include reaction options in system prompt', () => {
-    const messages = createReactionPrompt('test');
-
-    const systemContent = messages[0].content;
-    expect(systemContent).toContain('.');
-    expect(systemContent).toContain('...');
-    expect(systemContent).toContain('listening');
-  });
-});
-
-describe('createBriefResponsePrompt', () => {
-  it('should create messages for brief response', () => {
-    const entry = 'What do you think about my situation?';
-
-    const messages = createBriefResponsePrompt(entry);
-
-    expect(messages).toHaveLength(2);
-    expect(messages[0].role).toBe('system');
-    expect(messages[1].role).toBe('user');
-    expect(messages[1].content).toBe(entry);
-  });
-
-  it('should include context when provided', () => {
-    const entry = 'How should I handle this?';
-    const context = 'User has been stressed about work';
-
-    const messages = createBriefResponsePrompt(entry, context);
-
-    expect(messages[0].content).toContain(context);
-  });
-
-  it('should not include context section when not provided', () => {
-    const entry = 'Just wondering';
-
-    const messages = createBriefResponsePrompt(entry);
-
-    expect(messages[0].content).not.toContain('Recent context:');
-  });
-
-  it('should emphasize short responses', () => {
-    const messages = createBriefResponsePrompt('test');
-
-    expect(messages[0].content).toContain('1-2 sentences');
-    expect(messages[0].content).toContain('No lectures');
+    expect(messages[0].content).toContain('Good:');
+    expect(messages[0].content).toContain('Bad:');
   });
 });

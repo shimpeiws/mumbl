@@ -42,10 +42,6 @@ export { MessageHistory, SessionMessageHistory } from './message-history.js';
 export {
   MUMBL_SYSTEM_PROMPT,
   createChatMessages,
-  createTrendPrompt,
-  createReactionPrompt,
-  createBriefResponsePrompt,
-  // Legacy exports for backwards compatibility
   createSummaryPrompt,
   createReflectionPrompt,
 } from './prompts.js';
