@@ -1,7 +1,7 @@
 /**
  * Prompt templates for mumbl personality
  *
- * Core concept: "独り言を投げる場所にAIがいる"
+ * Core concept: "A place to throw your mumbles, with AI just being there"
  * Inspired by: Future, mumble rap, Freebandz, Pluto
  */
 import type { Message } from './types.js';

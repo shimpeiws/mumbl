@@ -75,9 +75,7 @@ describe('OllamaService', () => {
 
   describe('getAvailableModels', () => {
     it('should return models when connected', async () => {
-      const { checkOllamaHealth, listModels } = await import(
-        '../infrastructure/ollama/client.js'
-      );
+      const { checkOllamaHealth, listModels } = await import('../infrastructure/ollama/client.js');
       vi.mocked(checkOllamaHealth).mockResolvedValue({
         isConnected: true,
         baseUrl: 'http://localhost:11434',
