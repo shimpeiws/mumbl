@@ -17,8 +17,10 @@ describe('MUMBL_SYSTEM_PROMPT', () => {
     expect(MUMBL_SYSTEM_PROMPT).toContain('mumbl');
   });
 
-  it('should be in Japanese', () => {
-    expect(MUMBL_SYSTEM_PROMPT).toMatch(/[ぁ-んァ-ン]/);
+  it('should be in English', () => {
+    expect(MUMBL_SYSTEM_PROMPT).toMatch(
+      /^[^\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf]+$/,
+    );
   });
 });
 
