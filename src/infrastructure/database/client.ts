@@ -36,11 +36,11 @@ export function ensureStorageDir(dir = DEFAULT_STORAGE_DIR): void {
  */
 export function initializeDatabase(dbPath?: string): Database.Database {
   try {
-    const path = dbPath ?? getDatabasePath();
+    const dbFilePath = dbPath ?? getDatabasePath();
 
-    ensureStorageDir(dbPath ? path.split('/').slice(0, -1).join('/') : undefined);
+    ensureStorageDir(dbPath ? path.dirname(dbFilePath) : undefined);
 
-    const db = new Database(path);
+    const db = new Database(dbFilePath);
 
     db.pragma('journal_mode = WAL');
 
