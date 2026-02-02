@@ -1,13 +1,13 @@
+import { AnthropicProvider } from './anthropic-provider.js';
+import { ProviderUnavailableError } from './errors.js';
+import { MessageHistory, SessionMessageHistory } from './message-history.js';
+import { OllamaProvider } from './ollama-provider.js';
+import { createChatMessages, createReflectionPrompt, createSummaryPrompt } from './prompts.js';
 /**
  * High-level LLM service for mumbl
  */
-import type { LLMProvider, ModelConfig, ChatResponse, StreamChunk, Provider } from './types.js';
-import { DEFAULT_OLLAMA_MODEL, DEFAULT_ANTHROPIC_MODEL } from './types.js';
-import { OllamaProvider } from './ollama-provider.js';
-import { AnthropicProvider } from './anthropic-provider.js';
-import { MessageHistory, SessionMessageHistory } from './message-history.js';
-import { createChatMessages, createSummaryPrompt, createReflectionPrompt } from './prompts.js';
-import { ProviderUnavailableError } from './errors.js';
+import type { ChatResponse, LLMProvider, ModelConfig, Provider, StreamChunk } from './types.js';
+import { DEFAULT_ANTHROPIC_MODEL, DEFAULT_OLLAMA_MODEL } from './types.js';
 
 export interface LLMServiceConfig {
   provider: Provider;
@@ -42,7 +42,9 @@ export class LLMService {
   constructor(config: LLMServiceConfig) {
     const primaryConfig: ModelConfig = {
       provider: config.provider,
-      model: config.model ?? (config.provider === 'ollama' ? DEFAULT_OLLAMA_MODEL : DEFAULT_ANTHROPIC_MODEL),
+      model:
+        config.model ??
+        (config.provider === 'ollama' ? DEFAULT_OLLAMA_MODEL : DEFAULT_ANTHROPIC_MODEL),
       baseUrl: config.baseUrl,
       apiKey: config.apiKey,
       temperature: config.temperature,
@@ -54,7 +56,8 @@ export class LLMService {
     if (config.fallbackProvider) {
       const fallbackConfig: ModelConfig = {
         provider: config.fallbackProvider,
-        model: config.fallbackProvider === 'ollama' ? DEFAULT_OLLAMA_MODEL : DEFAULT_ANTHROPIC_MODEL,
+        model:
+          config.fallbackProvider === 'ollama' ? DEFAULT_OLLAMA_MODEL : DEFAULT_ANTHROPIC_MODEL,
         baseUrl: config.baseUrl,
         apiKey: config.apiKey,
         temperature: config.temperature,
@@ -77,7 +80,9 @@ export class LLMService {
     const sessionId = options?.sessionId ?? 'default';
     const includeHistory = options?.includeHistory ?? true;
 
-    const history = includeHistory ? this.sessionHistory.getSession(sessionId) : new MessageHistory(0);
+    const history = includeHistory
+      ? this.sessionHistory.getSession(sessionId)
+      : new MessageHistory(0);
 
     const messages = createChatMessages(userMessage, history.getMessages());
 
@@ -113,7 +118,9 @@ export class LLMService {
     const sessionId = options?.sessionId ?? 'default';
     const includeHistory = options?.includeHistory ?? true;
 
-    const history = includeHistory ? this.sessionHistory.getSession(sessionId) : new MessageHistory(0);
+    const history = includeHistory
+      ? this.sessionHistory.getSession(sessionId)
+      : new MessageHistory(0);
 
     const messages = createChatMessages(userMessage, history.getMessages());
 

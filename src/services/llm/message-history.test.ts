@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { MessageHistory, SessionMessageHistory } from './message-history.js';
 import type { Message } from './types.js';
 

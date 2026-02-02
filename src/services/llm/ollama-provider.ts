@@ -1,22 +1,12 @@
+import { AIMessage, HumanMessage, SystemMessage } from '@langchain/core/messages';
+import type { BaseMessage } from '@langchain/core/messages';
 /**
  * Ollama LLM Provider implementation using LangChain
  */
 import { ChatOllama } from '@langchain/ollama';
-import { HumanMessage, AIMessage, SystemMessage } from '@langchain/core/messages';
-import type { BaseMessage } from '@langchain/core/messages';
 import { ProviderUnavailableError, StreamError } from './errors.js';
-import type {
-  LLMProvider,
-  Message,
-  ChatResponse,
-  StreamChunk,
-  ModelConfig,
-} from './types.js';
-import {
-  DEFAULT_OLLAMA_MODEL,
-  DEFAULT_OLLAMA_BASE_URL,
-  DEFAULT_TEMPERATURE,
-} from './types.js';
+import type { ChatResponse, LLMProvider, Message, ModelConfig, StreamChunk } from './types.js';
+import { DEFAULT_OLLAMA_BASE_URL, DEFAULT_OLLAMA_MODEL, DEFAULT_TEMPERATURE } from './types.js';
 
 export class OllamaProvider implements LLMProvider {
   private model: ChatOllama;
@@ -95,9 +85,7 @@ export class OllamaProvider implements LLMProvider {
 
   async healthCheck(): Promise<boolean> {
     try {
-      const response = await fetch(
-        `${DEFAULT_OLLAMA_BASE_URL}/api/tags`,
-      );
+      const response = await fetch(`${DEFAULT_OLLAMA_BASE_URL}/api/tags`);
       return response.ok;
     } catch {
       return false;

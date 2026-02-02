@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   MUMBL_SYSTEM_PROMPT,
   createChatMessages,
-  createSummaryPrompt,
   createReflectionPrompt,
+  createSummaryPrompt,
 } from './prompts.js';
 import type { Message } from './types.js';
 

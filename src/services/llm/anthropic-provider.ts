@@ -2,21 +2,11 @@
  * Anthropic LLM Provider implementation using LangChain
  */
 import { ChatAnthropic } from '@langchain/anthropic';
-import { HumanMessage, AIMessage, SystemMessage } from '@langchain/core/messages';
+import { AIMessage, HumanMessage, SystemMessage } from '@langchain/core/messages';
 import type { BaseMessage } from '@langchain/core/messages';
 import { AuthenticationError, ProviderUnavailableError, StreamError } from './errors.js';
-import type {
-  LLMProvider,
-  Message,
-  ChatResponse,
-  StreamChunk,
-  ModelConfig,
-} from './types.js';
-import {
-  DEFAULT_ANTHROPIC_MODEL,
-  DEFAULT_TEMPERATURE,
-  DEFAULT_MAX_TOKENS,
-} from './types.js';
+import type { ChatResponse, LLMProvider, Message, ModelConfig, StreamChunk } from './types.js';
+import { DEFAULT_ANTHROPIC_MODEL, DEFAULT_MAX_TOKENS, DEFAULT_TEMPERATURE } from './types.js';
 
 export class AnthropicProvider implements LLMProvider {
   private model: ChatAnthropic;

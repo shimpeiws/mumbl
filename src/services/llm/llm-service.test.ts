@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { LLMService, createProvider } from './llm-service.js';
-import { OllamaProvider } from './ollama-provider.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnthropicProvider } from './anthropic-provider.js';
 import { ProviderUnavailableError } from './errors.js';
-import type { ModelConfig, ChatResponse, StreamChunk } from './types.js';
+import { LLMService, createProvider } from './llm-service.js';
+import { OllamaProvider } from './ollama-provider.js';
+import type { ChatResponse, ModelConfig, StreamChunk } from './types.js';
 
 // Mock the providers
 vi.mock('./ollama-provider.js', () => ({
