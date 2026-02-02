@@ -1,6 +1,7 @@
 import { Box, Text } from 'ink';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { JournalEntry } from '../../../repositories/types.js';
+import { useNavigation } from '../../context/NavigationContext.js';
 import { useEntries } from '../../hooks/useEntries.js';
 import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation.js';
 import { groupEntriesByDate } from '../../utils/date-formatter.js';
@@ -24,9 +25,19 @@ interface EntryItem {
 
 type FlatListItem = HeaderItem | EntryItem;
 
-export function EntryList() {
+interface EntryListProps {
+  onViewingDetailChange?: (isViewing: boolean) => void;
+}
+
+export function EntryList({ onViewingDetailChange }: EntryListProps) {
   const { entries, loading, error } = useEntries();
+  const { listState, setListState } = useNavigation();
   const [viewingEntry, setViewingEntry] = useState<JournalEntry | null>(null);
+
+  // Notify parent when viewing detail changes
+  useEffect(() => {
+    onViewingDetailChange?.(viewingEntry !== null);
+  }, [viewingEntry, onViewingDetailChange]);
 
   // Group entries by date and flatten for rendering
   const flatList = useMemo(() => {
@@ -62,11 +73,15 @@ export function EntryList() {
   const { selectedIndex } = useKeyboardNavigation({
     itemCount: entryItems.length,
     enabled: !viewingEntry,
+    initialIndex: listState.selectedIndex,
     onAction: () => {
       const selectedEntry = entryItems[selectedIndex]?.entry;
       if (selectedEntry) {
         setViewingEntry(selectedEntry);
       }
+    },
+    onIndexChange: (index) => {
+      setListState({ selectedIndex: index });
     },
   });
 
@@ -126,10 +141,6 @@ export function EntryList() {
             />
           );
         })}
-      </Box>
-
-      <Box marginTop={1}>
-        <Text dimColor>Use j/k or arrows to navigate, Enter to view, q to quit</Text>
       </Box>
     </Box>
   );

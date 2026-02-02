@@ -1,0 +1,47 @@
+import { Box, Text, useInput } from 'ink';
+import React from 'react';
+import { useNavigation } from '../../context/NavigationContext.js';
+
+export function WriteView() {
+  const { switchToList, writeState, setWriteState } = useNavigation();
+
+  useInput((input, key) => {
+    if (key.escape) {
+      switchToList();
+      return;
+    }
+
+    if (key.tab) {
+      switchToList();
+      return;
+    }
+
+    // Basic text input handling (placeholder for future implementation)
+    if (key.backspace || key.delete) {
+      setWriteState({ content: writeState.content.slice(0, -1) });
+      return;
+    }
+
+    if (input && !key.ctrl && !key.meta) {
+      setWriteState({ content: writeState.content + input });
+    }
+  });
+
+  return (
+    <Box flexDirection="column" padding={1}>
+      <Box marginBottom={1}>
+        <Text bold color="green">
+          New Entry
+        </Text>
+      </Box>
+
+      <Box borderStyle="round" borderColor="green" padding={1} flexDirection="column" minHeight={5}>
+        <Text>{writeState.content || <Text dimColor>Start typing...</Text>}</Text>
+      </Box>
+
+      <Box marginTop={1}>
+        <Text dimColor>Characters: {writeState.content.length}</Text>
+      </Box>
+    </Box>
+  );
+}

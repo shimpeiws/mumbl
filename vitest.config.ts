@@ -27,7 +27,7 @@ export default defineConfig({
         statements: 70,
       },
     },
-    include: ['src/**/*.test.ts', 'src/**/__tests__/**/*.ts', 'test/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'src/**/__tests__/**/*.ts', 'test/**/*.test.ts'],
     testTimeout: 10000,
     globalSetup: './test/helpers/setup.ts',
   },
