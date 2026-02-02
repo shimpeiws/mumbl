@@ -13,6 +13,12 @@
       },
       "suspicious": {
         "noExplicitAny": "warn"
+      },
+      "complexity": {
+        "useLiteralKeys": "off"
+      },
+      "performance": {
+        "noDelete": "off"
       }
     }
   },

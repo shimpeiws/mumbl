@@ -12,6 +12,39 @@ This project is in early development.
 
 - Node.js >= 20.0.0
 - pnpm >= 9.0.0
+- [Ollama](https://ollama.ai/) (for LLM features)
+
+### Ollama Installation
+
+This application uses Ollama for local LLM communication.
+
+**macOS:**
+```bash
+brew install ollama
+```
+
+**Linux:**
+```bash
+curl -fsSL https://ollama.ai/install.sh | sh
+```
+
+**Start the Ollama server:**
+```bash
+ollama serve
+```
+
+**Pull the default model:**
+```bash
+ollama pull qwen2.5-coder:7b
+```
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MUMBL_OLLAMA_URL` | `http://localhost:11434` | Ollama server base URL |
+| `MUMBL_OLLAMA_MODEL` | `qwen2.5-coder:7b` | Default model to use |
+| `MUMBL_OLLAMA_TIMEOUT` | `30000` | Connection timeout (ms) |
 
 ### Setup
 
