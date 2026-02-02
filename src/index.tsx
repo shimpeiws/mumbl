@@ -3,6 +3,7 @@ import { render } from 'ink';
 import React from 'react';
 import { closeDatabase, getDatabase } from './infrastructure/database/client.js';
 import { EntryService } from './services/entry-service.js';
+import { OllamaService } from './services/ollama-service.js';
 import { App } from './ui/App.js';
 import { ServiceProvider } from './ui/context/ServiceContext.js';
 
@@ -19,9 +20,10 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
 
   const db = getDatabase();
   const entryService = new EntryService(db);
+  const ollamaService = new OllamaService();
 
   const instance = render(
-    <ServiceProvider entryService={entryService}>
+    <ServiceProvider entryService={entryService} ollamaService={ollamaService}>
       <App />
     </ServiceProvider>,
   );
