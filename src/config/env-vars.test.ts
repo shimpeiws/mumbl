@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { loadEnvVars, getApiKey } from './env-vars.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { getApiKey, loadEnvVars } from './env-vars.js';
 
 describe('env-vars', () => {
   const originalEnv = process.env;

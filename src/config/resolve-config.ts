@@ -1,11 +1,11 @@
 /**
  * Configuration resolution with priority: CLI > Environment > Config file > Default
  */
-import { DEFAULT_OLLAMA_MODEL, DEFAULT_ANTHROPIC_MODEL } from '../services/llm/types.js';
+import { DEFAULT_ANTHROPIC_MODEL, DEFAULT_OLLAMA_MODEL } from '../services/llm/types.js';
 import { parseCliArgs } from './cli-args.js';
 import { loadConfigFile } from './config-file.js';
-import { loadEnvVars, getApiKey } from './env-vars.js';
-import type { ResolvedConfig, ConfigSource } from './types.js';
+import { getApiKey, loadEnvVars } from './env-vars.js';
+import type { ConfigSource, ResolvedConfig } from './types.js';
 
 /**
  * Resolve configuration from all sources with priority

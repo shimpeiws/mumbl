@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { resolveConfig } from './resolve-config.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as cliArgs from './cli-args.js';
 import * as configFile from './config-file.js';
 import * as envVars from './env-vars.js';
+import { resolveConfig } from './resolve-config.js';
 
 vi.mock('./cli-args.js');
 vi.mock('./config-file.js');

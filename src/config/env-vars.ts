@@ -1,3 +1,4 @@
+import type { Provider } from '../services/llm/types.js';
 /**
  * Environment variable loading for mumbl
  *
@@ -8,7 +9,6 @@
  * - ANTHROPIC_API_KEY: API key for Anthropic
  */
 import type { MumblConfig } from './types.js';
-import type { Provider } from '../services/llm/types.js';
 
 /**
  * Load configuration from environment variables

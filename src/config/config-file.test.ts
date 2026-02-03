@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
-import { loadConfigFile, getConfigFilePath } from './config-file.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getConfigFilePath, loadConfigFile } from './config-file.js';
 
 vi.mock('node:fs');
 vi.mock('node:os');

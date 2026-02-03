@@ -29,7 +29,11 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
   const llmService = createLLMServiceFromConfig(config);
 
   const instance = render(
-    <ServiceProvider entryService={entryService} ollamaService={ollamaService} llmService={llmService}>
+    <ServiceProvider
+      entryService={entryService}
+      ollamaService={ollamaService}
+      llmService={llmService}
+    >
       <App />
     </ServiceProvider>,
   );
