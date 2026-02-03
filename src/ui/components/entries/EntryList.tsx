@@ -4,6 +4,7 @@ import type { JournalEntry } from '../../../repositories/types.js';
 import { useNavigation } from '../../context/NavigationContext.js';
 import { useEntries } from '../../hooks/useEntries.js';
 import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation.js';
+import { useReactions } from '../../hooks/useReactions.js';
 import { groupEntriesByDate } from '../../utils/date-formatter.js';
 import { EmptyState } from './EmptyState.js';
 import { EntryDetail } from './EntryDetail.js';
@@ -33,6 +34,10 @@ export function EntryList({ onViewingDetailChange }: EntryListProps) {
   const { entries, loading, error } = useEntries();
   const { listState, setListState } = useNavigation();
   const [viewingEntry, setViewingEntry] = useState<JournalEntry | null>(null);
+
+  // Get entry IDs for fetching reactions
+  const entryIds = useMemo(() => entries.map((e) => e.id), [entries]);
+  const { reactions } = useReactions(entryIds);
 
   // Notify parent when viewing detail changes
   useEffect(() => {
@@ -138,6 +143,7 @@ export function EntryList({ onViewingDetailChange }: EntryListProps) {
               key={item.key}
               entry={item.entry}
               isSelected={item.entry.id === selectedEntryId}
+              reaction={reactions.get(item.entry.id)}
             />
           );
         })}

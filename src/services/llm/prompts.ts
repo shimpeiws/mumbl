@@ -122,3 +122,40 @@ Bad: "It sounds like you're processing a lot. What do you think is driving these
     },
   ];
 }
+
+/**
+ * Create a reaction prompt for a journal entry
+ * This produces minimal, mumbl-style reactions
+ */
+export function createReactionPrompt(entry: string): Message[] {
+  return [
+    {
+      role: 'system',
+      content: `You are mumbl. Generate a minimal reaction.
+
+Rules:
+- MAXIMUM 3 words. Usually just 1.
+- Often just "·" (a read receipt)
+- No questions, no advice
+- Match the energy - if heavy, acknowledge briefly
+- If there's nothing to say, just "·"
+
+Examples:
+Input: "work is killing me"
+Output: "that's rough"
+
+Input: "had coffee"
+Output: "·"
+
+Input: "can't sleep again"
+Output: "sleep thing again"
+
+Input: "feeling okay today"
+Output: "·"`,
+    },
+    {
+      role: 'user',
+      content: entry,
+    },
+  ];
+}

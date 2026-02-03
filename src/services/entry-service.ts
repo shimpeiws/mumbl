@@ -8,19 +8,23 @@ import type {
   UpdateEntryOptions,
 } from '../repositories/types.js';
 import { generateEntryId } from './id-service.js';
+import type { ReactionService } from './reaction-service.js';
 
 /**
  * High-level API for managing journal entries
  */
 export class EntryService {
   private repository: EntryRepository;
+  private reactionService?: ReactionService;
 
-  constructor(db: DatabaseType) {
+  constructor(db: DatabaseType, reactionService?: ReactionService) {
     this.repository = new EntryRepository(db);
+    this.reactionService = reactionService;
   }
 
   /**
    * Create a new journal entry
+   * Queues reaction generation asynchronously (non-blocking)
    */
   create(options: CreateEntryOptions): JournalEntry {
     const now = new Date();
@@ -34,6 +38,12 @@ export class EntryService {
     };
 
     this.repository.insert(entry);
+
+    // Queue reaction generation (non-blocking)
+    if (this.reactionService) {
+      this.reactionService.queueReaction(entry.id, entry.content);
+    }
+
     return entry;
   }
 
