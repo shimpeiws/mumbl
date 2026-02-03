@@ -48,4 +48,4 @@ export {
 
 // Main Service
 export type { LLMServiceConfig } from './llm-service.js';
-export { LLMService, createProvider, createDefaultLLMService } from './llm-service.js';
+export { LLMService, createProvider, createLLMServiceFromConfig } from './llm-service.js';
