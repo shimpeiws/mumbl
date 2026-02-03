@@ -1,3 +1,4 @@
+import type { ResolvedConfig } from '../../config/types.js';
 import { AnthropicProvider } from './anthropic-provider.js';
 import { ProviderUnavailableError } from './errors.js';
 import { MessageHistory, SessionMessageHistory } from './message-history.js';
@@ -220,6 +221,7 @@ export class LLMService {
 /**
  * Create an LLM service with default configuration
  * Uses MUMBL_PROVIDER and MUMBL_MODEL environment variables
+ * @deprecated Use createLLMServiceFromConfig with resolveConfig() instead
  */
 export function createDefaultLLMService(): LLMService {
   const provider = (process.env['MUMBL_PROVIDER'] as Provider) ?? 'ollama';
@@ -231,5 +233,20 @@ export function createDefaultLLMService(): LLMService {
     model,
     apiKey,
     fallbackProvider: provider === 'ollama' && apiKey ? 'anthropic' : undefined,
+  });
+}
+
+/**
+ * Create an LLM service from resolved configuration
+ * Use this with resolveConfig() for full configuration priority support
+ * Priority: CLI > Environment > Config file > Default
+ */
+export function createLLMServiceFromConfig(config: ResolvedConfig): LLMService {
+  return new LLMService({
+    provider: config.provider,
+    model: config.model,
+    baseUrl: config.baseUrl,
+    apiKey: config.apiKey,
+    fallbackProvider: config.provider === 'ollama' && config.apiKey ? 'anthropic' : undefined,
   });
 }
