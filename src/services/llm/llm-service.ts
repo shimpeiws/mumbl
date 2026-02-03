@@ -219,24 +219,6 @@ export class LLMService {
 }
 
 /**
- * Create an LLM service with default configuration
- * Uses MUMBL_PROVIDER and MUMBL_MODEL environment variables
- * @deprecated Use createLLMServiceFromConfig with resolveConfig() instead
- */
-export function createDefaultLLMService(): LLMService {
-  const provider = (process.env['MUMBL_PROVIDER'] as Provider) ?? 'ollama';
-  const model = process.env['MUMBL_MODEL'];
-  const apiKey = process.env['ANTHROPIC_API_KEY'];
-
-  return new LLMService({
-    provider,
-    model,
-    apiKey,
-    fallbackProvider: provider === 'ollama' && apiKey ? 'anthropic' : undefined,
-  });
-}
-
-/**
  * Create an LLM service from resolved configuration
  * Use this with resolveConfig() for full configuration priority support
  * Priority: CLI > Environment > Config file > Default
