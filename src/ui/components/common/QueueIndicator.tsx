@@ -21,17 +21,9 @@ export function QueueIndicator({ status }: QueueIndicatorProps) {
 
   // Show spinner when processing
   if (running > 0) {
-    return (
-      <Text dimColor>
-        [processing{pending > 0 ? ` +${pending}` : ''}]
-      </Text>
-    );
+    return <Text dimColor>[processing{pending > 0 ? ` +${pending}` : ''}]</Text>;
   }
 
   // Show pending count
-  return (
-    <Text dimColor>
-      [{pending} pending]
-    </Text>
-  );
+  return <Text dimColor>[{pending} pending]</Text>;
 }

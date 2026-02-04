@@ -7,8 +7,8 @@ import type { LLMService } from '../llm/llm-service.js';
 import type { ReactionService } from '../reaction-service.js';
 import { shouldRetryError, sleep, withRetry } from './retry.js';
 import {
-  DEFAULT_QUEUE_CONFIG,
   type ChatTaskPayload,
+  DEFAULT_QUEUE_CONFIG,
   type QueueEventCallback,
   type QueueEventType,
   type QueueEvents,

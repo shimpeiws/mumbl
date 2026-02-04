@@ -195,10 +195,7 @@ describe('withRetry', () => {
 
   it('should use custom shouldRetry function', async () => {
     const error = new Error('Custom retryable error');
-    const fn = vi
-      .fn()
-      .mockRejectedValueOnce(error)
-      .mockResolvedValueOnce('success');
+    const fn = vi.fn().mockRejectedValueOnce(error).mockResolvedValueOnce('success');
 
     const customShouldRetry = (e: unknown) => e instanceof Error && e.message.includes('Custom');
 

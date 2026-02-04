@@ -371,7 +371,9 @@ describe('QueueService', () => {
     it('should wait for running tasks to complete', async () => {
       vi.mocked(llmService.reflect).mockImplementation(
         () =>
-          new Promise((resolve) => setTimeout(() => resolve({ content: 'done', model: 'test' }), 500)),
+          new Promise((resolve) =>
+            setTimeout(() => resolve({ content: 'done', model: 'test' }), 500),
+          ),
       );
 
       const taskId = queueService.enqueueReflect('entry-1', 'test');
@@ -412,7 +414,10 @@ describe('QueueService', () => {
 
     it('should timeout if tasks take too long', async () => {
       vi.mocked(llmService.reflect).mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({ content: 'done', model: 'test' }), 5000)),
+        () =>
+          new Promise((resolve) =>
+            setTimeout(() => resolve({ content: 'done', model: 'test' }), 5000),
+          ),
       );
 
       queueService.enqueueReflect('entry-1', 'test');
@@ -456,7 +461,10 @@ describe('QueueService', () => {
   describe('isActive', () => {
     it('should return true when processing', async () => {
       vi.mocked(llmService.reflect).mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({ content: 'done', model: 'test' }), 500)),
+        () =>
+          new Promise((resolve) =>
+            setTimeout(() => resolve({ content: 'done', model: 'test' }), 500),
+          ),
       );
 
       queueService.enqueueReflect('entry-1', 'test');
