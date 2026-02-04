@@ -5,10 +5,12 @@ import { ModeIndicator } from './components/common/ModeIndicator.js';
 import { EntryList } from './components/entries/EntryList.js';
 import { WriteView } from './components/write/WriteView.js';
 import { NavigationProvider, useNavigation } from './context/NavigationContext.js';
+import { useQueue } from './context/QueueContext.js';
 
 function AppContent() {
   const { exit } = useApp();
   const { mode, toggleMode } = useNavigation();
+  const { status: queueStatus } = useQueue();
   const [isViewingDetail, setIsViewingDetail] = useState(false);
 
   useInput((input, key) => {
@@ -38,7 +40,7 @@ function AppContent() {
         {mode === 'write' && <WriteView />}
       </Box>
 
-      <HelpFooter mode={mode} isViewingDetail={isViewingDetail} />
+      <HelpFooter mode={mode} isViewingDetail={isViewingDetail} queueStatus={queueStatus} />
     </Box>
   );
 }

@@ -2,6 +2,7 @@ import React, { createContext, useContext } from 'react';
 import type { EntryService } from '../../services/entry-service.js';
 import type { LLMService } from '../../services/llm/llm-service.js';
 import type { OllamaService } from '../../services/ollama-service.js';
+import type { QueueService } from '../../services/queue/index.js';
 import type { ReactionService } from '../../services/reaction-service.js';
 
 interface ServiceContextValue {
@@ -9,6 +10,7 @@ interface ServiceContextValue {
   ollamaService: OllamaService;
   llmService: LLMService;
   reactionService: ReactionService;
+  queueService: QueueService;
 }
 
 export const ServiceContext = createContext<ServiceContextValue | null>(null);
@@ -26,6 +28,7 @@ interface ServiceProviderProps {
   ollamaService: OllamaService;
   llmService: LLMService;
   reactionService: ReactionService;
+  queueService: QueueService;
   children: React.ReactNode;
 }
 
@@ -34,10 +37,13 @@ export function ServiceProvider({
   ollamaService,
   llmService,
   reactionService,
+  queueService,
   children,
 }: ServiceProviderProps) {
   return (
-    <ServiceContext.Provider value={{ entryService, ollamaService, llmService, reactionService }}>
+    <ServiceContext.Provider
+      value={{ entryService, ollamaService, llmService, reactionService, queueService }}
+    >
       {children}
     </ServiceContext.Provider>
   );
