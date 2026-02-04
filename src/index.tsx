@@ -7,8 +7,10 @@ import { closeDatabase, getDatabase } from './infrastructure/database/client.js'
 import { EntryService } from './services/entry-service.js';
 import { createLLMServiceFromConfig } from './services/llm/llm-service.js';
 import { OllamaService } from './services/ollama-service.js';
+import { QueueService } from './services/queue/index.js';
 import { ReactionService } from './services/reaction-service.js';
 import { App } from './ui/App.js';
+import { QueueProvider } from './ui/context/QueueContext.js';
 import { ServiceProvider } from './ui/context/ServiceContext.js';
 
 (async () => {
@@ -35,6 +37,10 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
   const reactionLLMService = reactionConfig.useLLM ? llmService : undefined;
   const reactionService = new ReactionService(db, reactionConfig, reactionLLMService);
 
+  // Create queue service for background processing
+  const queueService = new QueueService(llmService, reactionService);
+  queueService.start();
+
   // Create entry service with reaction support
   const entryService = new EntryService(db, reactionService);
   const ollamaService = new OllamaService();
@@ -45,11 +51,17 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
       ollamaService={ollamaService}
       llmService={llmService}
       reactionService={reactionService}
+      queueService={queueService}
     >
-      <App />
+      <QueueProvider queueService={queueService}>
+        <App />
+      </QueueProvider>
     </ServiceProvider>,
   );
 
   await instance.waitUntilExit();
+
+  // Graceful shutdown: wait for running tasks to complete
+  await queueService.stop();
   closeDatabase();
 })();

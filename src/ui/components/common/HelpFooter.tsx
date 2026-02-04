@@ -1,13 +1,16 @@
 import { Box, Text } from 'ink';
 import React from 'react';
+import type { QueueStatus } from '../../../services/queue/index.js';
 import type { AppMode } from '../../context/NavigationContext.js';
+import { QueueIndicator } from './QueueIndicator.js';
 
 interface HelpFooterProps {
   mode: AppMode;
   isViewingDetail?: boolean;
+  queueStatus?: QueueStatus;
 }
 
-export function HelpFooter({ mode, isViewingDetail = false }: HelpFooterProps) {
+export function HelpFooter({ mode, isViewingDetail = false, queueStatus }: HelpFooterProps) {
   const getShortcuts = () => {
     if (mode === 'write') {
       return 'Tab: list | Esc: cancel | q: quit';
@@ -19,8 +22,9 @@ export function HelpFooter({ mode, isViewingDetail = false }: HelpFooterProps) {
   };
 
   return (
-    <Box marginTop={1} paddingX={1}>
+    <Box marginTop={1} paddingX={1} justifyContent="space-between">
       <Text dimColor>{getShortcuts()}</Text>
+      {queueStatus && <QueueIndicator status={queueStatus} />}
     </Box>
   );
 }
