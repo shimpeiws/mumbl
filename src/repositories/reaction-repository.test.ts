@@ -22,7 +22,14 @@ describe('ReactionRepository', () => {
     db.prepare(
       `INSERT INTO entries (id, timestamp, content, metadata, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?)`,
-    ).run('entry-2', Date.now() / 1000, 'Test content 2', '{}', Date.now() / 1000, Date.now() / 1000);
+    ).run(
+      'entry-2',
+      Date.now() / 1000,
+      'Test content 2',
+      '{}',
+      Date.now() / 1000,
+      Date.now() / 1000,
+    );
   });
 
   afterEach(() => {

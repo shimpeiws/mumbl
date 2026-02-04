@@ -1,5 +1,5 @@
-import type { ReactionConfig } from '../../services/reaction-service.js';
 import type { ReactionType } from '../../repositories/types.js';
+import type { ReactionConfig } from '../../services/reaction-service.js';
 
 /**
  * Get reaction configuration from environment variables

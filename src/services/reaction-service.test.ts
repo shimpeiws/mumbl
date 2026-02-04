@@ -152,19 +152,21 @@ describe('ReactionService', () => {
   describe('with LLM service', () => {
     it('should use LLM when configured', async () => {
       const mockLLMService = {
-        react: vi.fn().mockResolvedValue({ content: 'that\'s rough' }),
+        react: vi.fn().mockResolvedValue({ content: "that's rough" }),
       };
 
       const llmService = new ReactionService(
         db,
         { useLLM: true },
-        mockLLMService as unknown as Parameters<typeof ReactionService.prototype['generateReaction']>[2],
+        mockLLMService as unknown as Parameters<
+          (typeof ReactionService.prototype)['generateReaction']
+        >[2],
       );
 
       const reaction = await llmService.generateReaction('entry-1', 'work is killing me');
 
       expect(mockLLMService.react).toHaveBeenCalledWith('work is killing me');
-      expect(reaction?.content).toBe('that\'s rough');
+      expect(reaction?.content).toBe("that's rough");
       expect(reaction?.reactionType).toBe('custom');
     });
 
@@ -176,7 +178,9 @@ describe('ReactionService', () => {
       const llmService = new ReactionService(
         db,
         { useLLM: true },
-        mockLLMService as unknown as Parameters<typeof ReactionService.prototype['generateReaction']>[2],
+        mockLLMService as unknown as Parameters<
+          (typeof ReactionService.prototype)['generateReaction']
+        >[2],
       );
 
       const reaction = await llmService.generateReaction('entry-1', 'test content');

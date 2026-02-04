@@ -11,12 +11,7 @@ interface EntryListItemProps {
   reaction?: Reaction;
 }
 
-export function EntryListItem({
-  entry,
-  isSelected,
-  maxWidth = 60,
-  reaction,
-}: EntryListItemProps) {
+export function EntryListItem({ entry, isSelected, maxWidth = 60, reaction }: EntryListItemProps) {
   const timestamp = formatEntryTimestamp(entry.timestamp);
   const reactionContent = reaction?.content ?? '';
   const timestampWidth = timestamp.length + 3; // brackets + space
