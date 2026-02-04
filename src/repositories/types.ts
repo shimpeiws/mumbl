@@ -63,3 +63,36 @@ export interface EntryRow {
   created_at: number; // Unix timestamp in seconds
   updated_at: number; // Unix timestamp in seconds
 }
+
+/**
+ * Reaction types aligned with mumbl's personality
+ */
+export type ReactionType =
+  | 'read' // Simple read receipt (default)
+  | 'heard' // Acknowledgment
+  | 'thinking' // Pondering
+  | 'with-you' // Silent presence
+  | 'custom'; // For LLM-generated reactions
+
+/**
+ * A reaction to a journal entry
+ */
+export interface Reaction {
+  id: string;
+  entryId: string;
+  reactionType: ReactionType;
+  content: string; // The actual display content (e.g., "·", "hearing you")
+  createdAt: Date;
+}
+
+/**
+ * Database row representation of a reaction
+ * Used internally by repository layer
+ */
+export interface ReactionRow {
+  id: string;
+  entry_id: string;
+  reaction_type: string;
+  content: string;
+  created_at: number; // Unix timestamp in seconds
+}

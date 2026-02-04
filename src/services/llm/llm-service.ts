@@ -3,7 +3,12 @@ import { AnthropicProvider } from './anthropic-provider.js';
 import { ProviderUnavailableError } from './errors.js';
 import { MessageHistory, SessionMessageHistory } from './message-history.js';
 import { OllamaProvider } from './ollama-provider.js';
-import { createChatMessages, createReflectionPrompt, createSummaryPrompt } from './prompts.js';
+import {
+  createChatMessages,
+  createReactionPrompt,
+  createReflectionPrompt,
+  createSummaryPrompt,
+} from './prompts.js';
 /**
  * High-level LLM service for mumbl
  */
@@ -170,6 +175,23 @@ export class LLMService {
    */
   async reflect(entry: string): Promise<ChatResponse> {
     const messages = createReflectionPrompt(entry);
+
+    try {
+      return await this.primaryProvider.chat(messages);
+    } catch (error) {
+      if (error instanceof ProviderUnavailableError && this.fallbackProvider) {
+        return await this.fallbackProvider.chat(messages);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Generate a minimal reaction to a journal entry
+   * Returns a very brief acknowledgment (usually 1-3 words)
+   */
+  async react(entry: string): Promise<ChatResponse> {
+    const messages = createReactionPrompt(entry);
 
     try {
       return await this.primaryProvider.chat(messages);
