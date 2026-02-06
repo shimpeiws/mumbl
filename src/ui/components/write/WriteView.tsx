@@ -1,9 +1,11 @@
 import { Box, Text, useInput } from 'ink';
 import React from 'react';
 import { useNavigation } from '../../context/NavigationContext.js';
+import { useServices } from '../../context/ServiceContext.js';
 
 export function WriteView() {
   const { switchToList, writeState, setWriteState } = useNavigation();
+  const { entryService } = useServices();
 
   useInput((input, key) => {
     if (key.escape) {
@@ -16,7 +18,18 @@ export function WriteView() {
       return;
     }
 
-    // Basic text input handling (placeholder for future implementation)
+    // Save entry on Enter (only if content is not empty)
+    if (key.return) {
+      const trimmedContent = writeState.content.trim();
+      if (trimmedContent) {
+        entryService.create({ content: trimmedContent });
+        setWriteState({ content: '' });
+        switchToList();
+      }
+      return;
+    }
+
+    // Basic text input handling
     if (key.backspace || key.delete) {
       setWriteState({ content: writeState.content.slice(0, -1) });
       return;

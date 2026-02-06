@@ -72,10 +72,6 @@ export function initializeSchema(db: {
     )
   `);
 
-  db.exec(`
-    INSERT OR IGNORE INTO schema_version (version) VALUES (${SCHEMA_VERSION})
-  `);
-
   // Run any pending migrations for existing databases
   runMigrations(db);
 }
@@ -109,8 +105,16 @@ export function runMigrations(db: {
 }): void {
   const currentVersion = getSchemaVersion(db);
 
+  // New database - insert initial version
+  if (currentVersion === 0) {
+    db.exec(`INSERT INTO schema_version (version) VALUES (${SCHEMA_VERSION})`);
+    return;
+  }
+
+  // Run migrations for existing databases
   if (currentVersion < 2) {
     migrateToVersion2(db);
-    db.exec('UPDATE schema_version SET version = 2');
+    db.exec('DELETE FROM schema_version');
+    db.exec('INSERT INTO schema_version (version) VALUES (2)');
   }
 }
