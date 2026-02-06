@@ -13,7 +13,7 @@ export interface ReactionConfig {
 const DEFAULT_CONFIG: ReactionConfig = {
   enabled: true,
   defaultReactionType: 'read',
-  useLLM: false,
+  useLLM: true,
 };
 
 /**
@@ -63,8 +63,14 @@ export class ReactionService {
     if (this.config.useLLM && this.llmService) {
       try {
         const response = await this.llmService.react(content);
-        reactionContent = response.content;
-        reactionType = 'custom';
+        const trimmed = response.content.trim();
+        // Use LLM response if non-empty, otherwise fallback
+        if (trimmed) {
+          reactionContent = trimmed;
+          reactionType = 'custom';
+        } else {
+          reactionContent = this.getDefaultContent(reactionType);
+        }
       } catch {
         // Fallback to default reaction on LLM failure
         reactionContent = this.getDefaultContent(reactionType);

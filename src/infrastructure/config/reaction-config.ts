@@ -7,7 +7,7 @@ import type { ReactionConfig } from '../../services/reaction-service.js';
  * Environment variables:
  * - MUMBL_REACTIONS_ENABLED: Enable/disable reactions (default: true)
  * - MUMBL_REACTION_TYPE: Default reaction type (default: 'read')
- * - MUMBL_REACTION_USE_LLM: Use LLM for generating reactions (default: false)
+ * - MUMBL_REACTION_USE_LLM: Use LLM for generating reactions (default: true)
  */
 export function getReactionConfig(): ReactionConfig {
   const enabledEnv = process.env['MUMBL_REACTIONS_ENABLED'];
@@ -25,8 +25,8 @@ export function getReactionConfig(): ReactionConfig {
     ? (reactionTypeEnv as ReactionType)
     : 'read';
 
-  // Parse useLLM - defaults to false, only true if explicitly set to 'true'
-  const useLLM = useLLMEnv === 'true';
+  // Parse useLLM - defaults to true, only false if explicitly set to 'false'
+  const useLLM = useLLMEnv !== 'false';
 
   return {
     enabled,
