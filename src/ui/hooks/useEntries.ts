@@ -29,7 +29,7 @@ export function useEntries(options: UseEntriesOptions = {}): UseEntriesResult {
       const listOptions: ListEntriesOptions = {
         limit: options.limit,
         sortBy: options.sortBy ?? 'timestamp',
-        order: options.order ?? 'desc',
+        order: options.order ?? 'asc',
       };
 
       const result = entryService.list(listOptions);

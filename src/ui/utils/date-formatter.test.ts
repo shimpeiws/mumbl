@@ -85,12 +85,13 @@ describe('groupEntriesByDate', () => {
     const grouped = groupEntriesByDate(entries, now);
 
     expect(grouped).toHaveLength(3);
-    expect(grouped[0].group).toBe('today');
-    expect(grouped[0].entries).toHaveLength(2);
+    // Groups are ordered oldest first for chat-style display
+    expect(grouped[0].group).toBe('older');
+    expect(grouped[0].entries).toHaveLength(1);
     expect(grouped[1].group).toBe('yesterday');
     expect(grouped[1].entries).toHaveLength(1);
-    expect(grouped[2].group).toBe('older');
-    expect(grouped[2].entries).toHaveLength(1);
+    expect(grouped[2].group).toBe('today');
+    expect(grouped[2].entries).toHaveLength(2);
   });
 
   it('should maintain entry order within groups', () => {

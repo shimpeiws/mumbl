@@ -107,14 +107,14 @@ export function groupEntriesByDate(
     groups.set(group, existing);
   }
 
-  // Return groups in chronological order (most recent first)
+  // Return groups in chronological order (oldest first for chat-style display)
   const groupOrder: DateGroup[] = [
-    'today',
-    'yesterday',
-    'thisWeek',
-    'lastWeek',
-    'thisMonth',
     'older',
+    'thisMonth',
+    'lastWeek',
+    'thisWeek',
+    'yesterday',
+    'today',
   ];
 
   return groupOrder
