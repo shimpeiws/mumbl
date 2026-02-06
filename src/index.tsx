@@ -2,6 +2,7 @@
 import { render } from 'ink';
 import React from 'react';
 import { resolveConfig } from './config/index.js';
+import { detectAgent, logAgentDetection } from './infrastructure/agent/index.js';
 import { getReactionConfig } from './infrastructure/config/reaction-config.js';
 import { closeDatabase, getDatabase } from './infrastructure/database/client.js';
 import { EntryService } from './services/entry-service.js';
@@ -23,6 +24,10 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
     console.log('Note: Interactive mode requires a TTY. Run in a terminal for full experience.');
     process.exit(0);
   }
+
+  // Detect and log active AI coding agent
+  const agentResult = await detectAgent();
+  logAgentDetection(agentResult);
 
   // Resolve configuration with priority: CLI > Environment > Config file > Default
   const config = resolveConfig();
