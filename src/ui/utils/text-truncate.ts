@@ -1,5 +1,15 @@
+import stringWidth from 'string-width';
+
 /**
- * Truncates text to fit within a given width
+ * Gets the display width of a string (full-width chars = 2, half-width = 1)
+ */
+export function getDisplayWidth(text: string): number {
+  return stringWidth(text);
+}
+
+/**
+ * Truncates text to fit within a given display width
+ * Accounts for full-width characters (Japanese, Chinese, etc.)
  * Adds ellipsis if truncated
  */
 export function truncateText(text: string, maxWidth: number): string {
@@ -7,15 +17,36 @@ export function truncateText(text: string, maxWidth: number): string {
     return '';
   }
 
-  if (text.length <= maxWidth) {
+  const textWidth = stringWidth(text);
+  if (textWidth <= maxWidth) {
     return text;
   }
 
   if (maxWidth <= 3) {
-    return text.slice(0, maxWidth);
+    return truncateToWidth(text, maxWidth);
   }
 
-  return `${text.slice(0, maxWidth - 3)}...`;
+  return `${truncateToWidth(text, maxWidth - 3)}...`;
+}
+
+/**
+ * Truncates text to fit within a given display width
+ * Returns the longest prefix that fits within maxWidth
+ */
+function truncateToWidth(text: string, maxWidth: number): string {
+  let currentWidth = 0;
+  let result = '';
+
+  for (const char of text) {
+    const charWidth = stringWidth(char);
+    if (currentWidth + charWidth > maxWidth) {
+      break;
+    }
+    currentWidth += charWidth;
+    result += char;
+  }
+
+  return result;
 }
 
 /**

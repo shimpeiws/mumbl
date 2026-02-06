@@ -2,7 +2,7 @@ import { Box, Text } from 'ink';
 import React from 'react';
 import type { JournalEntry, Reaction } from '../../../repositories/types.js';
 import { formatEntryTimestamp } from '../../utils/date-formatter.js';
-import { getPreviewLine } from '../../utils/text-truncate.js';
+import { getDisplayWidth, getPreviewLine } from '../../utils/text-truncate.js';
 
 interface EntryListItemProps {
   entry: JournalEntry;
@@ -33,8 +33,8 @@ export function EntryListItem({ entry, isSelected, maxWidth = 60, reaction }: En
   const contentWidth = Math.max(10, maxWidth - timestampWidth - 2); // 2 for cursor "> "
   const preview = getPreviewLine(entry.content, contentWidth);
 
-  // Calculate padding between content and timestamp
-  const paddingLength = Math.max(1, maxWidth - 2 - preview.length - timestamp.length);
+  // Calculate padding between content and timestamp using display width
+  const paddingLength = Math.max(1, maxWidth - 2 - getDisplayWidth(preview) - timestamp.length);
   const padding = ' '.repeat(paddingLength);
 
   return (

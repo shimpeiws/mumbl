@@ -1,5 +1,29 @@
 import { describe, expect, it } from 'vitest';
-import { getFirstLine, getPreviewLine, truncateText } from './text-truncate.js';
+import { getDisplayWidth, getFirstLine, getPreviewLine, truncateText } from './text-truncate.js';
+
+describe('getDisplayWidth', () => {
+  it('should return correct width for ASCII characters', () => {
+    expect(getDisplayWidth('hello')).toBe(5);
+    expect(getDisplayWidth('Hello World')).toBe(11);
+  });
+
+  it('should return correct width for full-width characters', () => {
+    // Japanese characters are 2 columns each
+    expect(getDisplayWidth('こんにちは')).toBe(10);
+    expect(getDisplayWidth('日本語')).toBe(6);
+  });
+
+  it('should return correct width for mixed content', () => {
+    // "Hi " (3) + "日本" (4) = 7
+    expect(getDisplayWidth('Hi 日本')).toBe(7);
+    // "Hello" (5) + "こんにちは" (10) = 15
+    expect(getDisplayWidth('Helloこんにちは')).toBe(15);
+  });
+
+  it('should return 0 for empty string', () => {
+    expect(getDisplayWidth('')).toBe(0);
+  });
+});
 
 describe('truncateText', () => {
   it('should return empty string for maxWidth <= 0', () => {
@@ -24,6 +48,27 @@ describe('truncateText', () => {
 
   it('should handle empty string', () => {
     expect(truncateText('', 10)).toBe('');
+  });
+
+  it('should truncate full-width characters by display width', () => {
+    // "こんにちは" = 10 columns, truncate to 8 columns = "こんに" (6) + "..." (3) = 9 > 8
+    // So we need "こん" (4) + "..." (3) = 7, or fit within 8
+    // Actually: maxWidth 8, need 3 for ellipsis, so 5 columns for text
+    // "こん" = 4 columns, fits. "こんに" = 6 columns, doesn't fit.
+    expect(truncateText('こんにちは', 8)).toBe('こん...');
+  });
+
+  it('should not truncate full-width text that fits', () => {
+    // "日本語" = 6 columns
+    expect(truncateText('日本語', 10)).toBe('日本語');
+    expect(truncateText('日本語', 6)).toBe('日本語');
+  });
+
+  it('should handle mixed content truncation', () => {
+    // "Hello日本語" = 5 + 6 = 11 columns
+    // Truncate to 10: need 7 for content + 3 for "..."
+    // "Hello日" = 5 + 2 = 7 columns
+    expect(truncateText('Hello日本語', 10)).toBe('Hello日...');
   });
 });
 
