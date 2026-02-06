@@ -3,11 +3,7 @@ import { type AgentDetectionResult, type AgentDetector, AgentType } from '../typ
 /**
  * Environment variables that indicate Gemini CLI is running
  */
-const GEMINI_CLI_ENV_VARS = [
-  'GEMINI_CLI',
-  'GEMINI_CLI_SESSION_ID',
-  'GOOGLE_GEMINI_CLI',
-] as const;
+const GEMINI_CLI_ENV_VARS = ['GEMINI_CLI', 'GEMINI_CLI_SESSION_ID', 'GOOGLE_GEMINI_CLI'] as const;
 
 /**
  * Detector for Gemini CLI

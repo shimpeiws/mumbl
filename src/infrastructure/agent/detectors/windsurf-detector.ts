@@ -3,11 +3,7 @@ import { type AgentDetectionResult, type AgentDetector, AgentType } from '../typ
 /**
  * Environment variables that indicate Windsurf is running
  */
-const WINDSURF_ENV_VARS = [
-  'WINDSURF_SESSION_ID',
-  'WINDSURF_EDITOR',
-  'CODEIUM_WINDSURF',
-] as const;
+const WINDSURF_ENV_VARS = ['WINDSURF_SESSION_ID', 'WINDSURF_EDITOR', 'CODEIUM_WINDSURF'] as const;
 
 /**
  * Detector for Windsurf editor (Codeium)

@@ -3,11 +3,7 @@ import { type AgentDetectionResult, type AgentDetector, AgentType } from '../typ
 /**
  * Environment variables that indicate Cursor editor is running
  */
-const CURSOR_ENV_VARS = [
-  'CURSOR_SESSION_ID',
-  'CURSOR_EDITOR',
-  'CURSOR_TRACE_ID',
-] as const;
+const CURSOR_ENV_VARS = ['CURSOR_SESSION_ID', 'CURSOR_EDITOR', 'CURSOR_TRACE_ID'] as const;
 
 /**
  * Detector for Cursor editor
