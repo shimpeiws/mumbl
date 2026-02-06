@@ -10,6 +10,16 @@ export interface ReactionConfig {
   useLLM: boolean;
 }
 
+/**
+ * Events emitted by ReactionService
+ */
+export interface ReactionEvents {
+  reactionCreated: Reaction;
+}
+
+export type ReactionEventType = keyof ReactionEvents;
+export type ReactionEventCallback<K extends ReactionEventType> = (data: ReactionEvents[K]) => void;
+
 const DEFAULT_CONFIG: ReactionConfig = {
   enabled: true,
   defaultReactionType: 'read',
@@ -34,11 +44,37 @@ export class ReactionService {
   private repository: ReactionRepository;
   private config: ReactionConfig;
   private llmService?: LLMService;
+  private listeners: Map<ReactionEventType, Set<ReactionEventCallback<ReactionEventType>>> =
+    new Map();
 
   constructor(db: DatabaseType, config: Partial<ReactionConfig> = {}, llmService?: LLMService) {
     this.repository = new ReactionRepository(db);
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.llmService = llmService;
+  }
+
+  /**
+   * Subscribe to reaction events
+   * Returns an unsubscribe function
+   */
+  on<K extends ReactionEventType>(event: K, callback: ReactionEventCallback<K>): () => void {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, new Set());
+    }
+    this.listeners.get(event)?.add(callback as ReactionEventCallback<ReactionEventType>);
+
+    return () => {
+      this.listeners.get(event)?.delete(callback as ReactionEventCallback<ReactionEventType>);
+    };
+  }
+
+  private emit<K extends ReactionEventType>(event: K, data: ReactionEvents[K]): void {
+    const callbacks = this.listeners.get(event);
+    if (callbacks) {
+      for (const callback of callbacks) {
+        callback(data);
+      }
+    }
   }
 
   /**
@@ -88,6 +124,7 @@ export class ReactionService {
     };
 
     this.repository.insert(reaction);
+    this.emit('reactionCreated', reaction);
     return reaction;
   }
 
