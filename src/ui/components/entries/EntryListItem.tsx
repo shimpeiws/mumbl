@@ -51,7 +51,7 @@ export function EntryListItem({ entry, isSelected, maxWidth = 60, reaction }: En
       {/* Second line: reaction (if exists) */}
       {reaction && (
         <Box>
-          <Text>  </Text>
+          <Text>{'  '}</Text>
           <Text dimColor>{formatReactionDisplay(reaction)}</Text>
         </Box>
       )}
