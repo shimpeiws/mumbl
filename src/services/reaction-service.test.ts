@@ -145,7 +145,7 @@ describe('ReactionService', () => {
 
       expect(config.enabled).toBe(false);
       expect(config.defaultReactionType).toBe('read');
-      expect(config.useLLM).toBe(false);
+      expect(config.useLLM).toBe(true);
     });
   });
 
