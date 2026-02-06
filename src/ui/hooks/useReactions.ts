@@ -49,7 +49,9 @@ export function useReactions(entryIds: string[]): UseReactionsResult {
   useEffect(() => {
     const unsubscribe = reactionService.on('reactionCreated', (reaction: Reaction) => {
       if (entryIdsRef.current.includes(reaction.entryId)) {
-        setReactions((prev: Map<string, Reaction>) => new Map(prev).set(reaction.entryId, reaction));
+        setReactions((prev: Map<string, Reaction>) =>
+          new Map(prev).set(reaction.entryId, reaction),
+        );
       }
     });
 
