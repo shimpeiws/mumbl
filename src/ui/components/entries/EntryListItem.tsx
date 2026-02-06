@@ -11,27 +11,49 @@ interface EntryListItemProps {
   reaction?: Reaction;
 }
 
+function formatReactionDisplay(reaction: Reaction): string {
+  switch (reaction.reactionType) {
+    case 'read':
+      return '·';
+    case 'heard':
+      return 'hearing you';
+    case 'thinking':
+      return `💭 ${reaction.content}`;
+    case 'with-you':
+    case 'custom':
+      return reaction.content;
+    default:
+      return reaction.content;
+  }
+}
+
 export function EntryListItem({ entry, isSelected, maxWidth = 60, reaction }: EntryListItemProps) {
   const timestamp = formatEntryTimestamp(entry.timestamp);
-  const reactionContent = reaction?.content ?? '';
-  const timestampWidth = timestamp.length + 3; // brackets + space
-  const reactionWidth = reactionContent.length > 0 ? reactionContent.length + 1 : 0; // +1 for space
-  const contentWidth = Math.max(10, maxWidth - timestampWidth - reactionWidth - 2); // 2 for cursor
+  const timestampWidth = timestamp.length + 1; // +1 for space before timestamp
+  const contentWidth = Math.max(10, maxWidth - timestampWidth - 2); // 2 for cursor "> "
   const preview = getPreviewLine(entry.content, contentWidth);
 
+  // Calculate padding between content and timestamp
+  const paddingLength = Math.max(1, maxWidth - 2 - preview.length - timestamp.length);
+  const padding = ' '.repeat(paddingLength);
+
   return (
-    <Box>
-      <Text color={isSelected ? 'cyan' : undefined}>{isSelected ? '> ' : '  '}</Text>
-      <Text color="gray">[{timestamp}]</Text>
-      <Text> </Text>
-      <Text color={isSelected ? 'white' : undefined} bold={isSelected}>
-        {preview}
-      </Text>
+    <Box flexDirection="column">
+      {/* First line: cursor + content + timestamp */}
+      <Box>
+        <Text color={isSelected ? 'cyan' : undefined}>{isSelected ? '> ' : '  '}</Text>
+        <Text color={isSelected ? 'white' : undefined} bold={isSelected}>
+          {preview}
+        </Text>
+        <Text>{padding}</Text>
+        <Text dimColor>{timestamp}</Text>
+      </Box>
+      {/* Second line: reaction (if exists) */}
       {reaction && (
-        <>
-          <Text> </Text>
-          <Text dimColor>{reaction.content}</Text>
-        </>
+        <Box>
+          <Text>{'  '}</Text>
+          <Text dimColor>{formatReactionDisplay(reaction)}</Text>
+        </Box>
       )}
     </Box>
   );
