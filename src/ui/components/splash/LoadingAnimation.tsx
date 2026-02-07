@@ -36,7 +36,8 @@ export function LoadingAnimation() {
   type SparkleIndex = 0 | 1 | 2 | 3 | 4 | 5;
 
   const spinnerIndex = (frame % SPINNER_FRAMES.length) as SpinnerIndex;
-  const messageIndex = (Math.floor(frame / SPINNER_FRAMES.length) % MESSAGES.length) as MessageIndex;
+  const messageIndex = (Math.floor(frame / SPINNER_FRAMES.length) %
+    MESSAGES.length) as MessageIndex;
   const sparkleIndex = (frame % SPARKLES.length) as SparkleIndex;
   const bottomSparkleIndex = ((frame + 3) % SPARKLES.length) as SparkleIndex;
 
