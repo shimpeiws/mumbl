@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { HelpFooter } from './components/common/HelpFooter.js';
 import { ModeIndicator } from './components/common/ModeIndicator.js';
 import { EntryList } from './components/entries/EntryList.js';
+import { SplashScreen } from './components/splash/SplashScreen.js';
 import { WriteView } from './components/write/WriteView.js';
 import { NavigationProvider, useNavigation } from './context/NavigationContext.js';
 import { useQueue } from './context/QueueContext.js';
@@ -45,10 +46,16 @@ function AppContent() {
   );
 }
 
-export const App = () => {
+export function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
+  if (showSplash) {
+    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+  }
+
   return (
     <NavigationProvider>
       <AppContent />
     </NavigationProvider>
   );
-};
+}
