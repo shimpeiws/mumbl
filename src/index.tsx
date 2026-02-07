@@ -2,7 +2,7 @@
 import { render } from 'ink';
 import React from 'react';
 import { resolveConfig } from './config/index.js';
-import { detectAgent, logAgentDetection } from './infrastructure/agent/index.js';
+import { detectAgent, getAdapter, logAgentDetection } from './infrastructure/agent/index.js';
 import { getReactionConfig } from './infrastructure/config/reaction-config.js';
 import { closeDatabase, getDatabase } from './infrastructure/database/client.js';
 import { EntryService } from './services/entry-service.js';
@@ -28,6 +28,13 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
   // Detect and log active AI coding agent
   const agentResult = await detectAgent();
   logAgentDetection(agentResult);
+
+  // Initialize adapter for the detected agent
+  const agentAdapter = getAdapter(agentResult);
+  const agentState = await agentAdapter.getState();
+  if (agentState.isActive) {
+    console.log(`Agent adapter initialized: ${agentAdapter.getDisplayName()}`);
+  }
 
   // Resolve configuration with priority: CLI > Environment > Config file > Default
   const config = resolveConfig();
