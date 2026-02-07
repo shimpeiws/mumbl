@@ -5,6 +5,8 @@ import { useNavigation } from '../../context/NavigationContext.js';
 import { useEntries } from '../../hooks/useEntries.js';
 import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation.js';
 import { useReactions } from '../../hooks/useReactions.js';
+import { useScrollableList } from '../../hooks/useScrollableList.js';
+import { useTerminalSize } from '../../hooks/useTerminalSize.js';
 import { groupEntriesByDate } from '../../utils/date-formatter.js';
 import { EmptyState } from './EmptyState.js';
 import { EntryDetail } from './EntryDetail.js';
@@ -93,6 +95,30 @@ export function EntryList({ onViewingDetailChange }: EntryListProps) {
   // Map flat list index to selected entry
   const selectedEntryId = entryItems[selectedIndex]?.entry?.id;
 
+  // Find the flatList index of the selected entry for scrolling
+  const selectedFlatIndex = useMemo(() => {
+    if (!selectedEntryId) return 0;
+    return flatList.findIndex((item) => item.type === 'entry' && item.entry.id === selectedEntryId);
+  }, [flatList, selectedEntryId]);
+
+  // Get terminal size for viewport calculation
+  const { rows: terminalRows } = useTerminalSize();
+
+  // Calculate viewport height: terminal rows - header (2 lines) - padding (2 lines) - footer reserve (3 lines)
+  const viewportHeight = Math.max(5, terminalRows - 7);
+
+  // Use scrollable list hook for scroll management
+  const { visibleStartIndex, visibleEndIndex, hasItemsAbove, hasItemsBelow } = useScrollableList({
+    totalItems: flatList.length,
+    selectedIndex: selectedFlatIndex,
+    viewportHeight,
+  });
+
+  // Slice the flatList for visible items
+  const visibleItems = useMemo(() => {
+    return flatList.slice(visibleStartIndex, visibleEndIndex + 1);
+  }, [flatList, visibleStartIndex, visibleEndIndex]);
+
   if (loading) {
     return (
       <Box padding={1}>
@@ -124,10 +150,17 @@ export function EntryList({ onViewingDetailChange }: EntryListProps) {
           Journal Entries
         </Text>
         <Text dimColor> ({entries.length} total)</Text>
+        {(hasItemsAbove || hasItemsBelow) && (
+          <Text dimColor>
+            {' '}
+            {hasItemsAbove ? '▲' : ' '}
+            {hasItemsBelow ? '▼' : ' '}
+          </Text>
+        )}
       </Box>
 
-      <Box flexDirection="column">
-        {flatList.map((item) => {
+      <Box flexDirection="column" height={viewportHeight} overflow="hidden">
+        {visibleItems.map((item) => {
           if (item.type === 'header') {
             return (
               <EntryGroupHeader
