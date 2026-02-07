@@ -12,10 +12,10 @@ const CLAUDE_CODE_ENV_VARS = [
 /**
  * Detector for Claude Code CLI
  */
-export class ClaudeCodeDetector implements AgentDetector {
-  readonly agentType = AgentType.ClaudeCode;
+export const claudeCodeDetector: AgentDetector = {
+  agentType: AgentType.ClaudeCode,
 
-  async detect(): Promise<AgentDetectionResult | null> {
+  detect: async (): Promise<AgentDetectionResult | null> => {
     // Check environment variables
     for (const envVar of CLAUDE_CODE_ENV_VARS) {
       const value = process.env[envVar];
@@ -32,5 +32,5 @@ export class ClaudeCodeDetector implements AgentDetector {
     }
 
     return null;
-  }
-}
+  },
+};

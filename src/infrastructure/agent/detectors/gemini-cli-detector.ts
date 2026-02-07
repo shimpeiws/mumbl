@@ -8,10 +8,10 @@ const GEMINI_CLI_ENV_VARS = ['GEMINI_CLI', 'GEMINI_CLI_SESSION_ID', 'GOOGLE_GEMI
 /**
  * Detector for Gemini CLI
  */
-export class GeminiCLIDetector implements AgentDetector {
-  readonly agentType = AgentType.GeminiCLI;
+export const geminiCLIDetector: AgentDetector = {
+  agentType: AgentType.GeminiCLI,
 
-  async detect(): Promise<AgentDetectionResult | null> {
+  detect: async (): Promise<AgentDetectionResult | null> => {
     // Check environment variables
     for (const envVar of GEMINI_CLI_ENV_VARS) {
       const value = process.env[envVar];
@@ -28,5 +28,5 @@ export class GeminiCLIDetector implements AgentDetector {
     }
 
     return null;
-  }
-}
+  },
+};

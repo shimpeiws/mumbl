@@ -4,18 +4,18 @@ import { ClaudeCodeAdapter } from './claude-code-adapter.js';
 import { CursorAdapter } from './cursor-adapter.js';
 import { GeminiCLIAdapter } from './gemini-cli-adapter.js';
 import type { AgentAdapter } from './types.js';
-import { UnknownAdapter } from './unknown-adapter.js';
+import { unknownAdapter } from './unknown-adapter.js';
 import { WindsurfAdapter } from './windsurf-adapter.js';
 
 /**
  * Registry of available adapters by agent type
+ * Note: Unknown type uses unknownAdapter object directly (not in registry)
  */
 const adapterRegistry = new Map<AgentType, new () => AgentAdapter>();
 adapterRegistry.set(AgentType.ClaudeCode, ClaudeCodeAdapter);
 adapterRegistry.set(AgentType.Cursor, CursorAdapter);
 adapterRegistry.set(AgentType.Windsurf, WindsurfAdapter);
 adapterRegistry.set(AgentType.GeminiCLI, GeminiCLIAdapter);
-adapterRegistry.set(AgentType.Unknown, UnknownAdapter);
 
 /**
  * Create an adapter for the specified agent type
@@ -23,12 +23,17 @@ adapterRegistry.set(AgentType.Unknown, UnknownAdapter);
  * @returns Appropriate adapter instance
  */
 export function createAdapter(agentType: AgentType): AgentAdapter {
+  // Special case for Unknown type (not a class)
+  if (agentType === AgentType.Unknown) {
+    return unknownAdapter;
+  }
+
   const AdapterClass = adapterRegistry.get(agentType);
   if (AdapterClass) {
     return new AdapterClass();
   }
   // Fallback to unknown adapter
-  return new UnknownAdapter();
+  return unknownAdapter;
 }
 
 /**
@@ -45,7 +50,8 @@ export function createAdapterFromDetection(detectionResult: AgentDetectionResult
  * @returns Array of registered agent types
  */
 export function getRegisteredAdapterTypes(): AgentType[] {
-  return Array.from(adapterRegistry.keys());
+  // Include Unknown type which is handled separately
+  return [...Array.from(adapterRegistry.keys()), AgentType.Unknown];
 }
 
 /**
@@ -72,7 +78,7 @@ export function getAdapter(detectionResult?: AgentDetectionResult): AgentAdapter
     currentAdapter = createAdapterFromDetection(detectionResult);
   }
   if (!currentAdapter) {
-    currentAdapter = new UnknownAdapter();
+    currentAdapter = unknownAdapter;
   }
   return currentAdapter;
 }

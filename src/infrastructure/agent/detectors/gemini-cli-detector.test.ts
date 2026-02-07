@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AgentType } from '../types.js';
-import { GeminiCLIDetector } from './gemini-cli-detector.js';
+import { geminiCLIDetector } from './gemini-cli-detector.js';
 
-describe('GeminiCLIDetector', () => {
+describe('geminiCLIDetector', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
@@ -14,15 +14,13 @@ describe('GeminiCLIDetector', () => {
   });
 
   it('should have correct agent type', () => {
-    const detector = new GeminiCLIDetector();
-    expect(detector.agentType).toBe(AgentType.GeminiCLI);
+    expect(geminiCLIDetector.agentType).toBe(AgentType.GeminiCLI);
   });
 
   it('should detect via GEMINI_CLI env var', async () => {
     process.env.GEMINI_CLI = '1';
 
-    const detector = new GeminiCLIDetector();
-    const result = await detector.detect();
+    const result = await geminiCLIDetector.detect();
 
     expect(result).toEqual({
       agent: AgentType.GeminiCLI,
@@ -37,8 +35,7 @@ describe('GeminiCLIDetector', () => {
   it('should detect via GEMINI_CLI_SESSION_ID env var', async () => {
     process.env.GEMINI_CLI_SESSION_ID = 'session-abc';
 
-    const detector = new GeminiCLIDetector();
-    const result = await detector.detect();
+    const result = await geminiCLIDetector.detect();
 
     expect(result).toEqual({
       agent: AgentType.GeminiCLI,
@@ -53,8 +50,7 @@ describe('GeminiCLIDetector', () => {
   it('should detect via GOOGLE_GEMINI_CLI env var', async () => {
     process.env.GOOGLE_GEMINI_CLI = 'true';
 
-    const detector = new GeminiCLIDetector();
-    const result = await detector.detect();
+    const result = await geminiCLIDetector.detect();
 
     expect(result).toEqual({
       agent: AgentType.GeminiCLI,
@@ -71,8 +67,7 @@ describe('GeminiCLIDetector', () => {
     delete process.env.GEMINI_CLI_SESSION_ID;
     delete process.env.GOOGLE_GEMINI_CLI;
 
-    const detector = new GeminiCLIDetector();
-    const result = await detector.detect();
+    const result = await geminiCLIDetector.detect();
 
     expect(result).toBeNull();
   });
@@ -80,8 +75,7 @@ describe('GeminiCLIDetector', () => {
   it('should return null when env var is empty string', async () => {
     process.env.GEMINI_CLI = '';
 
-    const detector = new GeminiCLIDetector();
-    const result = await detector.detect();
+    const result = await geminiCLIDetector.detect();
 
     expect(result).toBeNull();
   });
@@ -90,8 +84,7 @@ describe('GeminiCLIDetector', () => {
     process.env.GEMINI_CLI = '1';
     process.env.GEMINI_CLI_SESSION_ID = 'session-123';
 
-    const detector = new GeminiCLIDetector();
-    const result = await detector.detect();
+    const result = await geminiCLIDetector.detect();
 
     expect(result?.metadata?.envVar).toBe('GEMINI_CLI');
   });

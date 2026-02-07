@@ -12,7 +12,7 @@ import { ClaudeCodeAdapter } from './claude-code-adapter.js';
 import { CursorAdapter } from './cursor-adapter.js';
 import { GeminiCLIAdapter } from './gemini-cli-adapter.js';
 import type { AgentAdapter, AgentCapabilities } from './types.js';
-import { UnknownAdapter } from './unknown-adapter.js';
+import { unknownAdapter } from './unknown-adapter.js';
 import { WindsurfAdapter } from './windsurf-adapter.js';
 
 describe('adapter-factory', () => {
@@ -55,18 +55,18 @@ describe('adapter-factory', () => {
       expect(adapter.agentType).toBe(AgentType.GeminiCLI);
     });
 
-    it('should create UnknownAdapter for Unknown type', () => {
+    it('should return unknownAdapter for Unknown type', () => {
       const adapter = createAdapter(AgentType.Unknown);
 
-      expect(adapter).toBeInstanceOf(UnknownAdapter);
+      expect(adapter).toBe(unknownAdapter);
       expect(adapter.agentType).toBe(AgentType.Unknown);
     });
 
-    it('should fallback to UnknownAdapter for unregistered type', () => {
+    it('should fallback to unknownAdapter for unregistered type', () => {
       // Force an unregistered type by casting
       const adapter = createAdapter('unregistered' as AgentType);
 
-      expect(adapter).toBeInstanceOf(UnknownAdapter);
+      expect(adapter).toBe(unknownAdapter);
     });
   });
 
@@ -82,7 +82,7 @@ describe('adapter-factory', () => {
       expect(adapter).toBeInstanceOf(ClaudeCodeAdapter);
     });
 
-    it('should create UnknownAdapter for unknown detection', () => {
+    it('should return unknownAdapter for unknown detection', () => {
       const detectionResult = {
         agent: AgentType.Unknown,
         detectionMethod: 'fallback' as const,
@@ -90,7 +90,7 @@ describe('adapter-factory', () => {
 
       const adapter = createAdapterFromDetection(detectionResult);
 
-      expect(adapter).toBeInstanceOf(UnknownAdapter);
+      expect(adapter).toBe(unknownAdapter);
     });
   });
 
@@ -186,10 +186,10 @@ describe('adapter-factory', () => {
       expect(adapter2.agentType).toBe(AgentType.ClaudeCode);
     });
 
-    it('should return UnknownAdapter when no cache and no detection result', () => {
+    it('should return unknownAdapter when no cache and no detection result', () => {
       const adapter = getAdapter();
 
-      expect(adapter).toBeInstanceOf(UnknownAdapter);
+      expect(adapter).toBe(unknownAdapter);
     });
 
     it('should update cache when new detection result provided', () => {
@@ -220,7 +220,7 @@ describe('adapter-factory', () => {
       resetAdapter();
       const adapter = getAdapter();
 
-      expect(adapter).toBeInstanceOf(UnknownAdapter);
+      expect(adapter).toBe(unknownAdapter);
     });
   });
 });

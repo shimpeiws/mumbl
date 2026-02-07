@@ -7,7 +7,7 @@ import { getReactionConfig } from './infrastructure/config/reaction-config.js';
 import { closeDatabase, getDatabase } from './infrastructure/database/client.js';
 import { EntryService } from './services/entry-service.js';
 import { createLLMServiceFromConfig } from './services/llm/llm-service.js';
-import { OllamaService } from './services/ollama-service.js';
+import { ollamaService } from './services/ollama-service.js';
 import { QueueService } from './services/queue/index.js';
 import { ReactionService } from './services/reaction-service.js';
 import { App } from './ui/App.js';
@@ -55,7 +55,7 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
 
   // Create entry service with reaction support
   const entryService = new EntryService(db, reactionService);
-  const ollamaService = new OllamaService();
+  // ollamaService is imported as a singleton object
 
   const instance = render(
     <ServiceProvider

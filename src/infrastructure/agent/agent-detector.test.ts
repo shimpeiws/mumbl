@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AgentDetectorService, detectAgent, getAgentDetector } from './agent-detector.js';
+import { createAgentDetectorService, detectAgent, getAgentDetector } from './agent-detector.js';
 import type { AgentDetectionResult, AgentDetector } from './types.js';
 import { AgentType } from './types.js';
 
-describe('AgentDetectorService', () => {
+describe('createAgentDetectorService', () => {
   describe('detect', () => {
     it('should return first matching detector result', async () => {
       const mockResult: AgentDetectionResult = {
@@ -22,7 +22,7 @@ describe('AgentDetectorService', () => {
         detect: vi.fn().mockResolvedValue(null),
       };
 
-      const service = new AgentDetectorService([mockDetector1, mockDetector2]);
+      const service = createAgentDetectorService([mockDetector1, mockDetector2]);
       const result = await service.detect();
 
       expect(result).toEqual(mockResult);
@@ -41,7 +41,7 @@ describe('AgentDetectorService', () => {
         detect: vi.fn().mockResolvedValue(null),
       };
 
-      const service = new AgentDetectorService([mockDetector1, mockDetector2]);
+      const service = createAgentDetectorService([mockDetector1, mockDetector2]);
       const result = await service.detect();
 
       expect(result).toEqual({
@@ -71,7 +71,7 @@ describe('AgentDetectorService', () => {
         }),
       };
 
-      const service = new AgentDetectorService([mockDetector1, mockDetector2]);
+      const service = createAgentDetectorService([mockDetector1, mockDetector2]);
       await service.detect();
 
       expect(callOrder).toEqual(['claude', 'cursor']);
@@ -90,7 +90,7 @@ describe('AgentDetectorService', () => {
         detect: vi.fn(),
       };
 
-      const service = new AgentDetectorService([mockDetector1, mockDetector2]);
+      const service = createAgentDetectorService([mockDetector1, mockDetector2]);
       const agents = service.getRegisteredAgents();
 
       expect(agents).toEqual([AgentType.ClaudeCode, AgentType.Cursor]);

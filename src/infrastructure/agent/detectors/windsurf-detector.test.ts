@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AgentType } from '../types.js';
-import { WindsurfDetector } from './windsurf-detector.js';
+import { windsurfDetector } from './windsurf-detector.js';
 
-describe('WindsurfDetector', () => {
+describe('windsurfDetector', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
@@ -14,15 +14,13 @@ describe('WindsurfDetector', () => {
   });
 
   it('should have correct agent type', () => {
-    const detector = new WindsurfDetector();
-    expect(detector.agentType).toBe(AgentType.Windsurf);
+    expect(windsurfDetector.agentType).toBe(AgentType.Windsurf);
   });
 
   it('should detect via WINDSURF_SESSION_ID env var', async () => {
     process.env.WINDSURF_SESSION_ID = 'session-789';
 
-    const detector = new WindsurfDetector();
-    const result = await detector.detect();
+    const result = await windsurfDetector.detect();
 
     expect(result).toEqual({
       agent: AgentType.Windsurf,
@@ -37,8 +35,7 @@ describe('WindsurfDetector', () => {
   it('should detect via CODEIUM_WINDSURF env var', async () => {
     process.env.CODEIUM_WINDSURF = 'true';
 
-    const detector = new WindsurfDetector();
-    const result = await detector.detect();
+    const result = await windsurfDetector.detect();
 
     expect(result).toEqual({
       agent: AgentType.Windsurf,
@@ -53,8 +50,7 @@ describe('WindsurfDetector', () => {
   it('should detect via TERM_PROGRAM=Windsurf', async () => {
     process.env.TERM_PROGRAM = 'Windsurf';
 
-    const detector = new WindsurfDetector();
-    const result = await detector.detect();
+    const result = await windsurfDetector.detect();
 
     expect(result).toEqual({
       agent: AgentType.Windsurf,
@@ -72,8 +68,7 @@ describe('WindsurfDetector', () => {
     delete process.env.CODEIUM_WINDSURF;
     delete process.env.TERM_PROGRAM;
 
-    const detector = new WindsurfDetector();
-    const result = await detector.detect();
+    const result = await windsurfDetector.detect();
 
     expect(result).toBeNull();
   });
@@ -81,8 +76,7 @@ describe('WindsurfDetector', () => {
   it('should return null when TERM_PROGRAM is not Windsurf', async () => {
     process.env.TERM_PROGRAM = 'vscode';
 
-    const detector = new WindsurfDetector();
-    const result = await detector.detect();
+    const result = await windsurfDetector.detect();
 
     expect(result).toBeNull();
   });
@@ -90,8 +84,7 @@ describe('WindsurfDetector', () => {
   it('should return null when env var is empty string', async () => {
     process.env.WINDSURF_SESSION_ID = '';
 
-    const detector = new WindsurfDetector();
-    const result = await detector.detect();
+    const result = await windsurfDetector.detect();
 
     expect(result).toBeNull();
   });

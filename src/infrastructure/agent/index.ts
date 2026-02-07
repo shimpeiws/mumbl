@@ -1,10 +1,15 @@
 // Agent detection
-export { AgentDetectorService, detectAgent, getAgentDetector } from './agent-detector.js';
 export {
-  ClaudeCodeDetector,
-  CursorDetector,
-  GeminiCLIDetector,
-  WindsurfDetector,
+  type AgentDetectorService,
+  createAgentDetectorService,
+  detectAgent,
+  getAgentDetector,
+} from './agent-detector.js';
+export {
+  claudeCodeDetector,
+  cursorDetector,
+  geminiCLIDetector,
+  windsurfDetector,
 } from './detectors/index.js';
 export { logAgentDetection } from './logger.js';
 export { type AgentDetectionResult, type AgentDetector, AgentType } from './types.js';
@@ -26,6 +31,6 @@ export {
   registerAdapter,
   resetAdapter,
   type SendContextResult,
-  UnknownAdapter,
+  unknownAdapter,
   WindsurfAdapter,
 } from './adapters/index.js';

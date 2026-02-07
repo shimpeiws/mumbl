@@ -1,4 +1,4 @@
-export { ClaudeCodeDetector } from './claude-code-detector.js';
-export { CursorDetector } from './cursor-detector.js';
-export { GeminiCLIDetector } from './gemini-cli-detector.js';
-export { WindsurfDetector } from './windsurf-detector.js';
+export { claudeCodeDetector } from './claude-code-detector.js';
+export { cursorDetector } from './cursor-detector.js';
+export { geminiCLIDetector } from './gemini-cli-detector.js';
+export { windsurfDetector } from './windsurf-detector.js';

@@ -1,25 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { AgentType } from '../types.js';
-import { UnknownAdapter } from './unknown-adapter.js';
+import { unknownAdapter } from './unknown-adapter.js';
 
-describe('UnknownAdapter', () => {
-  const adapter = new UnknownAdapter();
-
+describe('unknownAdapter', () => {
   describe('agentType', () => {
     it('should be Unknown', () => {
-      expect(adapter.agentType).toBe(AgentType.Unknown);
+      expect(unknownAdapter.agentType).toBe(AgentType.Unknown);
     });
   });
 
   describe('getDisplayName', () => {
     it('should return Unknown Agent', () => {
-      expect(adapter.getDisplayName()).toBe('Unknown Agent');
+      expect(unknownAdapter.getDisplayName()).toBe('Unknown Agent');
     });
   });
 
   describe('sendContext', () => {
     it('should return failure for unknown agents', async () => {
-      const result = await adapter.sendContext({
+      const result = await unknownAdapter.sendContext({
         type: 'file',
         content: 'test content',
       });
@@ -31,7 +29,7 @@ describe('UnknownAdapter', () => {
 
   describe('getCapabilities', () => {
     it('should indicate no capabilities', () => {
-      const capabilities = adapter.getCapabilities();
+      const capabilities = unknownAdapter.getCapabilities();
 
       expect(capabilities.canReceiveContext).toBe(false);
       expect(capabilities.canAccessFiles).toBe(false);
@@ -42,7 +40,7 @@ describe('UnknownAdapter', () => {
 
   describe('healthCheck', () => {
     it('should always return true as fallback', async () => {
-      const isHealthy = await adapter.healthCheck();
+      const isHealthy = await unknownAdapter.healthCheck();
 
       expect(isHealthy).toBe(true);
     });

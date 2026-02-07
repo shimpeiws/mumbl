@@ -15,7 +15,7 @@ export { BaseAgentAdapter } from './base-adapter.js';
 export { ClaudeCodeAdapter } from './claude-code-adapter.js';
 export { CursorAdapter } from './cursor-adapter.js';
 export { GeminiCLIAdapter } from './gemini-cli-adapter.js';
-export { UnknownAdapter } from './unknown-adapter.js';
+export { unknownAdapter } from './unknown-adapter.js';
 export { WindsurfAdapter } from './windsurf-adapter.js';
 
 // Types

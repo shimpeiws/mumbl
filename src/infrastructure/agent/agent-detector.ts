@@ -1,34 +1,32 @@
 import {
-  ClaudeCodeDetector,
-  CursorDetector,
-  GeminiCLIDetector,
-  WindsurfDetector,
+  claudeCodeDetector,
+  cursorDetector,
+  geminiCLIDetector,
+  windsurfDetector,
 } from './detectors/index.js';
 import { type AgentDetectionResult, type AgentDetector, AgentType } from './types.js';
 
 /**
- * Main agent detector that checks all available detectors
- * and returns the first match or unknown as fallback
+ * Default detectors in priority order
  */
-export class AgentDetectorService {
-  private readonly detectors: AgentDetector[];
+const defaultDetectors: AgentDetector[] = [
+  claudeCodeDetector,
+  cursorDetector,
+  windsurfDetector,
+  geminiCLIDetector,
+];
 
-  constructor(detectors?: AgentDetector[]) {
-    this.detectors = detectors ?? [
-      new ClaudeCodeDetector(),
-      new CursorDetector(),
-      new WindsurfDetector(),
-      new GeminiCLIDetector(),
-    ];
-  }
-
+/**
+ * Create an agent detector service
+ */
+export const createAgentDetectorService = (detectors: AgentDetector[] = defaultDetectors) => ({
   /**
    * Detect the currently active AI coding agent
    * Checks each detector in order and returns the first match
    * Falls back to Unknown if no agent is detected
    */
-  async detect(): Promise<AgentDetectionResult> {
-    for (const detector of this.detectors) {
+  detect: async (): Promise<AgentDetectionResult> => {
+    for (const detector of detectors) {
       const result = await detector.detect();
       if (result !== null) {
         return result;
@@ -40,15 +38,17 @@ export class AgentDetectorService {
       agent: AgentType.Unknown,
       detectionMethod: 'fallback',
     };
-  }
+  },
 
   /**
    * Get all registered detector agent types
    */
-  getRegisteredAgents(): AgentType[] {
-    return this.detectors.map((d) => d.agentType);
-  }
-}
+  getRegisteredAgents: (): AgentType[] => {
+    return detectors.map((d) => d.agentType);
+  },
+});
+
+export type AgentDetectorService = ReturnType<typeof createAgentDetectorService>;
 
 /**
  * Singleton instance for convenience
@@ -60,7 +60,7 @@ let detectorInstance: AgentDetectorService | null = null;
  */
 export function getAgentDetector(): AgentDetectorService {
   if (!detectorInstance) {
-    detectorInstance = new AgentDetectorService();
+    detectorInstance = createAgentDetectorService();
   }
   return detectorInstance;
 }
