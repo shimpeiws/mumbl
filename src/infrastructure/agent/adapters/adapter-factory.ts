@@ -53,10 +53,7 @@ export function getRegisteredAdapterTypes(): AgentType[] {
  * @param agentType - Agent type to register
  * @param AdapterClass - Adapter class constructor
  */
-export function registerAdapter(
-  agentType: AgentType,
-  AdapterClass: new () => AgentAdapter
-): void {
+export function registerAdapter(agentType: AgentType, AdapterClass: new () => AgentAdapter): void {
   adapterRegistry.set(agentType, AdapterClass);
 }
 

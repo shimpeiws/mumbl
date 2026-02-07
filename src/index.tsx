@@ -2,11 +2,7 @@
 import { render } from 'ink';
 import React from 'react';
 import { resolveConfig } from './config/index.js';
-import {
-  detectAgent,
-  getAdapter,
-  logAgentDetection,
-} from './infrastructure/agent/index.js';
+import { detectAgent, getAdapter, logAgentDetection } from './infrastructure/agent/index.js';
 import { getReactionConfig } from './infrastructure/config/reaction-config.js';
 import { closeDatabase, getDatabase } from './infrastructure/database/client.js';
 import { EntryService } from './services/entry-service.js';
