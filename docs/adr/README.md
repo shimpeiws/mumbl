@@ -16,6 +16,7 @@ We use the [MADR (Markdown Architectural Decision Records)](https://adr.github.i
 |-----|-------|--------|------|
 | [0001](./0001-use-js-extension-in-typescript-imports.md) | Use .js Extension in TypeScript Import Statements | Accepted | 2026-01-28 |
 | [0002](./0002-defer-hot-reload-for-tui-development.md) | Defer Hot Reload for TUI Development | Accepted | 2026-01-28 |
+| [0003](./0003-prefer-function-interfaces-over-classes.md) | Prefer Function Interfaces Over Classes | Accepted | 2026-02-08 |
 
 ## Creating a New ADR
 
