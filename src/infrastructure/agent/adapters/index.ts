@@ -5,17 +5,21 @@ export {
   getAdapter,
   getRegisteredAdapterTypes,
   registerAdapter,
+  registerAdapterClass,
   resetAdapter,
 } from './adapter-factory.js';
 
-// Base adapter
-export { BaseAgentAdapter } from './base-adapter.js';
+// Adapter factory functions
+export { createClaudeCodeAdapter } from './claude-code-adapter.js';
+export { createCursorAdapter } from './cursor-adapter.js';
+export { createGeminiCLIAdapter } from './gemini-cli-adapter.js';
+export { createWindsurfAdapter } from './windsurf-adapter.js';
+export { unknownAdapter } from './unknown-adapter.js';
 
-// Concrete adapters
+// Legacy class exports (deprecated, for backward compatibility)
 export { ClaudeCodeAdapter } from './claude-code-adapter.js';
 export { CursorAdapter } from './cursor-adapter.js';
 export { GeminiCLIAdapter } from './gemini-cli-adapter.js';
-export { unknownAdapter } from './unknown-adapter.js';
 export { WindsurfAdapter } from './windsurf-adapter.js';
 
 // Types

@@ -1,15 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AgentType } from '../types.js';
-import { CursorAdapter } from './cursor-adapter.js';
+import { createCursorAdapter } from './cursor-adapter.js';
+import type { AgentAdapter } from './types.js';
 
-describe('CursorAdapter', () => {
-  let adapter: CursorAdapter;
+describe('createCursorAdapter', () => {
+  let adapter: AgentAdapter;
   const originalEnv = process.env;
 
   beforeEach(() => {
     vi.resetModules();
     process.env = { ...originalEnv };
-    adapter = new CursorAdapter();
+    adapter = createCursorAdapter();
   });
 
   afterEach(() => {

@@ -1,59 +1,87 @@
 import { AgentType } from '../types.js';
-import { BaseAgentAdapter } from './base-adapter.js';
-import type { AgentCapabilities, AgentContext, AgentState, SendContextResult } from './types.js';
+import type { AgentAdapter, AgentCapabilities, AgentContext, AgentState, SendContextResult } from './types.js';
 
 /**
- * Adapter for Windsurf editor agent (Codeium)
+ * Create adapter for Windsurf editor agent (Codeium)
  */
-export class WindsurfAdapter extends BaseAgentAdapter {
-  readonly agentType = AgentType.Windsurf;
+export function createWindsurfAdapter(): AgentAdapter {
+  const agentType = AgentType.Windsurf;
 
-  async getState(): Promise<AgentState> {
-    const sessionId = this.getEnvVar('WINDSURF_SESSION_ID');
+  const healthCheck = async (): Promise<boolean> => {
+    return (
+      process.env['WINDSURF_SESSION_ID'] !== undefined ||
+      process.env['WINDSURF_EDITOR'] !== undefined ||
+      process.env['CODEIUM_WINDSURF'] !== undefined ||
+      process.env['TERM_PROGRAM'] === 'Windsurf'
+    );
+  };
+
+  const getState = async (): Promise<AgentState> => {
+    const sessionId = process.env['WINDSURF_SESSION_ID'];
 
     return {
-      isActive: await this.healthCheck(),
+      isActive: await healthCheck(),
       workingDirectory: process.cwd(),
       sessionId,
       metadata: {
-        editor: this.getEnvVar('WINDSURF_EDITOR'),
-        codeium: this.getEnvVar('CODEIUM_WINDSURF'),
-        termProgram: this.getEnvVar('TERM_PROGRAM'),
+        editor: process.env['WINDSURF_EDITOR'],
+        codeium: process.env['CODEIUM_WINDSURF'],
+        termProgram: process.env['TERM_PROGRAM'],
       },
     };
-  }
+  };
 
-  async sendContext(context: AgentContext): Promise<SendContextResult> {
-    // Windsurf uses IDE integration for context
+  const sendContext = async (context: AgentContext): Promise<SendContextResult> => {
     return {
       success: true,
       response: `Context type '${context.type}' acknowledged by Windsurf adapter`,
     };
-  }
+  };
 
-  getCapabilities(): AgentCapabilities {
-    return {
-      canReceiveContext: true,
-      canAccessFiles: true,
-      canAccessTerminal: true,
-      supportsStreaming: true,
-      custom: {
-        hasCascade: true,
-        hasCodeium: true,
-      },
-    };
-  }
+  const getCapabilities = (): AgentCapabilities => ({
+    canReceiveContext: true,
+    canAccessFiles: true,
+    canAccessTerminal: true,
+    supportsStreaming: true,
+    custom: {
+      hasCascade: true,
+      hasCodeium: true,
+    },
+  });
 
-  async healthCheck(): Promise<boolean> {
-    return (
-      this.hasEnvVar('WINDSURF_SESSION_ID') ||
-      this.hasEnvVar('WINDSURF_EDITOR') ||
-      this.hasEnvVar('CODEIUM_WINDSURF') ||
-      this.getEnvVar('TERM_PROGRAM') === 'Windsurf'
-    );
-  }
+  const getDisplayName = (): string => 'Windsurf';
 
-  getDisplayName(): string {
-    return 'Windsurf';
+  return {
+    agentType,
+    getState,
+    sendContext,
+    getCapabilities,
+    healthCheck,
+    getDisplayName,
+  };
+}
+
+/**
+ * Legacy class export for backward compatibility
+ * @deprecated Use createWindsurfAdapter() instead
+ */
+export class WindsurfAdapter implements AgentAdapter {
+  readonly agentType = AgentType.Windsurf;
+  private readonly _adapter = createWindsurfAdapter();
+
+  async getState() {
+    return this._adapter.getState();
+  }
+  async sendContext(context: AgentContext) {
+    return this._adapter.sendContext(context);
+  }
+  getCapabilities() {
+    return this._adapter.getCapabilities();
+  }
+  async healthCheck() {
+    return this._adapter.healthCheck();
+  }
+  getDisplayName() {
+    return this._adapter.getDisplayName();
   }
 }

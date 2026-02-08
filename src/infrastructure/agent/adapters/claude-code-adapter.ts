@@ -1,61 +1,86 @@
 import { AgentType } from '../types.js';
-import { BaseAgentAdapter } from './base-adapter.js';
-import type { AgentCapabilities, AgentContext, AgentState, SendContextResult } from './types.js';
+import type { AgentAdapter, AgentCapabilities, AgentContext, AgentState, SendContextResult } from './types.js';
 
 /**
- * Adapter for Claude Code CLI agent
+ * Create adapter for Claude Code CLI agent
  */
-export class ClaudeCodeAdapter extends BaseAgentAdapter {
-  readonly agentType = AgentType.ClaudeCode;
+export function createClaudeCodeAdapter(): AgentAdapter {
+  const agentType = AgentType.ClaudeCode;
 
-  async getState(): Promise<AgentState> {
-    const sessionId = this.getEnvVar('CLAUDE_CODE_SESSION_ID');
-    const version = this.getEnvVar('CLAUDE_CODE_VERSION');
+  const healthCheck = async (): Promise<boolean> => {
+    return (
+      process.env['CLAUDE_CODE'] !== undefined ||
+      process.env['CLAUDE_CODE_VERSION'] !== undefined ||
+      process.env['CLAUDE_CODE_SESSION_ID'] !== undefined
+    );
+  };
+
+  const getState = async (): Promise<AgentState> => {
+    const sessionId = process.env['CLAUDE_CODE_SESSION_ID'];
+    const version = process.env['CLAUDE_CODE_VERSION'];
 
     return {
-      isActive: await this.healthCheck(),
+      isActive: await healthCheck(),
       workingDirectory: process.cwd(),
       sessionId,
       metadata: {
         version: version ?? 'unknown',
-        termProgram: this.getEnvVar('TERM_PROGRAM'),
+        termProgram: process.env['TERM_PROGRAM'],
       },
     };
-  }
+  };
 
-  async sendContext(context: AgentContext): Promise<SendContextResult> {
-    // Claude Code operates within the CLI context
-    // Context is available through the file system and environment
-    // No direct communication protocol needed
+  const sendContext = async (context: AgentContext): Promise<SendContextResult> => {
     return {
       success: true,
       response: `Context type '${context.type}' acknowledged by Claude Code adapter`,
     };
-  }
+  };
 
-  getCapabilities(): AgentCapabilities {
-    return {
-      canReceiveContext: true,
-      canAccessFiles: true,
-      canAccessTerminal: true,
-      supportsStreaming: true,
-      custom: {
-        hasMCP: true,
-        hasToolUse: true,
-      },
-    };
-  }
+  const getCapabilities = (): AgentCapabilities => ({
+    canReceiveContext: true,
+    canAccessFiles: true,
+    canAccessTerminal: true,
+    supportsStreaming: true,
+    custom: {
+      hasMCP: true,
+      hasToolUse: true,
+    },
+  });
 
-  async healthCheck(): Promise<boolean> {
-    // Check for Claude Code environment indicators
-    return (
-      this.hasEnvVar('CLAUDE_CODE') ||
-      this.hasEnvVar('CLAUDE_CODE_VERSION') ||
-      this.hasEnvVar('CLAUDE_CODE_SESSION_ID')
-    );
-  }
+  const getDisplayName = (): string => 'Claude Code';
 
-  getDisplayName(): string {
-    return 'Claude Code';
+  return {
+    agentType,
+    getState,
+    sendContext,
+    getCapabilities,
+    healthCheck,
+    getDisplayName,
+  };
+}
+
+/**
+ * Legacy class export for backward compatibility
+ * @deprecated Use createClaudeCodeAdapter() instead
+ */
+export class ClaudeCodeAdapter implements AgentAdapter {
+  readonly agentType = AgentType.ClaudeCode;
+  private readonly _adapter = createClaudeCodeAdapter();
+
+  async getState() {
+    return this._adapter.getState();
+  }
+  async sendContext(context: AgentContext) {
+    return this._adapter.sendContext(context);
+  }
+  getCapabilities() {
+    return this._adapter.getCapabilities();
+  }
+  async healthCheck() {
+    return this._adapter.healthCheck();
+  }
+  getDisplayName() {
+    return this._adapter.getDisplayName();
   }
 }

@@ -1,21 +1,21 @@
 import type { AgentDetectionResult } from '../types.js';
 import { AgentType } from '../types.js';
-import { ClaudeCodeAdapter } from './claude-code-adapter.js';
-import { CursorAdapter } from './cursor-adapter.js';
-import { GeminiCLIAdapter } from './gemini-cli-adapter.js';
+import { createClaudeCodeAdapter } from './claude-code-adapter.js';
+import { createCursorAdapter } from './cursor-adapter.js';
+import { createGeminiCLIAdapter } from './gemini-cli-adapter.js';
 import type { AgentAdapter } from './types.js';
 import { unknownAdapter } from './unknown-adapter.js';
-import { WindsurfAdapter } from './windsurf-adapter.js';
+import { createWindsurfAdapter } from './windsurf-adapter.js';
 
 /**
- * Registry of available adapters by agent type
+ * Registry of available adapter factory functions by agent type
  * Note: Unknown type uses unknownAdapter object directly (not in registry)
  */
-const adapterRegistry = new Map<AgentType, new () => AgentAdapter>();
-adapterRegistry.set(AgentType.ClaudeCode, ClaudeCodeAdapter);
-adapterRegistry.set(AgentType.Cursor, CursorAdapter);
-adapterRegistry.set(AgentType.Windsurf, WindsurfAdapter);
-adapterRegistry.set(AgentType.GeminiCLI, GeminiCLIAdapter);
+const adapterRegistry = new Map<AgentType, () => AgentAdapter>();
+adapterRegistry.set(AgentType.ClaudeCode, createClaudeCodeAdapter);
+adapterRegistry.set(AgentType.Cursor, createCursorAdapter);
+adapterRegistry.set(AgentType.Windsurf, createWindsurfAdapter);
+adapterRegistry.set(AgentType.GeminiCLI, createGeminiCLIAdapter);
 
 /**
  * Create an adapter for the specified agent type
@@ -23,14 +23,14 @@ adapterRegistry.set(AgentType.GeminiCLI, GeminiCLIAdapter);
  * @returns Appropriate adapter instance
  */
 export function createAdapter(agentType: AgentType): AgentAdapter {
-  // Special case for Unknown type (not a class)
+  // Special case for Unknown type (not a factory)
   if (agentType === AgentType.Unknown) {
     return unknownAdapter;
   }
 
-  const AdapterClass = adapterRegistry.get(agentType);
-  if (AdapterClass) {
-    return new AdapterClass();
+  const adapterFactory = adapterRegistry.get(agentType);
+  if (adapterFactory) {
+    return adapterFactory();
   }
   // Fallback to unknown adapter
   return unknownAdapter;
@@ -55,12 +55,22 @@ export function getRegisteredAdapterTypes(): AgentType[] {
 }
 
 /**
- * Register a custom adapter for an agent type
+ * Register a custom adapter factory for an agent type
+ * @param agentType - Agent type to register
+ * @param adapterFactory - Adapter factory function
+ */
+export function registerAdapter(agentType: AgentType, adapterFactory: () => AgentAdapter): void {
+  adapterRegistry.set(agentType, adapterFactory);
+}
+
+/**
+ * Register a custom adapter class for an agent type (legacy support)
  * @param agentType - Agent type to register
  * @param AdapterClass - Adapter class constructor
+ * @deprecated Use registerAdapter with factory function instead
  */
-export function registerAdapter(agentType: AgentType, AdapterClass: new () => AgentAdapter): void {
-  adapterRegistry.set(agentType, AdapterClass);
+export function registerAdapterClass(agentType: AgentType, AdapterClass: new () => AgentAdapter): void {
+  adapterRegistry.set(agentType, () => new AdapterClass());
 }
 
 /**

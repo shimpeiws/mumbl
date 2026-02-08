@@ -8,47 +8,48 @@ import { AuthenticationError, ProviderUnavailableError, StreamError } from './er
 import type { ChatResponse, LLMProvider, Message, ModelConfig, StreamChunk } from './types.js';
 import { DEFAULT_ANTHROPIC_MODEL, DEFAULT_MAX_TOKENS, DEFAULT_TEMPERATURE } from './types.js';
 
-export class AnthropicProvider implements LLMProvider {
-  private model: ChatAnthropic;
-  private modelName: string;
-
-  constructor(config?: Partial<ModelConfig>) {
-    const apiKey = config?.apiKey ?? process.env['ANTHROPIC_API_KEY'];
-
-    if (!apiKey) {
-      throw new AuthenticationError('anthropic');
+/**
+ * Convert messages to LangChain format
+ */
+function convertMessages(messages: Message[]): BaseMessage[] {
+  return messages.map((msg) => {
+    switch (msg.role) {
+      case 'system':
+        return new SystemMessage(msg.content);
+      case 'user':
+        return new HumanMessage(msg.content);
+      case 'assistant':
+        return new AIMessage(msg.content);
     }
+  });
+}
 
-    this.modelName = config?.model ?? DEFAULT_ANTHROPIC_MODEL;
-    this.model = new ChatAnthropic({
-      model: this.modelName,
-      anthropicApiKey: apiKey,
-      temperature: config?.temperature ?? DEFAULT_TEMPERATURE,
-      maxTokens: config?.maxTokens ?? DEFAULT_MAX_TOKENS,
-    });
+/**
+ * Create an Anthropic LLM provider
+ */
+export function createAnthropicProvider(config?: Partial<ModelConfig>): LLMProvider {
+  const apiKey = config?.apiKey ?? process.env['ANTHROPIC_API_KEY'];
+
+  if (!apiKey) {
+    throw new AuthenticationError('anthropic');
   }
 
-  private convertMessages(messages: Message[]): BaseMessage[] {
-    return messages.map((msg) => {
-      switch (msg.role) {
-        case 'system':
-          return new SystemMessage(msg.content);
-        case 'user':
-          return new HumanMessage(msg.content);
-        case 'assistant':
-          return new AIMessage(msg.content);
-      }
-    });
-  }
+  const modelName = config?.model ?? DEFAULT_ANTHROPIC_MODEL;
+  const model = new ChatAnthropic({
+    model: modelName,
+    anthropicApiKey: apiKey,
+    temperature: config?.temperature ?? DEFAULT_TEMPERATURE,
+    maxTokens: config?.maxTokens ?? DEFAULT_MAX_TOKENS,
+  });
 
-  async chat(messages: Message[]): Promise<ChatResponse> {
+  const chat = async (messages: Message[]): Promise<ChatResponse> => {
     try {
-      const langchainMessages = this.convertMessages(messages);
-      const response = await this.model.invoke(langchainMessages);
+      const langchainMessages = convertMessages(messages);
+      const response = await model.invoke(langchainMessages);
 
       return {
         content: typeof response.content === 'string' ? response.content : '',
-        model: this.modelName,
+        model: modelName,
         finishReason: response.response_metadata?.['stop_reason'] as string | undefined,
       };
     } catch (error) {
@@ -62,14 +63,14 @@ export class AnthropicProvider implements LLMProvider {
       }
       throw error;
     }
-  }
+  };
 
-  async *stream(messages: Message[]): AsyncIterable<StreamChunk> {
+  async function* stream(messages: Message[]): AsyncIterable<StreamChunk> {
     try {
-      const langchainMessages = this.convertMessages(messages);
-      const stream = await this.model.stream(langchainMessages);
+      const langchainMessages = convertMessages(messages);
+      const streamResult = await model.stream(langchainMessages);
 
-      for await (const chunk of stream) {
+      for await (const chunk of streamResult) {
         const content = typeof chunk.content === 'string' ? chunk.content : '';
         yield {
           content,
@@ -95,21 +96,49 @@ export class AnthropicProvider implements LLMProvider {
     }
   }
 
-  async healthCheck(): Promise<boolean> {
-    try {
-      // For Anthropic, we can't easily check without making an API call
-      // So we just verify that we have an API key configured
-      return true;
-    } catch {
-      return false;
-    }
+  const healthCheck = async (): Promise<boolean> => {
+    // For Anthropic, we can't easily check without making an API call
+    // So we just verify that we have an API key configured
+    return true;
+  };
+
+  const getProviderName = (): 'anthropic' => 'anthropic';
+
+  const getModelName = (): string => modelName;
+
+  return {
+    chat,
+    stream,
+    healthCheck,
+    getProviderName,
+    getModelName,
+  };
+}
+
+/**
+ * Legacy class export for backward compatibility
+ * @deprecated Use createAnthropicProvider() instead
+ */
+export class AnthropicProvider implements LLMProvider {
+  private readonly _provider: LLMProvider;
+
+  constructor(config?: Partial<ModelConfig>) {
+    this._provider = createAnthropicProvider(config);
   }
 
-  getProviderName(): 'anthropic' {
-    return 'anthropic';
+  chat(messages: Message[]) {
+    return this._provider.chat(messages);
   }
-
-  getModelName(): string {
-    return this.modelName;
+  stream(messages: Message[]) {
+    return this._provider.stream(messages);
+  }
+  healthCheck() {
+    return this._provider.healthCheck();
+  }
+  getProviderName() {
+    return this._provider.getProviderName();
+  }
+  getModelName() {
+    return this._provider.getModelName();
   }
 }
