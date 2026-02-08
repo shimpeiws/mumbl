@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ProcessingDetector, ProcessingStateCallback } from '../../infrastructure/agent/processing-detector.js';
+import type {
+  ProcessingDetector,
+  ProcessingStateCallback,
+} from '../../infrastructure/agent/processing-detector.js';
 import { WaitDisplayService, createWaitDisplayService } from './wait-display-service.js';
 
 // Create a mock processing detector

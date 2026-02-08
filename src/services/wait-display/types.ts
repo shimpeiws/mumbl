@@ -41,9 +41,9 @@ export type WaitDisplayStateCallback = (state: WaitDisplayState) => void;
  */
 export interface WaitDisplayEvents {
   /** Emitted when the display should be shown */
-  show: void;
+  show: undefined;
   /** Emitted when the display should be hidden */
-  hide: void;
+  hide: undefined;
   /** Emitted when the state changes */
   stateChange: WaitDisplayState;
 }

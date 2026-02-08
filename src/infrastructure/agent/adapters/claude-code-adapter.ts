@@ -1,5 +1,5 @@
 import {
-  ClaudeCodeProcessingDetector,
+  type ClaudeCodeProcessingDetector,
   createClaudeCodeProcessingDetector,
 } from '../detectors/claude-code-processing-detector.js';
 import type { ProcessingDetector, ProcessingStateCallback } from '../processing-detector.js';

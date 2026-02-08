@@ -161,8 +161,8 @@ describe('BaseProcessingDetector', () => {
 
       const startTime = detector.getProcessingStartTime();
       expect(startTime).toBeDefined();
-      expect(startTime!.getTime()).toBeGreaterThanOrEqual(beforeTime.getTime());
-      expect(startTime!.getTime()).toBeLessThanOrEqual(afterTime.getTime());
+      expect(startTime?.getTime()).toBeGreaterThanOrEqual(beforeTime.getTime());
+      expect(startTime?.getTime()).toBeLessThanOrEqual(afterTime.getTime());
     });
 
     it('should return undefined when processing ends', () => {
