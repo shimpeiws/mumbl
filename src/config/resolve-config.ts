@@ -5,7 +5,15 @@ import { DEFAULT_ANTHROPIC_MODEL, DEFAULT_OLLAMA_MODEL } from '../services/llm/t
 import { parseCliArgs } from './cli-args.js';
 import { loadConfigFile } from './config-file.js';
 import { getApiKey, loadEnvVars } from './env-vars.js';
-import type { ConfigSource, ResolvedConfig } from './types.js';
+import type { ConfigSource, ResolvedConfig, ResolvedWaitDisplayConfig } from './types.js';
+
+/**
+ * Default wait display configuration
+ */
+const DEFAULT_WAIT_DISPLAY_CONFIG: ResolvedWaitDisplayConfig = {
+  enabled: true,
+  minWaitTimeMs: 500,
+};
 
 /**
  * Resolve configuration from all sources with priority
@@ -32,10 +40,27 @@ export function resolveConfig(cliArgs?: string[]): ResolvedConfig {
 
   const baseUrl = sources.cli.baseUrl ?? sources.env.baseUrl ?? sources.file.baseUrl;
 
+  // Resolve wait display config with priority
+  const waitDisplayEnabled =
+    sources.cli.waitDisplay?.enabled ??
+    sources.env.waitDisplay?.enabled ??
+    sources.file.waitDisplay?.enabled ??
+    DEFAULT_WAIT_DISPLAY_CONFIG.enabled;
+
+  const waitDisplayMinWaitTimeMs =
+    sources.cli.waitDisplay?.minWaitTimeMs ??
+    sources.env.waitDisplay?.minWaitTimeMs ??
+    sources.file.waitDisplay?.minWaitTimeMs ??
+    DEFAULT_WAIT_DISPLAY_CONFIG.minWaitTimeMs;
+
   return {
     provider,
     model,
     baseUrl,
     apiKey: getApiKey(),
+    waitDisplay: {
+      enabled: waitDisplayEnabled,
+      minWaitTimeMs: waitDisplayMinWaitTimeMs,
+    },
   };
 }
