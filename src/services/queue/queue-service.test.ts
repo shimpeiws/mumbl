@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { LLMService } from '../llm/llm-service.js';
-import type { ReactionService } from '../reaction-service.js';
+import type { LLMServiceInterface } from '../llm/llm-service.js';
+import type { ReactionServiceInterface } from '../reaction-service.js';
 import { QueueService } from './queue-service.js';
 
 // Mock LLM service
-function createMockLLMService(): LLMService {
+function createMockLLMService(): LLMServiceInterface {
   return {
     chat: vi.fn().mockResolvedValue({ content: 'response', model: 'test' }),
     stream: vi.fn(),
@@ -14,11 +14,11 @@ function createMockLLMService(): LLMService {
     healthCheck: vi.fn().mockResolvedValue({ primary: true }),
     clearHistory: vi.fn(),
     getProviderInfo: vi.fn().mockReturnValue({ provider: 'ollama', model: 'test' }),
-  } as unknown as LLMService;
+  } as unknown as LLMServiceInterface;
 }
 
 // Mock Reaction service
-function createMockReactionService(): ReactionService {
+function createMockReactionService(): ReactionServiceInterface {
   return {
     isEnabled: vi.fn().mockReturnValue(true),
     generateReaction: vi.fn().mockResolvedValue({
@@ -34,12 +34,12 @@ function createMockReactionService(): ReactionService {
     deleteReaction: vi.fn(),
     updateConfig: vi.fn(),
     getConfig: vi.fn(),
-  } as unknown as ReactionService;
+  } as unknown as ReactionServiceInterface;
 }
 
 describe('QueueService', () => {
-  let llmService: LLMService;
-  let reactionService: ReactionService;
+  let llmService: LLMServiceInterface;
+  let reactionService: ReactionServiceInterface;
   let queueService: QueueService;
 
   beforeEach(() => {
@@ -392,24 +392,32 @@ describe('QueueService', () => {
     });
 
     it('should mark pending tasks as failed on shutdown', async () => {
-      queueService['isStopping'] = true;
-      queueService['tasks'].set('test-task', {
-        id: 'test-task',
-        type: 'react',
-        status: 'pending',
-        payload: { entryId: 'entry-1', entryContent: 'test' },
-        createdAt: new Date(),
-        retryCount: 0,
-        maxRetries: 3,
-      });
-      queueService['queue'].push('test-task');
-      queueService['isStopping'] = false;
+      // Make tasks take time so we have pending tasks in the queue
+      vi.mocked(reactionService.generateReaction).mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve(null), 1000)),
+      );
 
-      await queueService.stop(100);
+      // Enqueue multiple tasks - first will start, rest will be pending
+      queueService.enqueueReact('entry-1', 'content 1');
+      queueService.enqueueReact('entry-2', 'content 2');
+      queueService.enqueueReact('entry-3', 'content 3');
 
-      const task = queueService.getTask('test-task');
-      expect(task?.status).toBe('failed');
-      expect(task?.error).toBe('Queue shutdown');
+      // Let first task start
+      await vi.advanceTimersByTimeAsync(10);
+
+      const statusBefore = queueService.getStatus();
+      expect(statusBefore.running).toBe(1);
+      expect(statusBefore.pending).toBe(2);
+
+      // Stop the queue
+      const stopPromise = queueService.stop(100);
+      await vi.advanceTimersByTimeAsync(200);
+      await stopPromise;
+
+      // Pending tasks should be marked as failed
+      const failedTasks = queueService.getTasks('failed');
+      expect(failedTasks.length).toBeGreaterThanOrEqual(2);
+      expect(failedTasks.some((t) => t.error === 'Queue shutdown')).toBe(true);
     });
 
     it('should timeout if tasks take too long', async () => {
@@ -431,8 +439,10 @@ describe('QueueService', () => {
       await vi.advanceTimersByTimeAsync(200);
       await stopPromise;
 
-      // Queue should have stopped even though task is still running
-      expect(queueService['isStopping']).toBe(false);
+      // Queue should have stopped - verify by checking we can't enqueue new tasks
+      // or by checking the queue status
+      const status = queueService.getStatus();
+      expect(status.pending).toBe(0);
     });
   });
 

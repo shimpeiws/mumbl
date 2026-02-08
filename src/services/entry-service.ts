@@ -1,6 +1,6 @@
 import type { Database as DatabaseType } from 'better-sqlite3';
 import { EntryNotFoundError } from '../infrastructure/errors/domain-errors.js';
-import { EntryRepository } from '../repositories/entry-repository.js';
+import { createEntryRepository } from '../repositories/entry-repository.js';
 import type {
   CreateEntryOptions,
   JournalEntry,
@@ -11,22 +11,29 @@ import { generateEntryId } from './id-service.js';
 import type { ReactionService } from './reaction-service.js';
 
 /**
+ * Entry service interface
+ */
+export interface EntryServiceInterface {
+  create(options: CreateEntryOptions): JournalEntry;
+  getById(id: string): JournalEntry | null;
+  list(options?: ListEntriesOptions): JournalEntry[];
+  update(id: string, options: UpdateEntryOptions): JournalEntry | null;
+  delete(id: string): boolean;
+  count(): number;
+  search(query: string): JournalEntry[];
+}
+
+/**
+ * Create an entry service
  * High-level API for managing journal entries
  */
-export class EntryService {
-  private repository: EntryRepository;
-  private reactionService?: ReactionService;
+export function createEntryService(
+  db: DatabaseType,
+  reactionService?: ReactionService,
+): EntryServiceInterface {
+  const repository = createEntryRepository(db);
 
-  constructor(db: DatabaseType, reactionService?: ReactionService) {
-    this.repository = new EntryRepository(db);
-    this.reactionService = reactionService;
-  }
-
-  /**
-   * Create a new journal entry
-   * Queues reaction generation asynchronously (non-blocking)
-   */
-  create(options: CreateEntryOptions): JournalEntry {
+  const create = (options: CreateEntryOptions): JournalEntry => {
     const now = new Date();
     const entry: JournalEntry = {
       id: generateEntryId(),
@@ -37,65 +44,88 @@ export class EntryService {
       updatedAt: now,
     };
 
-    this.repository.insert(entry);
+    repository.insert(entry);
 
     // Queue reaction generation (non-blocking)
-    if (this.reactionService) {
-      this.reactionService.queueReaction(entry.id, entry.content);
+    if (reactionService) {
+      reactionService.queueReaction(entry.id, entry.content);
     }
 
     return entry;
-  }
+  };
 
-  /**
-   * Get entry by ID
-   * Returns null if not found
-   */
-  getById(id: string): JournalEntry | null {
-    return this.repository.findById(id);
-  }
+  const getById = (id: string): JournalEntry | null => {
+    return repository.findById(id);
+  };
 
-  /**
-   * List entries with optional filtering
-   */
-  list(options?: ListEntriesOptions): JournalEntry[] {
-    return this.repository.findAll(options);
-  }
+  const list = (options?: ListEntriesOptions): JournalEntry[] => {
+    return repository.findAll(options);
+  };
 
-  /**
-   * Update an existing entry
-   * Returns the updated entry, or null if not found
-   */
-  update(id: string, options: UpdateEntryOptions): JournalEntry | null {
+  const update = (id: string, options: UpdateEntryOptions): JournalEntry | null => {
     try {
-      return this.repository.update(id, options);
+      return repository.update(id, options);
     } catch (error) {
       if (error instanceof EntryNotFoundError) {
         return null;
       }
       throw error;
     }
+  };
+
+  const deleteEntry = (id: string): boolean => {
+    return repository.delete(id);
+  };
+
+  const count = (): number => {
+    return repository.count();
+  };
+
+  const search = (query: string): JournalEntry[] => {
+    return repository.search(query);
+  };
+
+  return {
+    create,
+    getById,
+    list,
+    update,
+    delete: deleteEntry,
+    count,
+    search,
+  };
+}
+
+/**
+ * Legacy class export for backward compatibility
+ * @deprecated Use createEntryService() instead
+ */
+export class EntryService implements EntryServiceInterface {
+  private readonly _service: EntryServiceInterface;
+
+  constructor(db: DatabaseType, reactionService?: ReactionService) {
+    this._service = createEntryService(db, reactionService);
   }
 
-  /**
-   * Delete an entry by ID
-   * Returns true if deleted, false if not found
-   */
-  delete(id: string): boolean {
-    return this.repository.delete(id);
+  create(options: CreateEntryOptions) {
+    return this._service.create(options);
   }
-
-  /**
-   * Count total entries
-   */
-  count(): number {
-    return this.repository.count();
+  getById(id: string) {
+    return this._service.getById(id);
   }
-
-  /**
-   * Search entries by content (simple substring match)
-   */
-  search(query: string): JournalEntry[] {
-    return this.repository.search(query);
+  list(options?: ListEntriesOptions) {
+    return this._service.list(options);
+  }
+  update(id: string, options: UpdateEntryOptions) {
+    return this._service.update(id, options);
+  }
+  delete(id: string) {
+    return this._service.delete(id);
+  }
+  count() {
+    return this._service.count();
+  }
+  search(query: string) {
+    return this._service.search(query);
   }
 }

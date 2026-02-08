@@ -69,7 +69,10 @@ export function registerAdapter(agentType: AgentType, adapterFactory: () => Agen
  * @param AdapterClass - Adapter class constructor
  * @deprecated Use registerAdapter with factory function instead
  */
-export function registerAdapterClass(agentType: AgentType, AdapterClass: new () => AgentAdapter): void {
+export function registerAdapterClass(
+  agentType: AgentType,
+  AdapterClass: new () => AgentAdapter,
+): void {
   adapterRegistry.set(agentType, () => new AdapterClass());
 }
 

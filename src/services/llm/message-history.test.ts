@@ -98,7 +98,10 @@ describe('SessionMessageHistory', () => {
   describe('getSession', () => {
     it('should create a new session if it does not exist', () => {
       const session = sessionHistory.getSession('session1');
-      expect(session).toBeInstanceOf(MessageHistory);
+      // Check for interface shape instead of class instance
+      expect(session).toHaveProperty('add');
+      expect(session).toHaveProperty('getMessages');
+      expect(session).toHaveProperty('clear');
       expect(session.length).toBe(0);
     });
 

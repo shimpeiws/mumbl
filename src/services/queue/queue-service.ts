@@ -3,8 +3,8 @@
  */
 
 import { generateEntryId } from '../id-service.js';
-import type { LLMService } from '../llm/llm-service.js';
-import type { ReactionService } from '../reaction-service.js';
+import type { LLMServiceInterface } from '../llm/llm-service.js';
+import type { ReactionServiceInterface } from '../reaction-service.js';
 import { shouldRetryError, sleep, withRetry } from './retry.js';
 import {
   type ChatTaskPayload,
@@ -23,122 +23,60 @@ import {
 } from './types.js';
 
 /**
- * Background processing queue for LLM tasks
+ * Queue service interface
  */
-export class QueueService {
-  private tasks: Map<string, Task<TaskPayload>> = new Map();
-  private queue: string[] = [];
-  private isProcessing = false;
-  private isStopping = false;
-  private listeners: Map<QueueEventType, Set<QueueEventCallback<QueueEventType>>> = new Map();
-  private config: QueueServiceConfig;
+export interface QueueServiceInterface {
+  enqueue<T extends TaskPayload>(type: TaskType, payload: T): string;
+  enqueueReact(entryId: string, entryContent: string): string;
+  enqueueReflect(entryId: string, entryContent: string): string;
+  enqueueSummarize(entryIds: string[], entryContents: string[]): string;
+  enqueueChat(message: string, sessionId?: string): string;
+  cancel(taskId: string): boolean;
+  getStatus(): QueueStatus;
+  getTask(taskId: string): Task<TaskPayload> | undefined;
+  getTasks(status?: Task<TaskPayload>['status']): Task<TaskPayload>[];
+  start(): void;
+  stop(timeoutMs?: number): Promise<void>;
+  on<K extends QueueEventType>(event: K, callback: QueueEventCallback<K>): () => void;
+  clearFinished(): void;
+  isActive(): boolean;
+}
 
-  constructor(
-    private llmService: LLMService,
-    private reactionService: ReactionService | null,
-    config: Partial<QueueServiceConfig> = {},
-  ) {
-    this.config = { ...DEFAULT_QUEUE_CONFIG, ...config };
-  }
+/**
+ * Create a background processing queue for LLM tasks
+ */
+export function createQueueService(
+  llmService: LLMServiceInterface,
+  reactionService: ReactionServiceInterface | null,
+  config: Partial<QueueServiceConfig> = {},
+): QueueServiceInterface {
+  const tasks: Map<string, Task<TaskPayload>> = new Map();
+  let queue: string[] = [];
+  let isProcessing = false;
+  let isStopping = false;
+  const listeners: Map<QueueEventType, Set<QueueEventCallback<QueueEventType>>> = new Map();
+  const queueConfig: QueueServiceConfig = { ...DEFAULT_QUEUE_CONFIG, ...config };
 
-  /**
-   * Add a task to the queue
-   */
-  enqueue<T extends TaskPayload>(type: TaskType, payload: T): string {
-    if (this.isStopping) {
-      throw new Error('Queue is stopping, cannot accept new tasks');
+  const emit = <K extends QueueEventType>(event: K, data: QueueEvents[K]): void => {
+    const callbacks = listeners.get(event);
+    if (callbacks) {
+      for (const callback of callbacks) {
+        try {
+          callback(data);
+        } catch {
+          // Ignore listener errors
+        }
+      }
     }
+  };
 
-    const id = generateEntryId();
-    const task: Task<T> = {
-      id,
-      type,
-      status: 'pending',
-      payload,
-      createdAt: new Date(),
-      retryCount: 0,
-      maxRetries: this.config.retryConfig.maxRetries,
-    };
-
-    this.tasks.set(id, task as Task<TaskPayload>);
-    this.queue.push(id);
-
-    this.emit('taskAdded', task as Task<TaskPayload>);
-    this.emit('statusChanged', this.getStatus());
-
-    // Auto-start processing if not already running
-    if (!this.isProcessing && !this.isStopping) {
-      this.processQueue();
-    }
-
-    return id;
-  }
-
-  /**
-   * Enqueue a reaction task
-   */
-  enqueueReact(entryId: string, entryContent: string): string {
-    return this.enqueue<ReactTaskPayload>('react', { entryId, entryContent });
-  }
-
-  /**
-   * Enqueue a reflection task
-   */
-  enqueueReflect(entryId: string, entryContent: string): string {
-    return this.enqueue<ReflectTaskPayload>('reflect', { entryId, entryContent });
-  }
-
-  /**
-   * Enqueue a summarization task
-   */
-  enqueueSummarize(entryIds: string[], entryContents: string[]): string {
-    return this.enqueue<SummarizeTaskPayload>('summarize', { entryIds, entryContents });
-  }
-
-  /**
-   * Enqueue a chat task
-   */
-  enqueueChat(message: string, sessionId?: string): string {
-    return this.enqueue<ChatTaskPayload>('chat', { message, sessionId });
-  }
-
-  /**
-   * Cancel a pending task
-   * Returns true if the task was cancelled, false if not found or already running
-   */
-  cancel(taskId: string): boolean {
-    const task = this.tasks.get(taskId);
-    if (!task || task.status !== 'pending') {
-      return false;
-    }
-
-    // Remove from queue
-    const queueIndex = this.queue.indexOf(taskId);
-    if (queueIndex !== -1) {
-      this.queue.splice(queueIndex, 1);
-    }
-
-    // Update task status
-    task.status = 'failed';
-    task.error = 'Cancelled';
-    task.completedAt = new Date();
-
-    this.emit('taskFailed', task);
-    this.emit('statusChanged', this.getStatus());
-
-    return true;
-  }
-
-  /**
-   * Get queue status summary
-   */
-  getStatus(): QueueStatus {
+  const getStatus = (): QueueStatus => {
     let pending = 0;
     let running = 0;
     let completed = 0;
     let failed = 0;
 
-    for (const task of this.tasks.values()) {
+    for (const task of tasks.values()) {
       switch (task.status) {
         case 'pending':
           pending++;
@@ -155,145 +93,65 @@ export class QueueService {
       }
     }
 
-    return { pending, running, completed, failed, total: this.tasks.size };
-  }
+    return { pending, running, completed, failed, total: tasks.size };
+  };
 
-  /**
-   * Get a specific task by ID
-   */
-  getTask(taskId: string): Task<TaskPayload> | undefined {
-    return this.tasks.get(taskId);
-  }
+  const processReactTask = async (task: Task<ReactTaskPayload>): Promise<void> => {
+    const { entryId, entryContent } = task.payload;
 
-  /**
-   * Get all tasks with optional status filter
-   */
-  getTasks(status?: Task['status']): Task<TaskPayload>[] {
-    const tasks = Array.from(this.tasks.values());
-    if (status) {
-      return tasks.filter((t) => t.status === status);
+    // Delegate to ReactionService if available, which handles LLM call and storage
+    if (reactionService) {
+      await reactionService.generateReaction(entryId, entryContent);
+    } else {
+      // Fallback: just call LLM without storing
+      await llmService.react(entryContent);
     }
-    return tasks;
-  }
+  };
 
-  /**
-   * Start queue processing
-   */
-  start(): void {
-    if (this.isProcessing || this.isStopping) {
-      return;
+  const processReflectTask = async (task: Task<ReflectTaskPayload>): Promise<void> => {
+    const { entryContent } = task.payload;
+    await llmService.reflect(entryContent);
+  };
+
+  const processSummarizeTask = async (task: Task<SummarizeTaskPayload>): Promise<void> => {
+    const { entryContents } = task.payload;
+    await llmService.summarize(entryContents);
+  };
+
+  const processChatTask = async (task: Task<ChatTaskPayload>): Promise<void> => {
+    const { message, sessionId } = task.payload;
+    await llmService.chat(message, { sessionId });
+  };
+
+  const processTask = async (task: Task<TaskPayload>): Promise<void> => {
+    switch (task.type) {
+      case 'react':
+        await processReactTask(task as Task<ReactTaskPayload>);
+        break;
+      case 'reflect':
+        await processReflectTask(task as Task<ReflectTaskPayload>);
+        break;
+      case 'summarize':
+        await processSummarizeTask(task as Task<SummarizeTaskPayload>);
+        break;
+      case 'chat':
+        await processChatTask(task as Task<ChatTaskPayload>);
+        break;
     }
-    this.processQueue();
-  }
+  };
 
-  /**
-   * Stop queue processing gracefully
-   * Waits for running tasks to complete (with timeout)
-   */
-  async stop(timeoutMs = 30000): Promise<void> {
-    this.isStopping = true;
-
-    // Wait for running tasks to complete
-    const startTime = Date.now();
-    while (this.isProcessing && Date.now() - startTime < timeoutMs) {
-      await sleep(100);
-    }
-
-    // Clear pending tasks
-    for (const taskId of this.queue) {
-      const task = this.tasks.get(taskId);
-      if (task && task.status === 'pending') {
-        task.status = 'failed';
-        task.error = 'Queue shutdown';
-        task.completedAt = new Date();
-        this.emit('taskFailed', task);
-      }
-    }
-    this.queue = [];
-
-    this.emit('statusChanged', this.getStatus());
-    this.isStopping = false;
-  }
-
-  /**
-   * Subscribe to queue events
-   * Returns unsubscribe function
-   */
-  on<K extends QueueEventType>(event: K, callback: QueueEventCallback<K>): () => void {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set());
-    }
-    this.listeners.get(event)?.add(callback as QueueEventCallback<QueueEventType>);
-
-    return () => {
-      this.listeners.get(event)?.delete(callback as QueueEventCallback<QueueEventType>);
-    };
-  }
-
-  /**
-   * Clear completed and failed tasks from memory
-   */
-  clearFinished(): void {
-    for (const [taskId, task] of this.tasks) {
-      if (task.status === 'completed' || task.status === 'failed') {
-        this.tasks.delete(taskId);
-      }
-    }
-    this.emit('statusChanged', this.getStatus());
-  }
-
-  /**
-   * Check if the queue is currently processing
-   */
-  isActive(): boolean {
-    return this.isProcessing;
-  }
-
-  private emit<K extends QueueEventType>(event: K, data: QueueEvents[K]): void {
-    const callbacks = this.listeners.get(event);
-    if (callbacks) {
-      for (const callback of callbacks) {
-        try {
-          callback(data);
-        } catch {
-          // Ignore listener errors
-        }
-      }
-    }
-  }
-
-  private async processQueue(): Promise<void> {
-    if (this.isProcessing || this.isStopping) {
-      return;
-    }
-
-    this.isProcessing = true;
-
-    while (this.queue.length > 0 && !this.isStopping) {
-      const taskId = this.queue.shift();
-      if (!taskId) break;
-
-      const task = this.tasks.get(taskId);
-      if (!task || task.status !== 'pending') continue;
-
-      await this.executeTask(task);
-    }
-
-    this.isProcessing = false;
-  }
-
-  private async executeTask(task: Task<TaskPayload>): Promise<void> {
+  const executeTask = async (task: Task<TaskPayload>): Promise<void> => {
     task.status = 'running';
     task.startedAt = new Date();
-    this.emit('taskStarted', task);
-    this.emit('statusChanged', this.getStatus());
+    emit('taskStarted', task);
+    emit('statusChanged', getStatus());
 
     try {
       await withRetry(
         async () => {
-          await this.processTask(task);
+          await processTask(task);
         },
-        this.config.retryConfig,
+        queueConfig.retryConfig,
         (error) => {
           if (shouldRetryError(error) && task.retryCount < task.maxRetries) {
             task.retryCount++;
@@ -305,58 +163,250 @@ export class QueueService {
 
       task.status = 'completed';
       task.completedAt = new Date();
-      this.emit('taskCompleted', task);
+      emit('taskCompleted', task);
     } catch (error) {
       task.status = 'failed';
       task.completedAt = new Date();
       task.error = error instanceof Error ? error.message : String(error);
-      this.emit('taskFailed', task);
+      emit('taskFailed', task);
     }
 
-    this.emit('statusChanged', this.getStatus());
-  }
+    emit('statusChanged', getStatus());
+  };
 
-  private async processTask(task: Task<TaskPayload>): Promise<void> {
-    switch (task.type) {
-      case 'react':
-        await this.processReactTask(task as Task<ReactTaskPayload>);
-        break;
-      case 'reflect':
-        await this.processReflectTask(task as Task<ReflectTaskPayload>);
-        break;
-      case 'summarize':
-        await this.processSummarizeTask(task as Task<SummarizeTaskPayload>);
-        break;
-      case 'chat':
-        await this.processChatTask(task as Task<ChatTaskPayload>);
-        break;
+  const processQueue = async (): Promise<void> => {
+    if (isProcessing || isStopping) {
+      return;
     }
-  }
 
-  private async processReactTask(task: Task<ReactTaskPayload>): Promise<void> {
-    const { entryId, entryContent } = task.payload;
+    isProcessing = true;
 
-    // Delegate to ReactionService if available, which handles LLM call and storage
-    if (this.reactionService) {
-      await this.reactionService.generateReaction(entryId, entryContent);
-    } else {
-      // Fallback: just call LLM without storing
-      await this.llmService.react(entryContent);
+    while (queue.length > 0 && !isStopping) {
+      const taskId = queue.shift();
+      if (!taskId) break;
+
+      const task = tasks.get(taskId);
+      if (!task || task.status !== 'pending') continue;
+
+      await executeTask(task);
     }
+
+    isProcessing = false;
+  };
+
+  const enqueue = <T extends TaskPayload>(type: TaskType, payload: T): string => {
+    if (isStopping) {
+      throw new Error('Queue is stopping, cannot accept new tasks');
+    }
+
+    const id = generateEntryId();
+    const task: Task<T> = {
+      id,
+      type,
+      status: 'pending',
+      payload,
+      createdAt: new Date(),
+      retryCount: 0,
+      maxRetries: queueConfig.retryConfig.maxRetries,
+    };
+
+    tasks.set(id, task as Task<TaskPayload>);
+    queue.push(id);
+
+    emit('taskAdded', task as Task<TaskPayload>);
+    emit('statusChanged', getStatus());
+
+    // Auto-start processing if not already running
+    if (!isProcessing && !isStopping) {
+      processQueue();
+    }
+
+    return id;
+  };
+
+  const enqueueReact = (entryId: string, entryContent: string): string => {
+    return enqueue<ReactTaskPayload>('react', { entryId, entryContent });
+  };
+
+  const enqueueReflect = (entryId: string, entryContent: string): string => {
+    return enqueue<ReflectTaskPayload>('reflect', { entryId, entryContent });
+  };
+
+  const enqueueSummarize = (entryIds: string[], entryContents: string[]): string => {
+    return enqueue<SummarizeTaskPayload>('summarize', { entryIds, entryContents });
+  };
+
+  const enqueueChat = (message: string, sessionId?: string): string => {
+    return enqueue<ChatTaskPayload>('chat', { message, sessionId });
+  };
+
+  const cancel = (taskId: string): boolean => {
+    const task = tasks.get(taskId);
+    if (!task || task.status !== 'pending') {
+      return false;
+    }
+
+    // Remove from queue
+    const queueIndex = queue.indexOf(taskId);
+    if (queueIndex !== -1) {
+      queue.splice(queueIndex, 1);
+    }
+
+    // Update task status
+    task.status = 'failed';
+    task.error = 'Cancelled';
+    task.completedAt = new Date();
+
+    emit('taskFailed', task);
+    emit('statusChanged', getStatus());
+
+    return true;
+  };
+
+  const getTask = (taskId: string): Task<TaskPayload> | undefined => {
+    return tasks.get(taskId);
+  };
+
+  const getTasks = (status?: Task<TaskPayload>['status']): Task<TaskPayload>[] => {
+    const allTasks = Array.from(tasks.values());
+    if (status) {
+      return allTasks.filter((t) => t.status === status);
+    }
+    return allTasks;
+  };
+
+  const start = (): void => {
+    if (isProcessing || isStopping) {
+      return;
+    }
+    processQueue();
+  };
+
+  const stop = async (timeoutMs = 30000): Promise<void> => {
+    isStopping = true;
+
+    // Wait for running tasks to complete
+    const startTime = Date.now();
+    while (isProcessing && Date.now() - startTime < timeoutMs) {
+      await sleep(100);
+    }
+
+    // Clear pending tasks
+    for (const taskId of queue) {
+      const task = tasks.get(taskId);
+      if (task && task.status === 'pending') {
+        task.status = 'failed';
+        task.error = 'Queue shutdown';
+        task.completedAt = new Date();
+        emit('taskFailed', task);
+      }
+    }
+    queue = [];
+
+    emit('statusChanged', getStatus());
+    isStopping = false;
+  };
+
+  const on = <K extends QueueEventType>(
+    event: K,
+    callback: QueueEventCallback<K>,
+  ): (() => void) => {
+    if (!listeners.has(event)) {
+      listeners.set(event, new Set());
+    }
+    listeners.get(event)?.add(callback as QueueEventCallback<QueueEventType>);
+
+    return () => {
+      listeners.get(event)?.delete(callback as QueueEventCallback<QueueEventType>);
+    };
+  };
+
+  const clearFinished = (): void => {
+    for (const [taskId, task] of tasks) {
+      if (task.status === 'completed' || task.status === 'failed') {
+        tasks.delete(taskId);
+      }
+    }
+    emit('statusChanged', getStatus());
+  };
+
+  const isActive = (): boolean => {
+    return isProcessing;
+  };
+
+  return {
+    enqueue,
+    enqueueReact,
+    enqueueReflect,
+    enqueueSummarize,
+    enqueueChat,
+    cancel,
+    getStatus,
+    getTask,
+    getTasks,
+    start,
+    stop,
+    on,
+    clearFinished,
+    isActive,
+  };
+}
+
+/**
+ * Legacy class export for backward compatibility
+ * @deprecated Use createQueueService() instead
+ */
+export class QueueService implements QueueServiceInterface {
+  private readonly _service: QueueServiceInterface;
+
+  constructor(
+    llmService: LLMServiceInterface,
+    reactionService: ReactionServiceInterface | null,
+    config: Partial<QueueServiceConfig> = {},
+  ) {
+    this._service = createQueueService(llmService, reactionService, config);
   }
 
-  private async processReflectTask(task: Task<ReflectTaskPayload>): Promise<void> {
-    const { entryContent } = task.payload;
-    await this.llmService.reflect(entryContent);
+  enqueue<T extends TaskPayload>(type: TaskType, payload: T) {
+    return this._service.enqueue(type, payload);
   }
-
-  private async processSummarizeTask(task: Task<SummarizeTaskPayload>): Promise<void> {
-    const { entryContents } = task.payload;
-    await this.llmService.summarize(entryContents);
+  enqueueReact(entryId: string, entryContent: string) {
+    return this._service.enqueueReact(entryId, entryContent);
   }
-
-  private async processChatTask(task: Task<ChatTaskPayload>): Promise<void> {
-    const { message, sessionId } = task.payload;
-    await this.llmService.chat(message, { sessionId });
+  enqueueReflect(entryId: string, entryContent: string) {
+    return this._service.enqueueReflect(entryId, entryContent);
+  }
+  enqueueSummarize(entryIds: string[], entryContents: string[]) {
+    return this._service.enqueueSummarize(entryIds, entryContents);
+  }
+  enqueueChat(message: string, sessionId?: string) {
+    return this._service.enqueueChat(message, sessionId);
+  }
+  cancel(taskId: string) {
+    return this._service.cancel(taskId);
+  }
+  getStatus() {
+    return this._service.getStatus();
+  }
+  getTask(taskId: string) {
+    return this._service.getTask(taskId);
+  }
+  getTasks(status?: Task<TaskPayload>['status']) {
+    return this._service.getTasks(status);
+  }
+  start() {
+    return this._service.start();
+  }
+  stop(timeoutMs?: number) {
+    return this._service.stop(timeoutMs);
+  }
+  on<K extends QueueEventType>(event: K, callback: QueueEventCallback<K>) {
+    return this._service.on(event, callback);
+  }
+  clearFinished() {
+    return this._service.clearFinished();
+  }
+  isActive() {
+    return this._service.isActive();
   }
 }

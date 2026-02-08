@@ -4,120 +4,170 @@
 import type { Message } from './types.js';
 
 /**
- * In-memory message history store
+ * Message history interface
  */
-export class MessageHistory {
-  private messages: Message[] = [];
-  private maxMessages: number;
+export interface MessageHistoryInterface {
+  add(message: Message): void;
+  addMany(messages: Message[]): void;
+  getMessages(): Message[];
+  getRecentMessages(count: number): Message[];
+  clear(): void;
+  readonly length: number;
+}
+
+/**
+ * Session message history interface
+ */
+export interface SessionMessageHistoryInterface {
+  getSession(sessionId: string): MessageHistoryInterface;
+  clearSession(sessionId: string): void;
+  clearAll(): void;
+  getSessionIds(): string[];
+  hasSession(sessionId: string): boolean;
+}
+
+/**
+ * Create an in-memory message history store
+ */
+export function createMessageHistory(maxMessages = 20): MessageHistoryInterface {
+  let messages: Message[] = [];
+
+  const trim = (): void => {
+    if (messages.length > maxMessages) {
+      messages = messages.slice(-maxMessages);
+    }
+  };
+
+  const add = (message: Message): void => {
+    messages.push(message);
+    trim();
+  };
+
+  const addMany = (newMessages: Message[]): void => {
+    messages.push(...newMessages);
+    trim();
+  };
+
+  const getMessages = (): Message[] => {
+    return [...messages];
+  };
+
+  const getRecentMessages = (count: number): Message[] => {
+    return messages.slice(-count);
+  };
+
+  const clear = (): void => {
+    messages = [];
+  };
+
+  return {
+    add,
+    addMany,
+    getMessages,
+    getRecentMessages,
+    clear,
+    get length() {
+      return messages.length;
+    },
+  };
+}
+
+/**
+ * Create a session-based message history manager
+ * Allows managing multiple conversation histories by session ID
+ */
+export function createSessionMessageHistory(maxMessages = 20): SessionMessageHistoryInterface {
+  const sessions: Map<string, MessageHistoryInterface> = new Map();
+
+  const getSession = (sessionId: string): MessageHistoryInterface => {
+    let history = sessions.get(sessionId);
+    if (!history) {
+      history = createMessageHistory(maxMessages);
+      sessions.set(sessionId, history);
+    }
+    return history;
+  };
+
+  const clearSession = (sessionId: string): void => {
+    sessions.delete(sessionId);
+  };
+
+  const clearAll = (): void => {
+    sessions.clear();
+  };
+
+  const getSessionIds = (): string[] => {
+    return Array.from(sessions.keys());
+  };
+
+  const hasSession = (sessionId: string): boolean => {
+    return sessions.has(sessionId);
+  };
+
+  return {
+    getSession,
+    clearSession,
+    clearAll,
+    getSessionIds,
+    hasSession,
+  };
+}
+
+/**
+ * Legacy class export for backward compatibility
+ * @deprecated Use createMessageHistory() instead
+ */
+export class MessageHistory implements MessageHistoryInterface {
+  private readonly _history: MessageHistoryInterface;
 
   constructor(maxMessages = 20) {
-    this.maxMessages = maxMessages;
+    this._history = createMessageHistory(maxMessages);
   }
 
-  /**
-   * Add a message to the history
-   */
-  add(message: Message): void {
-    this.messages.push(message);
-    this.trim();
+  add(message: Message) {
+    return this._history.add(message);
   }
-
-  /**
-   * Add multiple messages to the history
-   */
-  addMany(messages: Message[]): void {
-    this.messages.push(...messages);
-    this.trim();
+  addMany(messages: Message[]) {
+    return this._history.addMany(messages);
   }
-
-  /**
-   * Get all messages in the history
-   */
-  getMessages(): Message[] {
-    return [...this.messages];
+  getMessages() {
+    return this._history.getMessages();
   }
-
-  /**
-   * Get the last N messages
-   */
-  getRecentMessages(count: number): Message[] {
-    return this.messages.slice(-count);
+  getRecentMessages(count: number) {
+    return this._history.getRecentMessages(count);
   }
-
-  /**
-   * Clear the message history
-   */
-  clear(): void {
-    this.messages = [];
+  clear() {
+    return this._history.clear();
   }
-
-  /**
-   * Get the number of messages in the history
-   */
-  get length(): number {
-    return this.messages.length;
-  }
-
-  /**
-   * Trim the history to the maximum number of messages
-   * Keeps the most recent messages
-   */
-  private trim(): void {
-    if (this.messages.length > this.maxMessages) {
-      this.messages = this.messages.slice(-this.maxMessages);
-    }
+  get length() {
+    return this._history.length;
   }
 }
 
 /**
- * Session-based message history manager
- * Allows managing multiple conversation histories by session ID
+ * Legacy class export for backward compatibility
+ * @deprecated Use createSessionMessageHistory() instead
  */
-export class SessionMessageHistory {
-  private sessions: Map<string, MessageHistory> = new Map();
-  private maxMessages: number;
+export class SessionMessageHistory implements SessionMessageHistoryInterface {
+  private readonly _history: SessionMessageHistoryInterface;
 
   constructor(maxMessages = 20) {
-    this.maxMessages = maxMessages;
+    this._history = createSessionMessageHistory(maxMessages);
   }
 
-  /**
-   * Get or create a message history for a session
-   */
-  getSession(sessionId: string): MessageHistory {
-    let history = this.sessions.get(sessionId);
-    if (!history) {
-      history = new MessageHistory(this.maxMessages);
-      this.sessions.set(sessionId, history);
-    }
-    return history;
+  getSession(sessionId: string) {
+    return this._history.getSession(sessionId);
   }
-
-  /**
-   * Clear a specific session's history
-   */
-  clearSession(sessionId: string): void {
-    this.sessions.delete(sessionId);
+  clearSession(sessionId: string) {
+    return this._history.clearSession(sessionId);
   }
-
-  /**
-   * Clear all sessions
-   */
-  clearAll(): void {
-    this.sessions.clear();
+  clearAll() {
+    return this._history.clearAll();
   }
-
-  /**
-   * Get all active session IDs
-   */
-  getSessionIds(): string[] {
-    return Array.from(this.sessions.keys());
+  getSessionIds() {
+    return this._history.getSessionIds();
   }
-
-  /**
-   * Check if a session exists
-   */
-  hasSession(sessionId: string): boolean {
-    return this.sessions.has(sessionId);
+  hasSession(sessionId: string) {
+    return this._history.hasSession(sessionId);
   }
 }

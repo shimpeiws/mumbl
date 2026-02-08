@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AgentType } from '../types.js';
-import { createWindsurfAdapter } from './windsurf-adapter.js';
 import type { AgentAdapter } from './types.js';
+import { createWindsurfAdapter } from './windsurf-adapter.js';
 
 describe('createWindsurfAdapter', () => {
   let adapter: AgentAdapter;

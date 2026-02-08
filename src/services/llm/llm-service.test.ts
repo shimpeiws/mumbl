@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AnthropicProvider } from './anthropic-provider.js';
+import { createAnthropicProvider } from './anthropic-provider.js';
 import { ProviderUnavailableError } from './errors.js';
 import { LLMService, createProvider } from './llm-service.js';
-import { OllamaProvider } from './ollama-provider.js';
+import { createOllamaProvider } from './ollama-provider.js';
 import type { ChatResponse, ModelConfig, StreamChunk } from './types.js';
 
 // Mock the providers
 vi.mock('./ollama-provider.js', () => ({
-  OllamaProvider: vi.fn().mockImplementation(() => ({
+  createOllamaProvider: vi.fn().mockImplementation(() => ({
     chat: vi.fn(),
     stream: vi.fn(),
     healthCheck: vi.fn(),
@@ -17,7 +17,7 @@ vi.mock('./ollama-provider.js', () => ({
 }));
 
 vi.mock('./anthropic-provider.js', () => ({
-  AnthropicProvider: vi.fn().mockImplementation(() => ({
+  createAnthropicProvider: vi.fn().mockImplementation(() => ({
     chat: vi.fn(),
     stream: vi.fn(),
     healthCheck: vi.fn(),
@@ -39,7 +39,7 @@ describe('createProvider', () => {
 
     const provider = createProvider(config);
 
-    expect(OllamaProvider).toHaveBeenCalledWith(config);
+    expect(createOllamaProvider).toHaveBeenCalledWith(config);
     expect(provider.getProviderName()).toBe('ollama');
   });
 
@@ -52,7 +52,7 @@ describe('createProvider', () => {
 
     const provider = createProvider(config);
 
-    expect(AnthropicProvider).toHaveBeenCalledWith(config);
+    expect(createAnthropicProvider).toHaveBeenCalledWith(config);
     expect(provider.getProviderName()).toBe('anthropic');
   });
 });
@@ -80,16 +80,13 @@ describe('LLMService', () => {
 
     mockOllamaHealthCheck = vi.fn().mockResolvedValue(true);
 
-    vi.mocked(OllamaProvider).mockImplementation(
-      () =>
-        ({
-          chat: mockOllamaChat,
-          stream: mockOllamaStream,
-          healthCheck: mockOllamaHealthCheck,
-          getProviderName: vi.fn().mockReturnValue('ollama'),
-          getModelName: vi.fn().mockReturnValue('qwen2.5-coder:7b'),
-        }) as unknown as OllamaProvider,
-    );
+    vi.mocked(createOllamaProvider).mockImplementation(() => ({
+      chat: mockOllamaChat,
+      stream: mockOllamaStream,
+      healthCheck: mockOllamaHealthCheck,
+      getProviderName: vi.fn().mockReturnValue('ollama'),
+      getModelName: vi.fn().mockReturnValue('qwen2.5-coder:7b'),
+    }));
 
     service = new LLMService({
       provider: 'ollama',
@@ -178,16 +175,13 @@ describe('LLMService', () => {
     it('should return health status for both providers when fallback is configured', async () => {
       const mockAnthropicHealthCheck = vi.fn().mockResolvedValue(true);
 
-      vi.mocked(AnthropicProvider).mockImplementation(
-        () =>
-          ({
-            chat: vi.fn(),
-            stream: vi.fn(),
-            healthCheck: mockAnthropicHealthCheck,
-            getProviderName: vi.fn().mockReturnValue('anthropic'),
-            getModelName: vi.fn().mockReturnValue('claude-sonnet-4-20250514'),
-          }) as unknown as AnthropicProvider,
-      );
+      vi.mocked(createAnthropicProvider).mockImplementation(() => ({
+        chat: vi.fn(),
+        stream: vi.fn(),
+        healthCheck: mockAnthropicHealthCheck,
+        getProviderName: vi.fn().mockReturnValue('anthropic'),
+        getModelName: vi.fn().mockReturnValue('claude-sonnet-4-20250514'),
+      }));
 
       const serviceWithFallback = new LLMService({
         provider: 'ollama',
@@ -246,16 +240,13 @@ describe('LLMService', () => {
         finishReason: 'end_turn',
       } satisfies ChatResponse);
 
-      vi.mocked(AnthropicProvider).mockImplementation(
-        () =>
-          ({
-            chat: mockAnthropicChat,
-            stream: vi.fn(),
-            healthCheck: vi.fn().mockResolvedValue(true),
-            getProviderName: vi.fn().mockReturnValue('anthropic'),
-            getModelName: vi.fn().mockReturnValue('claude-sonnet-4-20250514'),
-          }) as unknown as AnthropicProvider,
-      );
+      vi.mocked(createAnthropicProvider).mockImplementation(() => ({
+        chat: mockAnthropicChat,
+        stream: vi.fn(),
+        healthCheck: vi.fn().mockResolvedValue(true),
+        getProviderName: vi.fn().mockReturnValue('anthropic'),
+        getModelName: vi.fn().mockReturnValue('claude-sonnet-4-20250514'),
+      }));
 
       mockOllamaChat.mockRejectedValue(new ProviderUnavailableError('ollama'));
 

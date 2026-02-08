@@ -2,7 +2,8 @@
  * Queue service module exports
  */
 
-export { QueueService } from './queue-service.js';
+export { createQueueService, QueueService } from './queue-service.js';
+export type { QueueServiceInterface } from './queue-service.js';
 export {
   calculateBackoffDelay,
   shouldRetryError,

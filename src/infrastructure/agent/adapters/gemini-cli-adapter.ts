@@ -1,5 +1,11 @@
 import { AgentType } from '../types.js';
-import type { AgentAdapter, AgentCapabilities, AgentContext, AgentState, SendContextResult } from './types.js';
+import type {
+  AgentAdapter,
+  AgentCapabilities,
+  AgentContext,
+  AgentState,
+  SendContextResult,
+} from './types.js';
 
 /**
  * Create adapter for Gemini CLI agent
