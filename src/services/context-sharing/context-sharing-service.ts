@@ -4,7 +4,10 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import type { AgentType } from '../../infrastructure/agent/types.js';
+import {
+  type BaseContextFormatter,
+  ClaudeCodeFormatter,
+} from '../../infrastructure/agent/context/formatters/index.js';
 import {
   type BuildContextOptions,
   type ContextEntry,
@@ -14,16 +17,9 @@ import {
   RelevanceFilter,
   type ScoredEntry,
 } from '../../infrastructure/agent/context/index.js';
-import {
-  BaseContextFormatter,
-  ClaudeCodeFormatter,
-} from '../../infrastructure/agent/context/formatters/index.js';
+import type { AgentType } from '../../infrastructure/agent/types.js';
 import type { JournalEntry } from '../../repositories/types.js';
-import type {
-  ContextRequestOptions,
-  ContextResult,
-  ContextSharingConfig,
-} from './types.js';
+import type { ContextRequestOptions, ContextResult, ContextSharingConfig } from './types.js';
 import { DEFAULT_CONTEXT_SHARING_CONFIG } from './types.js';
 
 /**
@@ -91,7 +87,7 @@ export class ContextSharingService {
    */
   async buildContext(
     entries: JournalEntry[],
-    options: BuildContextOptions
+    options: BuildContextOptions,
   ): Promise<JournalContext> {
     const opts = { ...DEFAULT_CONTEXT_OPTIONS, ...options };
     const maxPermission = opts.maxPermissionLevel ?? this.config.defaultPermissionLevel;
@@ -103,9 +99,10 @@ export class ContextSharingService {
     // Filter by time range if specified
     let timeFiltered = permissionFiltered;
     if (opts.timeRange) {
+      const { start, end } = opts.timeRange;
       timeFiltered = permissionFiltered.filter((entry) => {
         const time = entry.timestamp.getTime();
-        return time >= opts.timeRange!.start.getTime() && time <= opts.timeRange!.end.getTime();
+        return time >= start.getTime() && time <= end.getTime();
       });
     }
 
@@ -115,15 +112,13 @@ export class ContextSharingService {
       scoredEntries = await this.relevanceFilter.filterByRelevance(
         timeFiltered,
         opts.relevanceQuery,
-        { limit: opts.maxEntries }
+        { limit: opts.maxEntries },
       );
     } else {
       // For 'recent' and other types, score by recency
-      scoredEntries = await this.relevanceFilter.filterByRelevance(
-        timeFiltered,
-        undefined,
-        { limit: opts.maxEntries }
-      );
+      scoredEntries = await this.relevanceFilter.filterByRelevance(timeFiltered, undefined, {
+        limit: opts.maxEntries,
+      });
     }
 
     // Handle 'specific' type - filter to specific IDs
@@ -135,7 +130,7 @@ export class ContextSharingService {
     // Convert to context entries with token limiting
     const { contextEntries, wasTruncated, estimatedTokens } = this.convertToContextEntries(
       scoredEntries,
-      opts.maxTokens ?? this.config.maxContextTokens
+      opts.maxTokens ?? this.config.maxContextTokens,
     );
 
     // Determine time range from included entries
@@ -164,7 +159,7 @@ export class ContextSharingService {
   async getContextForAgent(
     entries: JournalEntry[],
     agentType: AgentType,
-    options: ContextRequestOptions
+    options: ContextRequestOptions,
   ): Promise<ContextResult> {
     if (!this.config.enabled) {
       return {
@@ -217,7 +212,7 @@ export class ContextSharingService {
   async getSummaryContext(
     entries: JournalEntry[],
     agentType: AgentType,
-    options: Partial<ContextRequestOptions> = {}
+    options: Partial<ContextRequestOptions> = {},
   ): Promise<ContextResult> {
     return this.getContextForAgent(entries, agentType, {
       type: 'summary',
@@ -231,7 +226,7 @@ export class ContextSharingService {
   async getRecentContext(
     entries: JournalEntry[],
     agentType: AgentType,
-    options: Partial<ContextRequestOptions> = {}
+    options: Partial<ContextRequestOptions> = {},
   ): Promise<ContextResult> {
     return this.getContextForAgent(entries, agentType, {
       type: 'recent',
@@ -246,7 +241,7 @@ export class ContextSharingService {
     entries: JournalEntry[],
     agentType: AgentType,
     query: string,
-    options: Partial<ContextRequestOptions> = {}
+    options: Partial<ContextRequestOptions> = {},
   ): Promise<ContextResult> {
     return this.getContextForAgent(entries, agentType, {
       type: 'relevant',
@@ -260,7 +255,7 @@ export class ContextSharingService {
    */
   private convertToContextEntries(
     scoredEntries: ScoredEntry[],
-    maxTokens: number
+    maxTokens: number,
   ): { contextEntries: ContextEntry[]; wasTruncated: boolean; estimatedTokens: number } {
     const contextEntries: ContextEntry[] = [];
     let totalTokens = 0;
@@ -314,9 +309,7 @@ export class ContextSharingService {
   /**
    * Calculate time range from context entries
    */
-  private calculateTimeRange(
-    entries: ContextEntry[]
-  ): { start: Date; end: Date } | undefined {
+  private calculateTimeRange(entries: ContextEntry[]): { start: Date; end: Date } | undefined {
     if (entries.length === 0) {
       return undefined;
     }

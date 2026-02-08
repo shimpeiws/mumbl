@@ -20,7 +20,7 @@ describe('ContextSharingService', () => {
   const createEntry = (
     content: string,
     timestamp = new Date('2025-01-15T10:00:00Z'),
-    metadata = {}
+    metadata = {},
   ): JournalEntry => ({
     id: `entry-${Math.random().toString(36).substring(7)}`,
     timestamp,
@@ -58,10 +58,7 @@ describe('ContextSharingService', () => {
 
   describe('buildContext', () => {
     it('should build context with entries', async () => {
-      const entries = [
-        createEntry('Entry 1'),
-        createEntry('Entry 2'),
-      ];
+      const entries = [createEntry('Entry 1'), createEntry('Entry 2')];
 
       const context = await service.buildContext(entries, { contextType: 'recent' });
 
@@ -89,7 +86,7 @@ describe('ContextSharingService', () => {
 
     it('should respect maxEntries limit', async () => {
       const entries = Array.from({ length: 20 }, (_, i) =>
-        createEntry(`Entry ${i}`, new Date(2025, 0, i + 1))
+        createEntry(`Entry ${i}`, new Date(2025, 0, i + 1)),
       );
 
       const context = await service.buildContext(entries, {
@@ -211,11 +208,7 @@ describe('ContextSharingService', () => {
     });
 
     it('getRelevantContext should use relevant type with query', async () => {
-      const result = await service.getRelevantContext(
-        entries,
-        AgentType.ClaudeCode,
-        'test'
-      );
+      const result = await service.getRelevantContext(entries, AgentType.ClaudeCode, 'test');
 
       expect(result.success).toBe(true);
       expect(result.context).toContain('Relevant Entries');
@@ -226,7 +219,7 @@ describe('ContextSharingService', () => {
     it('should truncate context when exceeding token limit', async () => {
       // Create entries with substantial content
       const entries = Array.from({ length: 10 }, (_, i) =>
-        createEntry('A'.repeat(2000), new Date(2025, 0, 20 - i))
+        createEntry('A'.repeat(2000), new Date(2025, 0, 20 - i)),
       );
 
       const context = await service.buildContext(entries, {

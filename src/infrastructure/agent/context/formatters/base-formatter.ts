@@ -72,7 +72,10 @@ export abstract class BaseContextFormatter {
   /**
    * Truncate content to maximum length
    */
-  protected truncateContent(content: string, maxLength: number): { content: string; truncated: boolean } {
+  protected truncateContent(
+    content: string,
+    maxLength: number,
+  ): { content: string; truncated: boolean } {
     if (content.length <= maxLength) {
       return { content, truncated: false };
     }

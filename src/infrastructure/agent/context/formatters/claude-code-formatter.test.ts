@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AgentType } from '../../types.js';
-import { PermissionLevel, type ContextEntry, type JournalContext } from '../context-protocol.js';
+import { type ContextEntry, type JournalContext, PermissionLevel } from '../context-protocol.js';
 import { ClaudeCodeFormatter } from './claude-code-formatter.js';
 
 describe('ClaudeCodeFormatter', () => {
@@ -9,7 +9,7 @@ describe('ClaudeCodeFormatter', () => {
   const createEntry = (
     content: string,
     timestamp = new Date('2025-01-15T10:00:00Z'),
-    options: Partial<ContextEntry> = {}
+    options: Partial<ContextEntry> = {},
   ): ContextEntry => ({
     id: 'entry-1',
     timestamp,

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_CONTEXT_OPTIONS,
-  PermissionLevel,
   type BuildContextOptions,
   type ContextEntry,
   type ContextMetadata,
+  DEFAULT_CONTEXT_OPTIONS,
   type JournalContext,
+  PermissionLevel,
 } from './context-protocol.js';
 
 describe('context-protocol', () => {

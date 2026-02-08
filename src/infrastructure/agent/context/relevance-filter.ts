@@ -51,7 +51,7 @@ export class RelevanceFilter {
   async filterByRelevance(
     entries: JournalEntry[],
     query?: string,
-    options: RelevanceFilterOptions = {}
+    options: RelevanceFilterOptions = {},
   ): Promise<ScoredEntry[]> {
     const opts = { ...DEFAULT_OPTIONS, ...options };
 
@@ -116,7 +116,9 @@ export class RelevanceFilter {
    * @returns Most recent entries
    */
   getRecentEntries(entries: JournalEntry[], limit: number): JournalEntry[] {
-    return [...entries].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, limit);
+    return [...entries]
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .slice(0, limit);
   }
 
   /**
@@ -126,7 +128,7 @@ export class RelevanceFilter {
   private calculateRelevanceScore(
     entry: JournalEntry,
     query: string,
-    recencyWeight: number
+    recencyWeight: number,
   ): number {
     const textScore = this.calculateTextSimilarity(entry.content, query);
     const recencyScore = this.calculateRecencyScore(entry.timestamp);
@@ -180,7 +182,7 @@ export class RelevanceFilter {
     const daysOld = age / dayInMs;
 
     // Exponential decay with half-life of 7 days
-    return Math.exp(-daysOld * Math.LN2 / 7);
+    return Math.exp((-daysOld * Math.LN2) / 7);
   }
 
   /**
@@ -200,9 +202,7 @@ export class RelevanceFilter {
    * Tokenize text into terms
    */
   private tokenize(text: string): string[] {
-    return text
-      .split(/[\s\-_.,;:!?'"()\[\]{}]+/)
-      .filter((term) => term.length >= 2);
+    return text.split(/[\s\-_.,;:!?'"()\[\]{}]+/).filter((term) => term.length >= 2);
   }
 
   /**

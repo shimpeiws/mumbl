@@ -18,7 +18,7 @@ describe('RelevanceFilter', () => {
 
   const createEntry = (
     content: string,
-    timestamp: Date = new Date('2025-01-15T10:00:00Z')
+    timestamp: Date = new Date('2025-01-15T10:00:00Z'),
   ): JournalEntry => ({
     id: `test-${Math.random().toString(36).substring(7)}`,
     timestamp,
