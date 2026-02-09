@@ -2,13 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PermissionLevel } from '../../infrastructure/agent/context/context-protocol.js';
 import { AgentType } from '../../infrastructure/agent/types.js';
 import type { JournalEntry } from '../../repositories/types.js';
-import { ContextSharingService } from './context-sharing-service.js';
+import { type ContextSharingService, createContextSharingService } from './context-sharing-service.js';
 
 describe('ContextSharingService', () => {
   let service: ContextSharingService;
 
   beforeEach(() => {
-    service = new ContextSharingService();
+    service = createContextSharingService();
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2025-01-20T12:00:00Z'));
   });
