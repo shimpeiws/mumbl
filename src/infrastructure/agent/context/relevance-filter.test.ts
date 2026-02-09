@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JournalEntry } from '../../../repositories/types.js';
-import {
-  filterByRelevance,
-  generateContextSummary,
-  getRecentEntries,
-} from './relevance-filter.js';
+import { filterByRelevance, generateContextSummary, getRecentEntries } from './relevance-filter.js';
 
 describe('RelevanceFilter', () => {
   beforeEach(() => {

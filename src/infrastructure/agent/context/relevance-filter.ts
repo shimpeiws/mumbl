@@ -231,9 +231,7 @@ export const generateContextSummary = async (entries: JournalEntry[]): Promise<s
  * @returns Most recent entries
  */
 export const getRecentEntries = (entries: JournalEntry[], limit: number): JournalEntry[] => {
-  return [...entries]
-    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-    .slice(0, limit);
+  return [...entries].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, limit);
 };
 
 /**

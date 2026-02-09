@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PermissionLevel } from '../../infrastructure/agent/context/context-protocol.js';
 import { AgentType } from '../../infrastructure/agent/types.js';
 import type { JournalEntry } from '../../repositories/types.js';
-import { type ContextSharingService, createContextSharingService } from './context-sharing-service.js';
+import {
+  type ContextSharingService,
+  createContextSharingService,
+} from './context-sharing-service.js';
 
 describe('ContextSharingService', () => {
   let service: ContextSharingService;

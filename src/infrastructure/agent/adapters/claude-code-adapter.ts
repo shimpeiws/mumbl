@@ -22,9 +22,7 @@ export interface ClaudeCodeAgentAdapter extends AgentAdapter {
 /**
  * Create adapter for Claude Code CLI agent
  */
-export function createClaudeCodeAdapter(
-  pollingIntervalMs?: number,
-): ClaudeCodeAgentAdapter {
+export function createClaudeCodeAdapter(pollingIntervalMs?: number): ClaudeCodeAgentAdapter {
   const agentType = AgentType.ClaudeCode;
   const processingDetector = createClaudeCodeProcessingDetector(pollingIntervalMs);
 
