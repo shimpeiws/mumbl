@@ -51,6 +51,9 @@ importers:
       '@vitest/ui':
         specifier: ^2.1.0
         version: 2.1.9(vitest@2.1.9)
+      husky:
+        specifier: ^9.1.7
+        version: 9.1.7
       ink-testing-library:
         specifier: ^4.0.0
         version: 4.0.0(@types/react@19.2.9)
@@ -1144,6 +1147,11 @@ packages:
 
   html-escaper@2.0.2:
     resolution: {integrity: sha512-H2iMtd0I4Mt5eYiapRdIDjp+XzelXQ0tFE4JS7YFwFevXXMmOp9myNrUvCg0D6ws8iqkRPBfKHgbwig1SmlLfg==}
+
+  husky@9.1.7:
+    resolution: {integrity: sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   hyperdyperid@1.2.0:
     resolution: {integrity: sha512-Y93lCzHYgGWdrJ66yIktxiaGULYc6oGiABxhcO5AufBeOyoIdZF7bIfLaOrbM0iGIOXQQgxxRrFEnb+Y6w1n4A==}
@@ -2653,6 +2661,8 @@ snapshots:
   headers-polyfill@4.0.3: {}
 
   html-escaper@2.0.2: {}
+
+  husky@9.1.7: {}
 
   hyperdyperid@1.2.0: {}
 

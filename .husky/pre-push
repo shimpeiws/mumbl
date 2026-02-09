@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+
+echo "Running pre-push checks..."
+pnpm run ci:all
+
+if [ $? -ne 0 ]; then
+  echo "Pre-push checks failed. Push aborted."
+  exit 1
+fi
