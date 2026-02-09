@@ -8,10 +8,10 @@ const CURSOR_ENV_VARS = ['CURSOR_SESSION_ID', 'CURSOR_EDITOR', 'CURSOR_TRACE_ID'
 /**
  * Detector for Cursor editor
  */
-export class CursorDetector implements AgentDetector {
-  readonly agentType = AgentType.Cursor;
+export const cursorDetector: AgentDetector = {
+  agentType: AgentType.Cursor,
 
-  async detect(): Promise<AgentDetectionResult | null> {
+  detect: async (): Promise<AgentDetectionResult | null> => {
     // Check environment variables
     for (const envVar of CURSOR_ENV_VARS) {
       const value = process.env[envVar];
@@ -40,5 +40,5 @@ export class CursorDetector implements AgentDetector {
     }
 
     return null;
-  }
-}
+  },
+};

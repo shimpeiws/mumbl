@@ -3,7 +3,7 @@ import type {
   ProcessingDetector,
   ProcessingStateCallback,
 } from '../../infrastructure/agent/processing-detector.js';
-import { WaitDisplayService, createWaitDisplayService } from './wait-display-service.js';
+import { type WaitDisplayService, createWaitDisplayService } from './wait-display-service.js';
 
 // Create a mock processing detector
 function createMockProcessingDetector(): ProcessingDetector & {
@@ -57,7 +57,7 @@ describe('WaitDisplayService', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mockDetector = createMockProcessingDetector();
-    service = new WaitDisplayService(mockDetector, {
+    service = createWaitDisplayService(mockDetector, {
       minWaitTimeMs: 500,
     });
   });
@@ -79,7 +79,7 @@ describe('WaitDisplayService', () => {
     });
 
     it('should not start if disabled', () => {
-      const disabledService = new WaitDisplayService(mockDetector, {
+      const disabledService = createWaitDisplayService(mockDetector, {
         enabled: false,
       });
       const startMonitoringSpy = vi.spyOn(mockDetector, 'startMonitoring');
@@ -292,7 +292,9 @@ describe('WaitDisplayService', () => {
   describe('createWaitDisplayService', () => {
     it('should create a service instance', () => {
       const createdService = createWaitDisplayService(mockDetector);
-      expect(createdService).toBeInstanceOf(WaitDisplayService);
+      expect(createdService).toBeDefined();
+      expect(typeof createdService.start).toBe('function');
+      expect(typeof createdService.stop).toBe('function');
     });
 
     it('should accept custom configuration', () => {

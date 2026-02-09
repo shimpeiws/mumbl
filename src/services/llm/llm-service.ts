@@ -1,8 +1,13 @@
 import type { ResolvedConfig } from '../../config/types.js';
-import { AnthropicProvider } from './anthropic-provider.js';
+import { createAnthropicProvider } from './anthropic-provider.js';
 import { ProviderUnavailableError } from './errors.js';
-import { MessageHistory, SessionMessageHistory } from './message-history.js';
-import { OllamaProvider } from './ollama-provider.js';
+import {
+  type MessageHistoryInterface,
+  type SessionMessageHistoryInterface,
+  createMessageHistory,
+  createSessionMessageHistory,
+} from './message-history.js';
+import { createOllamaProvider } from './ollama-provider.js';
 import {
   createChatMessages,
   createReactionPrompt,
@@ -31,69 +36,79 @@ export interface LLMServiceConfig {
 export function createProvider(config: ModelConfig): LLMProvider {
   switch (config.provider) {
     case 'ollama':
-      return new OllamaProvider(config);
+      return createOllamaProvider(config);
     case 'anthropic':
-      return new AnthropicProvider(config);
+      return createAnthropicProvider(config);
   }
 }
 
 /**
- * High-level LLM service with fallback support and conversation management
+ * LLM service interface
  */
-export class LLMService {
-  private primaryProvider: LLMProvider;
-  private fallbackProvider?: LLMProvider;
-  private sessionHistory: SessionMessageHistory;
+export interface LLMServiceInterface {
+  chat(
+    userMessage: string,
+    options?: { sessionId?: string; includeHistory?: boolean },
+  ): Promise<ChatResponse>;
+  stream(
+    userMessage: string,
+    options?: { sessionId?: string; includeHistory?: boolean },
+  ): AsyncIterable<StreamChunk>;
+  summarize(entries: string[]): Promise<ChatResponse>;
+  reflect(entry: string): Promise<ChatResponse>;
+  react(entry: string): Promise<ChatResponse>;
+  healthCheck(): Promise<{ primary: boolean; fallback?: boolean }>;
+  clearHistory(sessionId?: string): void;
+  getProviderInfo(): { provider: Provider; model: string };
+}
 
-  constructor(config: LLMServiceConfig) {
-    const primaryConfig: ModelConfig = {
-      provider: config.provider,
-      model:
-        config.model ??
-        (config.provider === 'ollama' ? DEFAULT_OLLAMA_MODEL : DEFAULT_ANTHROPIC_MODEL),
+/**
+ * Create a high-level LLM service with fallback support and conversation management
+ */
+export function createLLMService(config: LLMServiceConfig): LLMServiceInterface {
+  const primaryConfig: ModelConfig = {
+    provider: config.provider,
+    model:
+      config.model ??
+      (config.provider === 'ollama' ? DEFAULT_OLLAMA_MODEL : DEFAULT_ANTHROPIC_MODEL),
+    baseUrl: config.baseUrl,
+    apiKey: config.apiKey,
+    temperature: config.temperature,
+    maxTokens: config.maxTokens,
+  };
+
+  const primaryProvider = createProvider(primaryConfig);
+
+  let fallbackProvider: LLMProvider | undefined;
+  if (config.fallbackProvider) {
+    const fallbackConfig: ModelConfig = {
+      provider: config.fallbackProvider,
+      model: config.fallbackProvider === 'ollama' ? DEFAULT_OLLAMA_MODEL : DEFAULT_ANTHROPIC_MODEL,
       baseUrl: config.baseUrl,
       apiKey: config.apiKey,
       temperature: config.temperature,
       maxTokens: config.maxTokens,
     };
-
-    this.primaryProvider = createProvider(primaryConfig);
-
-    if (config.fallbackProvider) {
-      const fallbackConfig: ModelConfig = {
-        provider: config.fallbackProvider,
-        model:
-          config.fallbackProvider === 'ollama' ? DEFAULT_OLLAMA_MODEL : DEFAULT_ANTHROPIC_MODEL,
-        baseUrl: config.baseUrl,
-        apiKey: config.apiKey,
-        temperature: config.temperature,
-        maxTokens: config.maxTokens,
-      };
-      this.fallbackProvider = createProvider(fallbackConfig);
-    }
-
-    this.sessionHistory = new SessionMessageHistory();
+    fallbackProvider = createProvider(fallbackConfig);
   }
 
-  /**
-   * Send a chat message and get a response
-   * Automatically handles conversation history
-   */
-  async chat(
+  const sessionHistory: SessionMessageHistoryInterface = createSessionMessageHistory();
+
+  const chat = async (
     userMessage: string,
     options?: { sessionId?: string; includeHistory?: boolean },
-  ): Promise<ChatResponse> {
+  ): Promise<ChatResponse> => {
     const sessionId = options?.sessionId ?? 'default';
     const includeHistory = options?.includeHistory ?? true;
 
-    const history = includeHistory
-      ? this.sessionHistory.getSession(sessionId)
-      : new MessageHistory(0);
+    const history: MessageHistoryInterface = includeHistory
+      ? sessionHistory.getSession(sessionId)
+      : createMessageHistory(0);
 
     const messages = createChatMessages(userMessage, history.getMessages());
 
     try {
-      const response = await this.primaryProvider.chat(messages);
+      const response = await primaryProvider.chat(messages);
 
       // Add the user message and response to history
       history.add({ role: 'user', content: userMessage });
@@ -101,8 +116,8 @@ export class LLMService {
 
       return response;
     } catch (error) {
-      if (error instanceof ProviderUnavailableError && this.fallbackProvider) {
-        const response = await this.fallbackProvider.chat(messages);
+      if (error instanceof ProviderUnavailableError && fallbackProvider) {
+        const response = await fallbackProvider.chat(messages);
 
         history.add({ role: 'user', content: userMessage });
         history.add({ role: 'assistant', content: response.content });
@@ -111,36 +126,32 @@ export class LLMService {
       }
       throw error;
     }
-  }
+  };
 
-  /**
-   * Stream a chat response
-   * Automatically handles conversation history
-   */
-  async *stream(
+  async function* stream(
     userMessage: string,
     options?: { sessionId?: string; includeHistory?: boolean },
   ): AsyncIterable<StreamChunk> {
     const sessionId = options?.sessionId ?? 'default';
     const includeHistory = options?.includeHistory ?? true;
 
-    const history = includeHistory
-      ? this.sessionHistory.getSession(sessionId)
-      : new MessageHistory(0);
+    const history: MessageHistoryInterface = includeHistory
+      ? sessionHistory.getSession(sessionId)
+      : createMessageHistory(0);
 
     const messages = createChatMessages(userMessage, history.getMessages());
 
     let fullResponse = '';
 
     try {
-      for await (const chunk of this.primaryProvider.stream(messages)) {
+      for await (const chunk of primaryProvider.stream(messages)) {
         fullResponse += chunk.content;
         yield chunk;
       }
     } catch (error) {
-      if (error instanceof ProviderUnavailableError && this.fallbackProvider) {
+      if (error instanceof ProviderUnavailableError && fallbackProvider) {
         fullResponse = '';
-        for await (const chunk of this.fallbackProvider.stream(messages)) {
+        for await (const chunk of fallbackProvider.stream(messages)) {
           fullResponse += chunk.content;
           yield chunk;
         }
@@ -154,89 +165,116 @@ export class LLMService {
     history.add({ role: 'assistant', content: fullResponse });
   }
 
-  /**
-   * Summarize journal entries
-   */
-  async summarize(entries: string[]): Promise<ChatResponse> {
+  const summarize = async (entries: string[]): Promise<ChatResponse> => {
     const messages = createSummaryPrompt(entries);
 
     try {
-      return await this.primaryProvider.chat(messages);
+      return await primaryProvider.chat(messages);
     } catch (error) {
-      if (error instanceof ProviderUnavailableError && this.fallbackProvider) {
-        return await this.fallbackProvider.chat(messages);
+      if (error instanceof ProviderUnavailableError && fallbackProvider) {
+        return await fallbackProvider.chat(messages);
       }
       throw error;
     }
-  }
+  };
 
-  /**
-   * Get a reflection on a journal entry
-   */
-  async reflect(entry: string): Promise<ChatResponse> {
+  const reflect = async (entry: string): Promise<ChatResponse> => {
     const messages = createReflectionPrompt(entry);
 
     try {
-      return await this.primaryProvider.chat(messages);
+      return await primaryProvider.chat(messages);
     } catch (error) {
-      if (error instanceof ProviderUnavailableError && this.fallbackProvider) {
-        return await this.fallbackProvider.chat(messages);
+      if (error instanceof ProviderUnavailableError && fallbackProvider) {
+        return await fallbackProvider.chat(messages);
       }
       throw error;
     }
-  }
+  };
 
-  /**
-   * Generate a minimal reaction to a journal entry
-   * Returns a very brief acknowledgment (usually 1-3 words)
-   */
-  async react(entry: string): Promise<ChatResponse> {
+  const react = async (entry: string): Promise<ChatResponse> => {
     const messages = createReactionPrompt(entry);
 
     try {
-      return await this.primaryProvider.chat(messages);
+      return await primaryProvider.chat(messages);
     } catch (error) {
-      if (error instanceof ProviderUnavailableError && this.fallbackProvider) {
-        return await this.fallbackProvider.chat(messages);
+      if (error instanceof ProviderUnavailableError && fallbackProvider) {
+        return await fallbackProvider.chat(messages);
       }
       throw error;
     }
-  }
+  };
 
-  /**
-   * Check if the primary provider is available
-   */
-  async healthCheck(): Promise<{ primary: boolean; fallback?: boolean }> {
-    const primaryHealth = await this.primaryProvider.healthCheck();
-    const fallbackHealth = this.fallbackProvider
-      ? await this.fallbackProvider.healthCheck()
-      : undefined;
+  const healthCheck = async (): Promise<{ primary: boolean; fallback?: boolean }> => {
+    const primaryHealth = await primaryProvider.healthCheck();
+    const fallbackHealth = fallbackProvider ? await fallbackProvider.healthCheck() : undefined;
 
     return {
       primary: primaryHealth,
       fallback: fallbackHealth,
     };
-  }
+  };
 
-  /**
-   * Clear conversation history for a session
-   */
-  clearHistory(sessionId?: string): void {
+  const clearHistory = (sessionId?: string): void => {
     if (sessionId) {
-      this.sessionHistory.clearSession(sessionId);
+      sessionHistory.clearSession(sessionId);
     } else {
-      this.sessionHistory.clearAll();
+      sessionHistory.clearAll();
     }
+  };
+
+  const getProviderInfo = (): { provider: Provider; model: string } => {
+    return {
+      provider: primaryProvider.getProviderName(),
+      model: primaryProvider.getModelName(),
+    };
+  };
+
+  return {
+    chat,
+    stream,
+    summarize,
+    reflect,
+    react,
+    healthCheck,
+    clearHistory,
+    getProviderInfo,
+  };
+}
+
+/**
+ * Legacy class export for backward compatibility
+ * @deprecated Use createLLMService() instead
+ */
+export class LLMService implements LLMServiceInterface {
+  private readonly _service: LLMServiceInterface;
+
+  constructor(config: LLMServiceConfig) {
+    this._service = createLLMService(config);
   }
 
-  /**
-   * Get the current provider information
-   */
-  getProviderInfo(): { provider: Provider; model: string } {
-    return {
-      provider: this.primaryProvider.getProviderName(),
-      model: this.primaryProvider.getModelName(),
-    };
+  chat(userMessage: string, options?: { sessionId?: string; includeHistory?: boolean }) {
+    return this._service.chat(userMessage, options);
+  }
+  stream(userMessage: string, options?: { sessionId?: string; includeHistory?: boolean }) {
+    return this._service.stream(userMessage, options);
+  }
+  summarize(entries: string[]) {
+    return this._service.summarize(entries);
+  }
+  reflect(entry: string) {
+    return this._service.reflect(entry);
+  }
+  react(entry: string) {
+    return this._service.react(entry);
+  }
+  healthCheck() {
+    return this._service.healthCheck();
+  }
+  clearHistory(sessionId?: string) {
+    return this._service.clearHistory(sessionId);
+  }
+  getProviderInfo() {
+    return this._service.getProviderInfo();
   }
 }
 
@@ -245,8 +283,8 @@ export class LLMService {
  * Use this with resolveConfig() for full configuration priority support
  * Priority: CLI > Environment > Config file > Default
  */
-export function createLLMServiceFromConfig(config: ResolvedConfig): LLMService {
-  return new LLMService({
+export function createLLMServiceFromConfig(config: ResolvedConfig): LLMServiceInterface {
+  return createLLMService({
     provider: config.provider,
     model: config.model,
     baseUrl: config.baseUrl,

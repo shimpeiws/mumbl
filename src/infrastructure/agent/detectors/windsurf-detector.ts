@@ -8,10 +8,10 @@ const WINDSURF_ENV_VARS = ['WINDSURF_SESSION_ID', 'WINDSURF_EDITOR', 'CODEIUM_WI
 /**
  * Detector for Windsurf editor (Codeium)
  */
-export class WindsurfDetector implements AgentDetector {
-  readonly agentType = AgentType.Windsurf;
+export const windsurfDetector: AgentDetector = {
+  agentType: AgentType.Windsurf,
 
-  async detect(): Promise<AgentDetectionResult | null> {
+  detect: async (): Promise<AgentDetectionResult | null> => {
     // Check environment variables
     for (const envVar of WINDSURF_ENV_VARS) {
       const value = process.env[envVar];
@@ -40,5 +40,5 @@ export class WindsurfDetector implements AgentDetector {
     }
 
     return null;
-  }
-}
+  },
+};

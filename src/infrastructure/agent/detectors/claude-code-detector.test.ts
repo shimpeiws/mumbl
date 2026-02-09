@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AgentType } from '../types.js';
-import { ClaudeCodeDetector } from './claude-code-detector.js';
+import { claudeCodeDetector } from './claude-code-detector.js';
 
-describe('ClaudeCodeDetector', () => {
+describe('claudeCodeDetector', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
@@ -14,15 +14,13 @@ describe('ClaudeCodeDetector', () => {
   });
 
   it('should have correct agent type', () => {
-    const detector = new ClaudeCodeDetector();
-    expect(detector.agentType).toBe(AgentType.ClaudeCode);
+    expect(claudeCodeDetector.agentType).toBe(AgentType.ClaudeCode);
   });
 
   it('should detect via CLAUDE_CODE env var', async () => {
     process.env.CLAUDE_CODE = '1';
 
-    const detector = new ClaudeCodeDetector();
-    const result = await detector.detect();
+    const result = await claudeCodeDetector.detect();
 
     expect(result).toEqual({
       agent: AgentType.ClaudeCode,
@@ -37,8 +35,7 @@ describe('ClaudeCodeDetector', () => {
   it('should detect via CLAUDE_CODE_VERSION env var', async () => {
     process.env.CLAUDE_CODE_VERSION = '1.0.0';
 
-    const detector = new ClaudeCodeDetector();
-    const result = await detector.detect();
+    const result = await claudeCodeDetector.detect();
 
     expect(result).toEqual({
       agent: AgentType.ClaudeCode,
@@ -53,8 +50,7 @@ describe('ClaudeCodeDetector', () => {
   it('should detect via CLAUDE_CODE_SESSION_ID env var', async () => {
     process.env.CLAUDE_CODE_SESSION_ID = 'session-123';
 
-    const detector = new ClaudeCodeDetector();
-    const result = await detector.detect();
+    const result = await claudeCodeDetector.detect();
 
     expect(result).toEqual({
       agent: AgentType.ClaudeCode,
@@ -71,8 +67,7 @@ describe('ClaudeCodeDetector', () => {
     delete process.env.CLAUDE_CODE_VERSION;
     delete process.env.CLAUDE_CODE_SESSION_ID;
 
-    const detector = new ClaudeCodeDetector();
-    const result = await detector.detect();
+    const result = await claudeCodeDetector.detect();
 
     expect(result).toBeNull();
   });
@@ -80,8 +75,7 @@ describe('ClaudeCodeDetector', () => {
   it('should return null when env var is empty string', async () => {
     process.env.CLAUDE_CODE = '';
 
-    const detector = new ClaudeCodeDetector();
-    const result = await detector.detect();
+    const result = await claudeCodeDetector.detect();
 
     expect(result).toBeNull();
   });
@@ -90,8 +84,7 @@ describe('ClaudeCodeDetector', () => {
     process.env.CLAUDE_CODE = '1';
     process.env.CLAUDE_CODE_VERSION = '1.0.0';
 
-    const detector = new ClaudeCodeDetector();
-    const result = await detector.detect();
+    const result = await claudeCodeDetector.detect();
 
     expect(result?.metadata?.envVar).toBe('CLAUDE_CODE');
   });

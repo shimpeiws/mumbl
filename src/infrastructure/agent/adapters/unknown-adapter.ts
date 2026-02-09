@@ -1,37 +1,37 @@
 import { AgentType } from '../types.js';
-import { BaseAgentAdapter } from './base-adapter.js';
-import type { AgentCapabilities, AgentContext, SendContextResult } from './types.js';
+import type {
+  AgentAdapter,
+  AgentCapabilities,
+  AgentContext,
+  AgentState,
+  SendContextResult,
+} from './types.js';
 
 /**
  * Fallback adapter for unknown or undetected agents
  * Provides no-op implementations with minimal capabilities
  */
-export class UnknownAdapter extends BaseAgentAdapter {
-  readonly agentType = AgentType.Unknown;
+export const unknownAdapter: AgentAdapter = {
+  agentType: AgentType.Unknown,
 
-  async sendContext(_context: AgentContext): Promise<SendContextResult> {
-    // No-op for unknown agents
-    return {
-      success: false,
-      error: 'Unknown agent type - context sending not supported',
-    };
-  }
+  getState: async (): Promise<AgentState> => ({
+    isActive: true,
+    workingDirectory: process.cwd(),
+  }),
 
-  getCapabilities(): AgentCapabilities {
-    return {
-      canReceiveContext: false,
-      canAccessFiles: false,
-      canAccessTerminal: false,
-      supportsStreaming: false,
-    };
-  }
+  sendContext: async (_context: AgentContext): Promise<SendContextResult> => ({
+    success: false,
+    error: 'Unknown agent type - context sending not supported',
+  }),
 
-  async healthCheck(): Promise<boolean> {
-    // Unknown adapter is always "healthy" as a fallback
-    return true;
-  }
+  getCapabilities: (): AgentCapabilities => ({
+    canReceiveContext: false,
+    canAccessFiles: false,
+    canAccessTerminal: false,
+    supportsStreaming: false,
+  }),
 
-  getDisplayName(): string {
-    return 'Unknown Agent';
-  }
-}
+  healthCheck: async (): Promise<boolean> => true,
+
+  getDisplayName: (): string => 'Unknown Agent',
+};

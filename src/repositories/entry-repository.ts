@@ -10,29 +10,51 @@ function toUnixSeconds(date: Date): number {
 }
 
 /**
- * Repository for journal entry database operations
+ * Convert database row to JournalEntry
  */
-export class EntryRepository {
-  constructor(private db: Database.Database) {}
+function rowToEntry(row: EntryRow): JournalEntry {
+  return {
+    id: row.id,
+    timestamp: new Date(row.timestamp * 1000),
+    content: row.content,
+    metadata: row.metadata ? JSON.parse(row.metadata) : {},
+    createdAt: new Date(row.created_at * 1000),
+    updatedAt: new Date(row.updated_at * 1000),
+  };
+}
 
-  /**
-   * Convert database row to JournalEntry
-   */
-  private rowToEntry(row: EntryRow): JournalEntry {
-    return {
-      id: row.id,
-      timestamp: new Date(row.timestamp * 1000),
-      content: row.content,
-      metadata: row.metadata ? JSON.parse(row.metadata) : {},
-      createdAt: new Date(row.created_at * 1000),
-      updatedAt: new Date(row.updated_at * 1000),
-    };
-  }
+/**
+ * Entry repository interface
+ */
+export interface EntryRepositoryInterface {
+  insert(entry: JournalEntry): void;
+  findById(id: string): JournalEntry | null;
+  findAll(options?: {
+    limit?: number;
+    offset?: number;
+    sortBy?: 'timestamp' | 'createdAt' | 'updatedAt';
+    order?: 'asc' | 'desc';
+    since?: Date;
+    until?: Date;
+  }): JournalEntry[];
+  update(
+    id: string,
+    updates: {
+      content?: string;
+      metadata?: Record<string, unknown>;
+      timestamp?: Date;
+    },
+  ): JournalEntry;
+  delete(id: string): boolean;
+  count(): number;
+  search(query: string): JournalEntry[];
+}
 
-  /**
-   * Insert a new entry into database
-   */
-  insert(entry: JournalEntry): void {
+/**
+ * Create an entry repository
+ */
+export function createEntryRepository(db: Database.Database): EntryRepositoryInterface {
+  const insert = (entry: JournalEntry): void => {
     if (!entry.id) {
       throw new InvalidEntryError('Entry ID is required');
     }
@@ -40,7 +62,7 @@ export class EntryRepository {
       throw new InvalidEntryError('Entry content is required');
     }
 
-    const stmt = this.db.prepare(`
+    const stmt = db.prepare(`
       INSERT INTO entries (id, timestamp, content, metadata, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
@@ -55,7 +77,6 @@ export class EntryRepository {
         toUnixSeconds(entry.updatedAt),
       );
     } catch (error) {
-      // better-sqlite3 errors have a 'code' property for SQLite error codes
       const sqliteError = error as { code?: string; message?: string };
       const isConstraintError =
         sqliteError.code?.includes('SQLITE_CONSTRAINT') ||
@@ -65,33 +86,27 @@ export class EntryRepository {
       }
       throw error;
     }
-  }
+  };
 
-  /**
-   * Find entry by ID
-   */
-  findById(id: string): JournalEntry | null {
-    const stmt = this.db.prepare(`
+  const findById = (id: string): JournalEntry | null => {
+    const stmt = db.prepare(`
       SELECT id, timestamp, content, metadata, created_at, updated_at
       FROM entries
       WHERE id = ?
     `);
 
     const row = stmt.get(id) as EntryRow | undefined;
-    return row ? this.rowToEntry(row) : null;
-  }
+    return row ? rowToEntry(row) : null;
+  };
 
-  /**
-   * Find all entries with optional filters
-   */
-  findAll(options?: {
+  const findAll = (options?: {
     limit?: number;
     offset?: number;
     sortBy?: 'timestamp' | 'createdAt' | 'updatedAt';
     order?: 'asc' | 'desc';
     since?: Date;
     until?: Date;
-  }): JournalEntry[] {
+  }): JournalEntry[] => {
     const sortColumn =
       options?.sortBy === 'createdAt'
         ? 'created_at'
@@ -133,24 +148,21 @@ export class EntryRepository {
       params.push(options.offset);
     }
 
-    const stmt = this.db.prepare(sql);
+    const stmt = db.prepare(sql);
     const rows = stmt.all(...params) as EntryRow[];
 
-    return rows.map((row) => this.rowToEntry(row));
-  }
+    return rows.map((row) => rowToEntry(row));
+  };
 
-  /**
-   * Update existing entry
-   */
-  update(
+  const update = (
     id: string,
     updates: {
       content?: string;
       metadata?: Record<string, unknown>;
       timestamp?: Date;
     },
-  ): JournalEntry {
-    const existing = this.findById(id);
+  ): JournalEntry => {
+    const existing = findById(id);
     if (!existing) {
       throw new EntryNotFoundError(id);
     }
@@ -184,40 +196,31 @@ export class EntryRepository {
       WHERE id = ?
     `;
 
-    const stmt = this.db.prepare(sql);
+    const stmt = db.prepare(sql);
     stmt.run(...params);
 
-    const updated = this.findById(id);
+    const updated = findById(id);
     if (!updated) {
       throw new EntryNotFoundError(id);
     }
 
     return updated;
-  }
+  };
 
-  /**
-   * Delete entry by ID
-   */
-  delete(id: string): boolean {
-    const stmt = this.db.prepare('DELETE FROM entries WHERE id = ?');
+  const deleteEntry = (id: string): boolean => {
+    const stmt = db.prepare('DELETE FROM entries WHERE id = ?');
     const result = stmt.run(id);
     return result.changes > 0;
-  }
+  };
 
-  /**
-   * Count total entries
-   */
-  count(): number {
-    const stmt = this.db.prepare('SELECT COUNT(*) as count FROM entries');
+  const count = (): number => {
+    const stmt = db.prepare('SELECT COUNT(*) as count FROM entries');
     const row = stmt.get() as { count: number };
     return row.count;
-  }
+  };
 
-  /**
-   * Search entries by content (simple substring match)
-   */
-  search(query: string): JournalEntry[] {
-    const stmt = this.db.prepare(`
+  const search = (query: string): JournalEntry[] => {
+    const stmt = db.prepare(`
       SELECT id, timestamp, content, metadata, created_at, updated_at
       FROM entries
       WHERE content LIKE ?
@@ -225,6 +228,64 @@ export class EntryRepository {
     `);
 
     const rows = stmt.all(`%${query}%`) as EntryRow[];
-    return rows.map((row) => this.rowToEntry(row));
+    return rows.map((row) => rowToEntry(row));
+  };
+
+  return {
+    insert,
+    findById,
+    findAll,
+    update,
+    delete: deleteEntry,
+    count,
+    search,
+  };
+}
+
+/**
+ * Legacy class export for backward compatibility
+ * @deprecated Use createEntryRepository() instead
+ */
+export class EntryRepository implements EntryRepositoryInterface {
+  private readonly _repo: EntryRepositoryInterface;
+
+  constructor(db: Database.Database) {
+    this._repo = createEntryRepository(db);
+  }
+
+  insert(entry: JournalEntry) {
+    return this._repo.insert(entry);
+  }
+  findById(id: string) {
+    return this._repo.findById(id);
+  }
+  findAll(options?: {
+    limit?: number;
+    offset?: number;
+    sortBy?: 'timestamp' | 'createdAt' | 'updatedAt';
+    order?: 'asc' | 'desc';
+    since?: Date;
+    until?: Date;
+  }) {
+    return this._repo.findAll(options);
+  }
+  update(
+    id: string,
+    updates: {
+      content?: string;
+      metadata?: Record<string, unknown>;
+      timestamp?: Date;
+    },
+  ) {
+    return this._repo.update(id, updates);
+  }
+  delete(id: string) {
+    return this._repo.delete(id);
+  }
+  count() {
+    return this._repo.count();
+  }
+  search(query: string) {
+    return this._repo.search(query);
   }
 }

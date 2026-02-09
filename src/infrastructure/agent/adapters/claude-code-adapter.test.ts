@@ -1,15 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AgentType } from '../types.js';
-import { ClaudeCodeAdapter } from './claude-code-adapter.js';
+import { createClaudeCodeAdapter } from './claude-code-adapter.js';
+import type { AgentAdapter } from './types.js';
 
-describe('ClaudeCodeAdapter', () => {
-  let adapter: ClaudeCodeAdapter;
+describe('createClaudeCodeAdapter', () => {
+  let adapter: AgentAdapter;
   const originalEnv = process.env;
 
   beforeEach(() => {
     vi.resetModules();
     process.env = { ...originalEnv };
-    adapter = new ClaudeCodeAdapter();
+    adapter = createClaudeCodeAdapter();
   });
 
   afterEach(() => {

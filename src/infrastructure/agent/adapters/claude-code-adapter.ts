@@ -1,103 +1,142 @@
-import {
-  type ClaudeCodeProcessingDetector,
-  createClaudeCodeProcessingDetector,
-} from '../detectors/claude-code-processing-detector.js';
+import { createClaudeCodeProcessingDetector } from '../detectors/claude-code-processing-detector.js';
 import type { ProcessingDetector, ProcessingStateCallback } from '../processing-detector.js';
 import { AgentType } from '../types.js';
-import { BaseAgentAdapter } from './base-adapter.js';
-import type { AgentCapabilities, AgentContext, AgentState, SendContextResult } from './types.js';
+import type {
+  AgentAdapter,
+  AgentCapabilities,
+  AgentContext,
+  AgentState,
+  SendContextResult,
+} from './types.js';
 
 /**
- * Adapter for Claude Code CLI agent
+ * Extended adapter interface with processing detector support
  */
-export class ClaudeCodeAdapter extends BaseAgentAdapter {
-  readonly agentType = AgentType.ClaudeCode;
-  private processingDetector: ClaudeCodeProcessingDetector;
+export interface ClaudeCodeAgentAdapter extends AgentAdapter {
+  getProcessingDetector(): ProcessingDetector;
+  startProcessingMonitor(): void;
+  stopProcessingMonitor(): void;
+  onProcessingStateChange(callback: ProcessingStateCallback): () => void;
+}
 
-  constructor(pollingIntervalMs?: number) {
-    super();
-    this.processingDetector = createClaudeCodeProcessingDetector(pollingIntervalMs);
-  }
+/**
+ * Create adapter for Claude Code CLI agent
+ */
+export function createClaudeCodeAdapter(pollingIntervalMs?: number): ClaudeCodeAgentAdapter {
+  const agentType = AgentType.ClaudeCode;
+  const processingDetector = createClaudeCodeProcessingDetector(pollingIntervalMs);
 
-  async getState(): Promise<AgentState> {
-    const sessionId = this.getEnvVar('CLAUDE_CODE_SESSION_ID');
-    const version = this.getEnvVar('CLAUDE_CODE_VERSION');
-    const isProcessing = await this.processingDetector.isProcessing();
+  const healthCheck = async (): Promise<boolean> => {
+    return (
+      process.env['CLAUDE_CODE'] !== undefined ||
+      process.env['CLAUDE_CODE_VERSION'] !== undefined ||
+      process.env['CLAUDE_CODE_SESSION_ID'] !== undefined
+    );
+  };
+
+  const getState = async (): Promise<AgentState> => {
+    const sessionId = process.env['CLAUDE_CODE_SESSION_ID'];
+    const version = process.env['CLAUDE_CODE_VERSION'];
+    const isProcessing = await processingDetector.isProcessing();
 
     return {
-      isActive: await this.healthCheck(),
+      isActive: await healthCheck(),
       workingDirectory: process.cwd(),
       sessionId,
       isProcessing,
-      processingStartTime: this.processingDetector.getProcessingStartTime(),
+      processingStartTime: processingDetector.getProcessingStartTime(),
       metadata: {
         version: version ?? 'unknown',
-        termProgram: this.getEnvVar('TERM_PROGRAM'),
+        termProgram: process.env['TERM_PROGRAM'],
       },
     };
-  }
+  };
 
-  /**
-   * Get the processing detector for this adapter
-   */
-  getProcessingDetector(): ProcessingDetector {
-    return this.processingDetector;
-  }
-
-  /**
-   * Start monitoring for processing state changes
-   */
-  startProcessingMonitor(): void {
-    this.processingDetector.startMonitoring();
-  }
-
-  /**
-   * Stop monitoring for processing state changes
-   */
-  stopProcessingMonitor(): void {
-    this.processingDetector.stopMonitoring();
-  }
-
-  /**
-   * Subscribe to processing state changes
-   */
-  onProcessingStateChange(callback: ProcessingStateCallback): () => void {
-    return this.processingDetector.onStateChange(callback);
-  }
-
-  async sendContext(context: AgentContext): Promise<SendContextResult> {
-    // Claude Code operates within the CLI context
-    // Context is available through the file system and environment
-    // No direct communication protocol needed
+  const sendContext = async (context: AgentContext): Promise<SendContextResult> => {
     return {
       success: true,
       response: `Context type '${context.type}' acknowledged by Claude Code adapter`,
     };
+  };
+
+  const getCapabilities = (): AgentCapabilities => ({
+    canReceiveContext: true,
+    canAccessFiles: true,
+    canAccessTerminal: true,
+    supportsStreaming: true,
+    custom: {
+      hasMCP: true,
+      hasToolUse: true,
+    },
+  });
+
+  const getDisplayName = (): string => 'Claude Code';
+
+  const getProcessingDetector = (): ProcessingDetector => processingDetector;
+
+  const startProcessingMonitor = (): void => {
+    processingDetector.startMonitoring();
+  };
+
+  const stopProcessingMonitor = (): void => {
+    processingDetector.stopMonitoring();
+  };
+
+  const onProcessingStateChange = (callback: ProcessingStateCallback): (() => void) => {
+    return processingDetector.onStateChange(callback);
+  };
+
+  return {
+    agentType,
+    getState,
+    sendContext,
+    getCapabilities,
+    healthCheck,
+    getDisplayName,
+    getProcessingDetector,
+    startProcessingMonitor,
+    stopProcessingMonitor,
+    onProcessingStateChange,
+  };
+}
+
+/**
+ * Legacy class export for backward compatibility
+ * @deprecated Use createClaudeCodeAdapter() instead
+ */
+export class ClaudeCodeAdapter implements ClaudeCodeAgentAdapter {
+  readonly agentType = AgentType.ClaudeCode;
+  private readonly _adapter: ClaudeCodeAgentAdapter;
+
+  constructor(pollingIntervalMs?: number) {
+    this._adapter = createClaudeCodeAdapter(pollingIntervalMs);
   }
 
-  getCapabilities(): AgentCapabilities {
-    return {
-      canReceiveContext: true,
-      canAccessFiles: true,
-      canAccessTerminal: true,
-      supportsStreaming: true,
-      custom: {
-        hasMCP: true,
-        hasToolUse: true,
-      },
-    };
+  async getState() {
+    return this._adapter.getState();
   }
-
-  async healthCheck(): Promise<boolean> {
-    // Check for Claude Code environment indicators
-    return (
-      this.hasEnvVar('CLAUDE_CODE') ||
-      this.hasEnvVar('CLAUDE_CODE_VERSION') ||
-      this.hasEnvVar('CLAUDE_CODE_SESSION_ID')
-    );
+  async sendContext(context: AgentContext) {
+    return this._adapter.sendContext(context);
   }
-
-  getDisplayName(): string {
-    return 'Claude Code';
+  getCapabilities() {
+    return this._adapter.getCapabilities();
+  }
+  async healthCheck() {
+    return this._adapter.healthCheck();
+  }
+  getDisplayName() {
+    return this._adapter.getDisplayName();
+  }
+  getProcessingDetector() {
+    return this._adapter.getProcessingDetector();
+  }
+  startProcessingMonitor() {
+    return this._adapter.startProcessingMonitor();
+  }
+  stopProcessingMonitor() {
+    return this._adapter.stopProcessingMonitor();
+  }
+  onProcessingStateChange(callback: ProcessingStateCallback) {
+    return this._adapter.onProcessingStateChange(callback);
   }
 }

@@ -1,12 +1,17 @@
 // Agent detection
-export { AgentDetectorService, detectAgent, getAgentDetector } from './agent-detector.js';
 export {
-  ClaudeCodeDetector,
+  type AgentDetectorService,
+  createAgentDetectorService,
+  detectAgent,
+  getAgentDetector,
+} from './agent-detector.js';
+export {
+  claudeCodeDetector,
   ClaudeCodeProcessingDetector,
   createClaudeCodeProcessingDetector,
-  CursorDetector,
-  GeminiCLIDetector,
-  WindsurfDetector,
+  cursorDetector,
+  geminiCLIDetector,
+  windsurfDetector,
 } from './detectors/index.js';
 export { logAgentDetection } from './logger.js';
 export {
@@ -22,17 +27,24 @@ export {
   type AgentCapabilities,
   type AgentContext,
   type AgentState,
-  BaseAgentAdapter,
-  ClaudeCodeAdapter,
+  type SendContextResult,
+  // Factory functions (preferred)
   createAdapter,
   createAdapterFromDetection,
-  CursorAdapter,
-  GeminiCLIAdapter,
+  createClaudeCodeAdapter,
+  createCursorAdapter,
+  createGeminiCLIAdapter,
+  createWindsurfAdapter,
+  unknownAdapter,
+  // Adapter registry
   getAdapter,
   getRegisteredAdapterTypes,
   registerAdapter,
+  registerAdapterClass,
   resetAdapter,
-  type SendContextResult,
-  UnknownAdapter,
+  // Legacy class exports (deprecated)
+  ClaudeCodeAdapter,
+  CursorAdapter,
+  GeminiCLIAdapter,
   WindsurfAdapter,
 } from './adapters/index.js';

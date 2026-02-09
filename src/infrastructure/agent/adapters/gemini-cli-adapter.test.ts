@@ -1,15 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AgentType } from '../types.js';
-import { GeminiCLIAdapter } from './gemini-cli-adapter.js';
+import { createGeminiCLIAdapter } from './gemini-cli-adapter.js';
+import type { AgentAdapter } from './types.js';
 
-describe('GeminiCLIAdapter', () => {
-  let adapter: GeminiCLIAdapter;
+describe('createGeminiCLIAdapter', () => {
+  let adapter: AgentAdapter;
   const originalEnv = process.env;
 
   beforeEach(() => {
     vi.resetModules();
     process.env = { ...originalEnv };
-    adapter = new GeminiCLIAdapter();
+    adapter = createGeminiCLIAdapter();
   });
 
   afterEach(() => {

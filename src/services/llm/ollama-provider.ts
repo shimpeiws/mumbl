@@ -1,48 +1,50 @@
-import { AIMessage, HumanMessage, SystemMessage } from '@langchain/core/messages';
-import type { BaseMessage } from '@langchain/core/messages';
 /**
  * Ollama LLM Provider implementation using LangChain
  */
+import { AIMessage, HumanMessage, SystemMessage } from '@langchain/core/messages';
+import type { BaseMessage } from '@langchain/core/messages';
 import { ChatOllama } from '@langchain/ollama';
 import { ProviderUnavailableError, StreamError } from './errors.js';
 import type { ChatResponse, LLMProvider, Message, ModelConfig, StreamChunk } from './types.js';
 import { DEFAULT_OLLAMA_BASE_URL, DEFAULT_OLLAMA_MODEL, DEFAULT_TEMPERATURE } from './types.js';
 
-export class OllamaProvider implements LLMProvider {
-  private model: ChatOllama;
-  private modelName: string;
+/**
+ * Convert messages to LangChain format
+ */
+function convertMessages(messages: Message[]): BaseMessage[] {
+  return messages.map((msg) => {
+    switch (msg.role) {
+      case 'system':
+        return new SystemMessage(msg.content);
+      case 'user':
+        return new HumanMessage(msg.content);
+      case 'assistant':
+        return new AIMessage(msg.content);
+    }
+  });
+}
 
-  constructor(config?: Partial<ModelConfig>) {
-    this.modelName = config?.model ?? DEFAULT_OLLAMA_MODEL;
-    this.model = new ChatOllama({
-      model: this.modelName,
-      baseUrl: config?.baseUrl ?? DEFAULT_OLLAMA_BASE_URL,
-      temperature: config?.temperature ?? DEFAULT_TEMPERATURE,
-      maxRetries: 2,
-    });
-  }
+/**
+ * Create an Ollama LLM provider
+ */
+export function createOllamaProvider(config?: Partial<ModelConfig>): LLMProvider {
+  const modelName = config?.model ?? DEFAULT_OLLAMA_MODEL;
+  const baseUrl = config?.baseUrl ?? DEFAULT_OLLAMA_BASE_URL;
+  const model = new ChatOllama({
+    model: modelName,
+    baseUrl,
+    temperature: config?.temperature ?? DEFAULT_TEMPERATURE,
+    maxRetries: 2,
+  });
 
-  private convertMessages(messages: Message[]): BaseMessage[] {
-    return messages.map((msg) => {
-      switch (msg.role) {
-        case 'system':
-          return new SystemMessage(msg.content);
-        case 'user':
-          return new HumanMessage(msg.content);
-        case 'assistant':
-          return new AIMessage(msg.content);
-      }
-    });
-  }
-
-  async chat(messages: Message[]): Promise<ChatResponse> {
+  const chat = async (messages: Message[]): Promise<ChatResponse> => {
     try {
-      const langchainMessages = this.convertMessages(messages);
-      const response = await this.model.invoke(langchainMessages);
+      const langchainMessages = convertMessages(messages);
+      const response = await model.invoke(langchainMessages);
 
       return {
         content: typeof response.content === 'string' ? response.content : '',
-        model: this.modelName,
+        model: modelName,
         finishReason: 'stop',
       };
     } catch (error) {
@@ -53,14 +55,14 @@ export class OllamaProvider implements LLMProvider {
       }
       throw error;
     }
-  }
+  };
 
-  async *stream(messages: Message[]): AsyncIterable<StreamChunk> {
+  async function* stream(messages: Message[]): AsyncIterable<StreamChunk> {
     try {
-      const langchainMessages = this.convertMessages(messages);
-      const stream = await this.model.stream(langchainMessages);
+      const langchainMessages = convertMessages(messages);
+      const streamResult = await model.stream(langchainMessages);
 
-      for await (const chunk of stream) {
+      for await (const chunk of streamResult) {
         const content = typeof chunk.content === 'string' ? chunk.content : '';
         yield {
           content,
@@ -83,20 +85,52 @@ export class OllamaProvider implements LLMProvider {
     }
   }
 
-  async healthCheck(): Promise<boolean> {
+  const healthCheck = async (): Promise<boolean> => {
     try {
-      const response = await fetch(`${DEFAULT_OLLAMA_BASE_URL}/api/tags`);
+      const response = await fetch(`${baseUrl}/api/tags`);
       return response.ok;
     } catch {
       return false;
     }
+  };
+
+  const getProviderName = (): 'ollama' => 'ollama';
+
+  const getModelName = (): string => modelName;
+
+  return {
+    chat,
+    stream,
+    healthCheck,
+    getProviderName,
+    getModelName,
+  };
+}
+
+/**
+ * Legacy class export for backward compatibility
+ * @deprecated Use createOllamaProvider() instead
+ */
+export class OllamaProvider implements LLMProvider {
+  private readonly _provider: LLMProvider;
+
+  constructor(config?: Partial<ModelConfig>) {
+    this._provider = createOllamaProvider(config);
   }
 
-  getProviderName(): 'ollama' {
-    return 'ollama';
+  chat(messages: Message[]) {
+    return this._provider.chat(messages);
   }
-
-  getModelName(): string {
-    return this.modelName;
+  stream(messages: Message[]) {
+    return this._provider.stream(messages);
+  }
+  healthCheck() {
+    return this._provider.healthCheck();
+  }
+  getProviderName() {
+    return this._provider.getProviderName();
+  }
+  getModelName() {
+    return this._provider.getModelName();
   }
 }

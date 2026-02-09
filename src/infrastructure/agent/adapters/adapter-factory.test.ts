@@ -6,14 +6,11 @@ import {
   getAdapter,
   getRegisteredAdapterTypes,
   registerAdapter,
+  registerAdapterClass,
   resetAdapter,
 } from './adapter-factory.js';
-import { ClaudeCodeAdapter } from './claude-code-adapter.js';
-import { CursorAdapter } from './cursor-adapter.js';
-import { GeminiCLIAdapter } from './gemini-cli-adapter.js';
 import type { AgentAdapter, AgentCapabilities } from './types.js';
-import { UnknownAdapter } from './unknown-adapter.js';
-import { WindsurfAdapter } from './windsurf-adapter.js';
+import { unknownAdapter } from './unknown-adapter.js';
 
 describe('adapter-factory', () => {
   beforeEach(() => {
@@ -27,46 +24,46 @@ describe('adapter-factory', () => {
   });
 
   describe('createAdapter', () => {
-    it('should create ClaudeCodeAdapter for ClaudeCode type', () => {
+    it('should create adapter for ClaudeCode type', () => {
       const adapter = createAdapter(AgentType.ClaudeCode);
 
-      expect(adapter).toBeInstanceOf(ClaudeCodeAdapter);
       expect(adapter.agentType).toBe(AgentType.ClaudeCode);
+      expect(adapter.getDisplayName()).toBe('Claude Code');
     });
 
-    it('should create CursorAdapter for Cursor type', () => {
+    it('should create adapter for Cursor type', () => {
       const adapter = createAdapter(AgentType.Cursor);
 
-      expect(adapter).toBeInstanceOf(CursorAdapter);
       expect(adapter.agentType).toBe(AgentType.Cursor);
+      expect(adapter.getDisplayName()).toBe('Cursor');
     });
 
-    it('should create WindsurfAdapter for Windsurf type', () => {
+    it('should create adapter for Windsurf type', () => {
       const adapter = createAdapter(AgentType.Windsurf);
 
-      expect(adapter).toBeInstanceOf(WindsurfAdapter);
       expect(adapter.agentType).toBe(AgentType.Windsurf);
+      expect(adapter.getDisplayName()).toBe('Windsurf');
     });
 
-    it('should create GeminiCLIAdapter for GeminiCLI type', () => {
+    it('should create adapter for GeminiCLI type', () => {
       const adapter = createAdapter(AgentType.GeminiCLI);
 
-      expect(adapter).toBeInstanceOf(GeminiCLIAdapter);
       expect(adapter.agentType).toBe(AgentType.GeminiCLI);
+      expect(adapter.getDisplayName()).toBe('Gemini CLI');
     });
 
-    it('should create UnknownAdapter for Unknown type', () => {
+    it('should return unknownAdapter for Unknown type', () => {
       const adapter = createAdapter(AgentType.Unknown);
 
-      expect(adapter).toBeInstanceOf(UnknownAdapter);
+      expect(adapter).toBe(unknownAdapter);
       expect(adapter.agentType).toBe(AgentType.Unknown);
     });
 
-    it('should fallback to UnknownAdapter for unregistered type', () => {
+    it('should fallback to unknownAdapter for unregistered type', () => {
       // Force an unregistered type by casting
       const adapter = createAdapter('unregistered' as AgentType);
 
-      expect(adapter).toBeInstanceOf(UnknownAdapter);
+      expect(adapter).toBe(unknownAdapter);
     });
   });
 
@@ -79,10 +76,10 @@ describe('adapter-factory', () => {
 
       const adapter = createAdapterFromDetection(detectionResult);
 
-      expect(adapter).toBeInstanceOf(ClaudeCodeAdapter);
+      expect(adapter.agentType).toBe(AgentType.ClaudeCode);
     });
 
-    it('should create UnknownAdapter for unknown detection', () => {
+    it('should return unknownAdapter for unknown detection', () => {
       const detectionResult = {
         agent: AgentType.Unknown,
         detectionMethod: 'fallback' as const,
@@ -90,7 +87,7 @@ describe('adapter-factory', () => {
 
       const adapter = createAdapterFromDetection(detectionResult);
 
-      expect(adapter).toBeInstanceOf(UnknownAdapter);
+      expect(adapter).toBe(unknownAdapter);
     });
   });
 
@@ -108,40 +105,54 @@ describe('adapter-factory', () => {
   });
 
   describe('registerAdapter', () => {
-    it('should register custom adapter', () => {
-      class CustomAdapter implements AgentAdapter {
-        readonly agentType = 'custom' as AgentType;
-        async getState() {
-          return { isActive: true };
-        }
-        async sendContext() {
-          return { success: true };
-        }
-        getCapabilities(): AgentCapabilities {
-          return {
-            canReceiveContext: true,
-            canAccessFiles: false,
-            canAccessTerminal: false,
-            supportsStreaming: false,
-          };
-        }
-        async healthCheck() {
-          return true;
-        }
-        getDisplayName() {
-          return 'Custom';
-        }
-      }
+    it('should register custom adapter factory', () => {
+      const customFactory = (): AgentAdapter => ({
+        agentType: 'custom' as AgentType,
+        getState: async () => ({ isActive: true }),
+        sendContext: async () => ({ success: true }),
+        getCapabilities: (): AgentCapabilities => ({
+          canReceiveContext: true,
+          canAccessFiles: false,
+          canAccessTerminal: false,
+          supportsStreaming: false,
+        }),
+        healthCheck: async () => true,
+        getDisplayName: () => 'Custom',
+      });
 
-      registerAdapter('custom' as AgentType, CustomAdapter);
+      registerAdapter('custom' as AgentType, customFactory);
       const adapter = createAdapter('custom' as AgentType);
 
-      expect(adapter).toBeInstanceOf(CustomAdapter);
+      expect(adapter.agentType).toBe('custom');
+      expect(adapter.getDisplayName()).toBe('Custom');
     });
 
     it('should override existing adapter registration', () => {
-      class NewClaudeAdapter implements AgentAdapter {
-        readonly agentType = AgentType.ClaudeCode;
+      const newClaudeFactory = (): AgentAdapter => ({
+        agentType: AgentType.ClaudeCode,
+        getState: async () => ({ isActive: true }),
+        sendContext: async () => ({ success: true }),
+        getCapabilities: (): AgentCapabilities => ({
+          canReceiveContext: true,
+          canAccessFiles: false,
+          canAccessTerminal: false,
+          supportsStreaming: false,
+        }),
+        healthCheck: async () => true,
+        getDisplayName: () => 'New Claude',
+      });
+
+      registerAdapter(AgentType.ClaudeCode, newClaudeFactory);
+      const adapter = createAdapter(AgentType.ClaudeCode);
+
+      expect(adapter.getDisplayName()).toBe('New Claude');
+    });
+  });
+
+  describe('registerAdapterClass (legacy)', () => {
+    it('should register custom adapter class', () => {
+      class CustomAdapter implements AgentAdapter {
+        readonly agentType = 'custom-class' as AgentType;
         async getState() {
           return { isActive: true };
         }
@@ -160,15 +171,15 @@ describe('adapter-factory', () => {
           return true;
         }
         getDisplayName() {
-          return 'New Claude';
+          return 'Custom Class';
         }
       }
 
-      registerAdapter(AgentType.ClaudeCode, NewClaudeAdapter);
-      const adapter = createAdapter(AgentType.ClaudeCode);
+      registerAdapterClass('custom-class' as AgentType, CustomAdapter);
+      const adapter = createAdapter('custom-class' as AgentType);
 
-      expect(adapter).toBeInstanceOf(NewClaudeAdapter);
-      expect(adapter.getDisplayName()).toBe('New Claude');
+      expect(adapter.agentType).toBe('custom-class');
+      expect(adapter.getDisplayName()).toBe('Custom Class');
     });
   });
 
@@ -186,10 +197,10 @@ describe('adapter-factory', () => {
       expect(adapter2.agentType).toBe(AgentType.ClaudeCode);
     });
 
-    it('should return UnknownAdapter when no cache and no detection result', () => {
+    it('should return unknownAdapter when no cache and no detection result', () => {
       const adapter = getAdapter();
 
-      expect(adapter).toBeInstanceOf(UnknownAdapter);
+      expect(adapter).toBe(unknownAdapter);
     });
 
     it('should update cache when new detection result provided', () => {
@@ -220,7 +231,7 @@ describe('adapter-factory', () => {
       resetAdapter();
       const adapter = getAdapter();
 
-      expect(adapter).toBeInstanceOf(UnknownAdapter);
+      expect(adapter).toBe(unknownAdapter);
     });
   });
 });

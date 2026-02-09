@@ -1,15 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AgentType } from '../types.js';
-import { WindsurfAdapter } from './windsurf-adapter.js';
+import type { AgentAdapter } from './types.js';
+import { createWindsurfAdapter } from './windsurf-adapter.js';
 
-describe('WindsurfAdapter', () => {
-  let adapter: WindsurfAdapter;
+describe('createWindsurfAdapter', () => {
+  let adapter: AgentAdapter;
   const originalEnv = process.env;
 
   beforeEach(() => {
     vi.resetModules();
     process.env = { ...originalEnv };
-    adapter = new WindsurfAdapter();
+    adapter = createWindsurfAdapter();
   });
 
   afterEach(() => {

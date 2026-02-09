@@ -3,7 +3,7 @@ import {
   OllamaConnectionError,
   OllamaModelNotFoundError,
 } from '../infrastructure/errors/ollama-errors.js';
-import { OllamaService } from './ollama-service.js';
+import { ollamaService } from './ollama-service.js';
 
 // Mock the client module
 vi.mock('../infrastructure/ollama/client.js', () => ({
@@ -19,11 +19,8 @@ const mockConfig = {
   timeout: 30000,
 };
 
-describe('OllamaService', () => {
-  let service: OllamaService;
-
+describe('ollamaService', () => {
   beforeEach(async () => {
-    service = new OllamaService();
     vi.clearAllMocks();
 
     // Reset mock implementation for getOllamaClientConfig
@@ -43,7 +40,7 @@ describe('OllamaService', () => {
         baseUrl: 'http://localhost:11434',
       });
 
-      const health = await service.checkHealth();
+      const health = await ollamaService.checkHealth();
 
       expect(health.isConnected).toBe(true);
       expect(health.baseUrl).toBe('http://localhost:11434');
@@ -58,7 +55,7 @@ describe('OllamaService', () => {
         baseUrl: 'http://localhost:11434',
       });
 
-      await expect(service.ensureConnected()).resolves.not.toThrow();
+      await expect(ollamaService.ensureConnected()).resolves.not.toThrow();
     });
 
     it('should throw OllamaConnectionError when disconnected', async () => {
@@ -69,7 +66,7 @@ describe('OllamaService', () => {
         error: 'Connection refused',
       });
 
-      await expect(service.ensureConnected()).rejects.toThrow(OllamaConnectionError);
+      await expect(ollamaService.ensureConnected()).rejects.toThrow(OllamaConnectionError);
     });
   });
 
@@ -89,7 +86,7 @@ describe('OllamaService', () => {
         },
       ]);
 
-      const models = await service.getAvailableModels();
+      const models = await ollamaService.getAvailableModels();
 
       expect(models).toHaveLength(1);
       expect(models[0]?.name).toBe('qwen2.5-coder:7b');
@@ -103,7 +100,7 @@ describe('OllamaService', () => {
         error: 'Connection refused',
       });
 
-      await expect(service.getAvailableModels()).rejects.toThrow(OllamaConnectionError);
+      await expect(ollamaService.getAvailableModels()).rejects.toThrow(OllamaConnectionError);
     });
   });
 
@@ -118,7 +115,7 @@ describe('OllamaService', () => {
       });
       vi.mocked(isModelAvailable).mockResolvedValue(true);
 
-      const result = await service.checkDefaultModel();
+      const result = await ollamaService.checkDefaultModel();
 
       expect(result.isAvailable).toBe(true);
       expect(result.model).toBe('qwen2.5-coder:7b');
@@ -135,7 +132,7 @@ describe('OllamaService', () => {
       });
       vi.mocked(isModelAvailable).mockResolvedValue(false);
 
-      const result = await service.checkDefaultModel();
+      const result = await ollamaService.checkDefaultModel();
 
       expect(result.isAvailable).toBe(false);
       expect(result.error).toContain('is not installed');
@@ -149,7 +146,7 @@ describe('OllamaService', () => {
         error: 'Connection refused',
       });
 
-      const result = await service.checkDefaultModel();
+      const result = await ollamaService.checkDefaultModel();
 
       expect(result.isAvailable).toBe(false);
       expect(result.error).toContain('Cannot connect');
@@ -167,7 +164,7 @@ describe('OllamaService', () => {
       });
       vi.mocked(isModelAvailable).mockResolvedValue(true);
 
-      await expect(service.ensureModelAvailable()).resolves.not.toThrow();
+      await expect(ollamaService.ensureModelAvailable()).resolves.not.toThrow();
     });
 
     it('should throw OllamaModelNotFoundError when model not available', async () => {
@@ -180,7 +177,7 @@ describe('OllamaService', () => {
       });
       vi.mocked(isModelAvailable).mockResolvedValue(false);
 
-      await expect(service.ensureModelAvailable('missing-model')).rejects.toThrow(
+      await expect(ollamaService.ensureModelAvailable('missing-model')).rejects.toThrow(
         OllamaModelNotFoundError,
       );
     });
@@ -193,13 +190,13 @@ describe('OllamaService', () => {
         error: 'Connection refused',
       });
 
-      await expect(service.ensureModelAvailable()).rejects.toThrow(OllamaConnectionError);
+      await expect(ollamaService.ensureModelAvailable()).rejects.toThrow(OllamaConnectionError);
     });
   });
 
   describe('getDefaultModel', () => {
     it('should return configured default model', () => {
-      const model = service.getDefaultModel();
+      const model = ollamaService.getDefaultModel();
 
       expect(model).toBe('qwen2.5-coder:7b');
     });
@@ -207,7 +204,7 @@ describe('OllamaService', () => {
 
   describe('getBaseUrl', () => {
     it('should return configured base URL', () => {
-      const url = service.getBaseUrl();
+      const url = ollamaService.getBaseUrl();
 
       expect(url).toBe('http://localhost:11434');
     });

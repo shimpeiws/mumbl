@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AgentType } from '../types.js';
-import { CursorDetector } from './cursor-detector.js';
+import { cursorDetector } from './cursor-detector.js';
 
-describe('CursorDetector', () => {
+describe('cursorDetector', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
@@ -14,15 +14,13 @@ describe('CursorDetector', () => {
   });
 
   it('should have correct agent type', () => {
-    const detector = new CursorDetector();
-    expect(detector.agentType).toBe(AgentType.Cursor);
+    expect(cursorDetector.agentType).toBe(AgentType.Cursor);
   });
 
   it('should detect via CURSOR_SESSION_ID env var', async () => {
     process.env.CURSOR_SESSION_ID = 'session-456';
 
-    const detector = new CursorDetector();
-    const result = await detector.detect();
+    const result = await cursorDetector.detect();
 
     expect(result).toEqual({
       agent: AgentType.Cursor,
@@ -37,8 +35,7 @@ describe('CursorDetector', () => {
   it('should detect via CURSOR_EDITOR env var', async () => {
     process.env.CURSOR_EDITOR = 'true';
 
-    const detector = new CursorDetector();
-    const result = await detector.detect();
+    const result = await cursorDetector.detect();
 
     expect(result).toEqual({
       agent: AgentType.Cursor,
@@ -53,8 +50,7 @@ describe('CursorDetector', () => {
   it('should detect via TERM_PROGRAM=Cursor', async () => {
     process.env.TERM_PROGRAM = 'Cursor';
 
-    const detector = new CursorDetector();
-    const result = await detector.detect();
+    const result = await cursorDetector.detect();
 
     expect(result).toEqual({
       agent: AgentType.Cursor,
@@ -72,8 +68,7 @@ describe('CursorDetector', () => {
     delete process.env.CURSOR_TRACE_ID;
     delete process.env.TERM_PROGRAM;
 
-    const detector = new CursorDetector();
-    const result = await detector.detect();
+    const result = await cursorDetector.detect();
 
     expect(result).toBeNull();
   });
@@ -81,8 +76,7 @@ describe('CursorDetector', () => {
   it('should return null when TERM_PROGRAM is not Cursor', async () => {
     process.env.TERM_PROGRAM = 'vscode';
 
-    const detector = new CursorDetector();
-    const result = await detector.detect();
+    const result = await cursorDetector.detect();
 
     expect(result).toBeNull();
   });
@@ -90,8 +84,7 @@ describe('CursorDetector', () => {
   it('should return null when env var is empty string', async () => {
     process.env.CURSOR_SESSION_ID = '';
 
-    const detector = new CursorDetector();
-    const result = await detector.detect();
+    const result = await cursorDetector.detect();
 
     expect(result).toBeNull();
   });

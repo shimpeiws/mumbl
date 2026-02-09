@@ -13,9 +13,10 @@ import {
   type ContextEntry,
   DEFAULT_CONTEXT_OPTIONS,
   type JournalContext,
-  PermissionManager,
-  RelevanceFilter,
   type ScoredEntry,
+  filterByPermission,
+  filterByRelevance,
+  getEntryPermission,
 } from '../../infrastructure/agent/context/index.js';
 import type { AgentType } from '../../infrastructure/agent/types.js';
 import type { JournalEntry } from '../../repositories/types.js';
@@ -28,72 +29,147 @@ import { DEFAULT_CONTEXT_SHARING_CONFIG } from './types.js';
 const TOKENS_PER_CHAR = 0.25;
 
 /**
- * Service for sharing journal context with AI agents
+ * Context sharing service interface
  */
-export class ContextSharingService {
-  private config: ContextSharingConfig;
-  private permissionManager: PermissionManager;
-  private relevanceFilter: RelevanceFilter;
-  private formatters: Map<AgentType, BaseContextFormatter>;
+export interface ContextSharingService {
+  isEnabled(): boolean;
+  updateConfig(config: Partial<ContextSharingConfig>): void;
+  getConfig(): ContextSharingConfig;
+  registerFormatter(formatter: BaseContextFormatter): void;
+  getFormatter(agentType: AgentType): BaseContextFormatter;
+  buildContext(entries: JournalEntry[], options: BuildContextOptions): Promise<JournalContext>;
+  getContextForAgent(
+    entries: JournalEntry[],
+    agentType: AgentType,
+    options: ContextRequestOptions,
+  ): Promise<ContextResult>;
+  getSummaryContext(
+    entries: JournalEntry[],
+    agentType: AgentType,
+    options?: Partial<ContextRequestOptions>,
+  ): Promise<ContextResult>;
+  getRecentContext(
+    entries: JournalEntry[],
+    agentType: AgentType,
+    options?: Partial<ContextRequestOptions>,
+  ): Promise<ContextResult>;
+  getRelevantContext(
+    entries: JournalEntry[],
+    agentType: AgentType,
+    query: string,
+    options?: Partial<ContextRequestOptions>,
+  ): Promise<ContextResult>;
+}
 
-  constructor(config: Partial<ContextSharingConfig> = {}) {
-    this.config = { ...DEFAULT_CONTEXT_SHARING_CONFIG, ...config };
-    this.permissionManager = new PermissionManager();
-    this.relevanceFilter = new RelevanceFilter();
-    this.formatters = new Map();
+/**
+ * Create a new ContextSharingService instance
+ */
+export function createContextSharingService(
+  initialConfig: Partial<ContextSharingConfig> = {},
+): ContextSharingService {
+  let config: ContextSharingConfig = { ...DEFAULT_CONTEXT_SHARING_CONFIG, ...initialConfig };
+  const formatters = new Map<AgentType, BaseContextFormatter>();
 
-    // Register default formatters
-    this.registerFormatter(new ClaudeCodeFormatter());
-  }
-
-  /**
-   * Check if context sharing is enabled
-   */
-  isEnabled(): boolean {
-    return this.config.enabled;
-  }
-
-  /**
-   * Update configuration
-   */
-  updateConfig(config: Partial<ContextSharingConfig>): void {
-    this.config = { ...this.config, ...config };
-  }
-
-  /**
-   * Get current configuration
-   */
-  getConfig(): ContextSharingConfig {
-    return { ...this.config };
-  }
-
-  /**
-   * Register a custom formatter for an agent type
-   */
-  registerFormatter(formatter: BaseContextFormatter): void {
-    this.formatters.set(formatter.agentType, formatter);
-  }
-
-  /**
-   * Get a formatter for the specified agent type
-   * Falls back to ClaudeCode formatter if not found
-   */
-  getFormatter(agentType: AgentType): BaseContextFormatter {
-    return this.formatters.get(agentType) ?? new ClaudeCodeFormatter();
-  }
+  // Register default formatters
+  const defaultFormatter = new ClaudeCodeFormatter();
+  formatters.set(defaultFormatter.agentType, defaultFormatter);
 
   /**
-   * Build journal context from entries
+   * Estimate token count for text
    */
-  async buildContext(
+  const estimateTokens = (text: string): number => {
+    return text.length * TOKENS_PER_CHAR;
+  };
+
+  /**
+   * Calculate time range from context entries
+   */
+  const calculateTimeRange = (entries: ContextEntry[]): { start: Date; end: Date } | undefined => {
+    if (entries.length === 0) {
+      return undefined;
+    }
+
+    const timestamps = entries.map((e) => e.timestamp.getTime());
+    return {
+      start: new Date(Math.min(...timestamps)),
+      end: new Date(Math.max(...timestamps)),
+    };
+  };
+
+  /**
+   * Convert scored entries to context entries with token limiting
+   */
+  const convertToContextEntries = (
+    scoredEntries: ScoredEntry[],
+    maxTokens: number,
+  ): { contextEntries: ContextEntry[]; wasTruncated: boolean; estimatedTokens: number } => {
+    const contextEntries: ContextEntry[] = [];
+    let totalTokens = 0;
+    let wasTruncated = false;
+
+    for (const { entry, score } of scoredEntries) {
+      const entryTokens = estimateTokens(entry.content);
+
+      if (totalTokens + entryTokens > maxTokens) {
+        // Truncate this entry to fit
+        const remainingTokens = maxTokens - totalTokens;
+        if (remainingTokens > 50) {
+          // Only include if we have meaningful space
+          const maxChars = Math.floor(remainingTokens / TOKENS_PER_CHAR);
+          const truncatedContent = entry.content.substring(0, maxChars);
+          contextEntries.push({
+            id: entry.id,
+            timestamp: entry.timestamp,
+            content: truncatedContent,
+            isTruncated: true,
+            relevanceScore: score,
+            permissionLevel: getEntryPermission(entry),
+          });
+          totalTokens += estimateTokens(truncatedContent);
+        }
+        wasTruncated = true;
+        break;
+      }
+
+      contextEntries.push({
+        id: entry.id,
+        timestamp: entry.timestamp,
+        content: entry.content,
+        isTruncated: false,
+        relevanceScore: score,
+        permissionLevel: getEntryPermission(entry),
+      });
+      totalTokens += entryTokens;
+    }
+
+    return { contextEntries, wasTruncated, estimatedTokens: Math.ceil(totalTokens) };
+  };
+
+  const isEnabled = (): boolean => config.enabled;
+
+  const updateConfig = (newConfig: Partial<ContextSharingConfig>): void => {
+    config = { ...config, ...newConfig };
+  };
+
+  const getConfig = (): ContextSharingConfig => ({ ...config });
+
+  const registerFormatter = (formatter: BaseContextFormatter): void => {
+    formatters.set(formatter.agentType, formatter);
+  };
+
+  const getFormatter = (agentType: AgentType): BaseContextFormatter => {
+    return formatters.get(agentType) ?? new ClaudeCodeFormatter();
+  };
+
+  const buildContext = async (
     entries: JournalEntry[],
     options: BuildContextOptions,
-  ): Promise<JournalContext> {
+  ): Promise<JournalContext> => {
     const opts = { ...DEFAULT_CONTEXT_OPTIONS, ...options };
-    const maxPermission = opts.maxPermissionLevel ?? this.config.defaultPermissionLevel;
+    const maxPermission = opts.maxPermissionLevel ?? config.defaultPermissionLevel;
 
     // Filter by permission
-    const permissionFiltered = this.permissionManager.filterByPermission(entries, maxPermission);
+    const permissionFiltered = filterByPermission(entries, maxPermission);
     const excludedByPermission = entries.length - permissionFiltered.length;
 
     // Filter by time range if specified
@@ -109,14 +185,12 @@ export class ContextSharingService {
     // Apply relevance filtering or get recent entries
     let scoredEntries: ScoredEntry[];
     if (options.contextType === 'relevant' && opts.relevanceQuery) {
-      scoredEntries = await this.relevanceFilter.filterByRelevance(
-        timeFiltered,
-        opts.relevanceQuery,
-        { limit: opts.maxEntries },
-      );
+      scoredEntries = await filterByRelevance(timeFiltered, opts.relevanceQuery, {
+        limit: opts.maxEntries,
+      });
     } else {
       // For 'recent' and other types, score by recency
-      scoredEntries = await this.relevanceFilter.filterByRelevance(timeFiltered, undefined, {
+      scoredEntries = await filterByRelevance(timeFiltered, undefined, {
         limit: opts.maxEntries,
       });
     }
@@ -128,13 +202,13 @@ export class ContextSharingService {
     }
 
     // Convert to context entries with token limiting
-    const { contextEntries, wasTruncated, estimatedTokens } = this.convertToContextEntries(
+    const { contextEntries, wasTruncated, estimatedTokens } = convertToContextEntries(
       scoredEntries,
-      opts.maxTokens ?? this.config.maxContextTokens,
+      opts.maxTokens ?? config.maxContextTokens,
     );
 
     // Determine time range from included entries
-    const timeRange = this.calculateTimeRange(contextEntries);
+    const timeRange = calculateTimeRange(contextEntries);
 
     return {
       requestId: randomUUID(),
@@ -151,17 +225,14 @@ export class ContextSharingService {
         relevanceQuery: opts.relevanceQuery,
       },
     };
-  }
+  };
 
-  /**
-   * Get formatted context for an agent
-   */
-  async getContextForAgent(
+  const getContextForAgent = async (
     entries: JournalEntry[],
     agentType: AgentType,
     options: ContextRequestOptions,
-  ): Promise<ContextResult> {
-    if (!this.config.enabled) {
+  ): Promise<ContextResult> => {
+    if (!config.enabled) {
       return {
         success: false,
         error: 'Context sharing is disabled',
@@ -171,21 +242,21 @@ export class ContextSharingService {
     try {
       const buildOptions: BuildContextOptions = {
         contextType: options.type,
-        maxEntries: options.maxEntries ?? this.config.maxContextEntries,
-        maxTokens: options.maxTokens ?? this.config.maxContextTokens,
-        maxPermissionLevel: options.maxPermissionLevel ?? this.config.defaultPermissionLevel,
+        maxEntries: options.maxEntries ?? config.maxContextEntries,
+        maxTokens: options.maxTokens ?? config.maxContextTokens,
+        maxPermissionLevel: options.maxPermissionLevel ?? config.defaultPermissionLevel,
         relevanceQuery: options.query,
         timeRange: options.timeRange,
         entryIds: options.entryIds,
-        includeTimestamps: this.config.includeTimestamps,
+        includeTimestamps: config.includeTimestamps,
       };
 
-      const context = await this.buildContext(entries, buildOptions);
-      const formatter = this.getFormatter(agentType);
+      const context = await buildContext(entries, buildOptions);
+      const formatter = getFormatter(agentType);
 
       const formattedContext = formatter.format(context, {
-        includeTimestamps: this.config.includeTimestamps,
-        includeMetadata: this.config.includeMetadata,
+        includeTimestamps: config.includeTimestamps,
+        includeMetadata: config.includeMetadata,
       });
 
       return {
@@ -204,120 +275,53 @@ export class ContextSharingService {
         error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
-  }
+  };
 
-  /**
-   * Generate a summary context
-   */
-  async getSummaryContext(
+  const getSummaryContext = async (
     entries: JournalEntry[],
     agentType: AgentType,
     options: Partial<ContextRequestOptions> = {},
-  ): Promise<ContextResult> {
-    return this.getContextForAgent(entries, agentType, {
+  ): Promise<ContextResult> => {
+    return getContextForAgent(entries, agentType, {
       type: 'summary',
       ...options,
     });
-  }
+  };
 
-  /**
-   * Get recent entries context
-   */
-  async getRecentContext(
+  const getRecentContext = async (
     entries: JournalEntry[],
     agentType: AgentType,
     options: Partial<ContextRequestOptions> = {},
-  ): Promise<ContextResult> {
-    return this.getContextForAgent(entries, agentType, {
+  ): Promise<ContextResult> => {
+    return getContextForAgent(entries, agentType, {
       type: 'recent',
       ...options,
     });
-  }
+  };
 
-  /**
-   * Get relevant entries context based on query
-   */
-  async getRelevantContext(
+  const getRelevantContext = async (
     entries: JournalEntry[],
     agentType: AgentType,
     query: string,
     options: Partial<ContextRequestOptions> = {},
-  ): Promise<ContextResult> {
-    return this.getContextForAgent(entries, agentType, {
+  ): Promise<ContextResult> => {
+    return getContextForAgent(entries, agentType, {
       type: 'relevant',
       query,
       ...options,
     });
-  }
+  };
 
-  /**
-   * Convert scored entries to context entries with token limiting
-   */
-  private convertToContextEntries(
-    scoredEntries: ScoredEntry[],
-    maxTokens: number,
-  ): { contextEntries: ContextEntry[]; wasTruncated: boolean; estimatedTokens: number } {
-    const contextEntries: ContextEntry[] = [];
-    let totalTokens = 0;
-    let wasTruncated = false;
-
-    for (const { entry, score } of scoredEntries) {
-      const entryTokens = this.estimateTokens(entry.content);
-
-      if (totalTokens + entryTokens > maxTokens) {
-        // Truncate this entry to fit
-        const remainingTokens = maxTokens - totalTokens;
-        if (remainingTokens > 50) {
-          // Only include if we have meaningful space
-          const maxChars = Math.floor(remainingTokens / TOKENS_PER_CHAR);
-          const truncatedContent = entry.content.substring(0, maxChars);
-          contextEntries.push({
-            id: entry.id,
-            timestamp: entry.timestamp,
-            content: truncatedContent,
-            isTruncated: true,
-            relevanceScore: score,
-            permissionLevel: this.permissionManager.getEntryPermission(entry),
-          });
-          totalTokens += this.estimateTokens(truncatedContent);
-        }
-        wasTruncated = true;
-        break;
-      }
-
-      contextEntries.push({
-        id: entry.id,
-        timestamp: entry.timestamp,
-        content: entry.content,
-        isTruncated: false,
-        relevanceScore: score,
-        permissionLevel: this.permissionManager.getEntryPermission(entry),
-      });
-      totalTokens += entryTokens;
-    }
-
-    return { contextEntries, wasTruncated, estimatedTokens: Math.ceil(totalTokens) };
-  }
-
-  /**
-   * Estimate token count for text
-   */
-  private estimateTokens(text: string): number {
-    return text.length * TOKENS_PER_CHAR;
-  }
-
-  /**
-   * Calculate time range from context entries
-   */
-  private calculateTimeRange(entries: ContextEntry[]): { start: Date; end: Date } | undefined {
-    if (entries.length === 0) {
-      return undefined;
-    }
-
-    const timestamps = entries.map((e) => e.timestamp.getTime());
-    return {
-      start: new Date(Math.min(...timestamps)),
-      end: new Date(Math.max(...timestamps)),
-    };
-  }
+  return {
+    isEnabled,
+    updateConfig,
+    getConfig,
+    registerFormatter,
+    getFormatter,
+    buildContext,
+    getContextForAgent,
+    getSummaryContext,
+    getRecentContext,
+    getRelevantContext,
+  };
 }
