@@ -10,6 +10,10 @@ export interface AgentState {
   workingDirectory?: string;
   /** Current session ID if available */
   sessionId?: string;
+  /** Whether the agent is currently processing a request */
+  isProcessing?: boolean;
+  /** When processing started */
+  processingStartTime?: Date;
   /** Additional agent-specific state */
   metadata?: Record<string, unknown>;
 }
