@@ -17,11 +17,28 @@ export type {
 } from './context-protocol.js';
 
 // Permission management
-export { PermissionManager } from './permission-manager.js';
+export {
+  containsSensitiveContent,
+  countExcludedEntries,
+  createPermissionManager,
+  filterByPermission,
+  getEntryPermission,
+  redactSensitiveContent,
+} from './permission-manager.js';
+export type { PermissionManager } from './permission-manager.js';
 
 // Relevance filtering
-export { RelevanceFilter } from './relevance-filter.js';
-export type { RelevanceFilterOptions, ScoredEntry } from './relevance-filter.js';
+export {
+  createRelevanceFilter,
+  filterByRelevance,
+  generateContextSummary,
+  getRecentEntries,
+} from './relevance-filter.js';
+export type {
+  RelevanceFilter,
+  RelevanceFilterOptions,
+  ScoredEntry,
+} from './relevance-filter.js';
 
 // Formatters
 export {

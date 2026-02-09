@@ -1,12 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JournalEntry } from '../../../repositories/types.js';
-import { RelevanceFilter } from './relevance-filter.js';
+import {
+  filterByRelevance,
+  generateContextSummary,
+  getRecentEntries,
+} from './relevance-filter.js';
 
 describe('RelevanceFilter', () => {
-  let filter: RelevanceFilter;
-
   beforeEach(() => {
-    filter = new RelevanceFilter();
     // Set a fixed date for consistent recency scoring
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2025-01-20T12:00:00Z'));
@@ -36,7 +37,7 @@ describe('RelevanceFilter', () => {
         createEntry('middle entry', new Date('2025-01-15T10:00:00Z')),
       ];
 
-      const result = await filter.filterByRelevance(entries);
+      const result = await filterByRelevance(entries);
 
       expect(result).toHaveLength(3);
       expect(result[0].entry.content).toBe('new entry');
@@ -51,7 +52,7 @@ describe('RelevanceFilter', () => {
       ];
 
       // Use higher minScore to filter out entries that only have recency score
-      const result = await filter.filterByRelevance(entries, 'programming', { minScore: 0.5 });
+      const result = await filterByRelevance(entries, 'programming', { minScore: 0.5 });
 
       expect(result.length).toBeGreaterThan(0);
       expect(result.every((r) => r.entry.content.toLowerCase().includes('programming'))).toBe(true);
@@ -63,7 +64,7 @@ describe('RelevanceFilter', () => {
         createEntry('TypeScript programming is great for large projects'),
       ];
 
-      const result = await filter.filterByRelevance(entries, 'TypeScript programming');
+      const result = await filterByRelevance(entries, 'TypeScript programming');
 
       expect(result).toHaveLength(2);
       // Entry with both terms should score higher
@@ -76,7 +77,7 @@ describe('RelevanceFilter', () => {
         createEntry('completely unrelated content about cooking'),
       ];
 
-      const result = await filter.filterByRelevance(entries, 'TypeScript', { minScore: 0.3 });
+      const result = await filterByRelevance(entries, 'TypeScript', { minScore: 0.3 });
 
       expect(result.length).toBeLessThanOrEqual(2);
       expect(result.every((r) => r.score >= 0.3)).toBe(true);
@@ -89,19 +90,19 @@ describe('RelevanceFilter', () => {
         createEntry('entry three TypeScript'),
       ];
 
-      const result = await filter.filterByRelevance(entries, 'TypeScript', { limit: 2 });
+      const result = await filterByRelevance(entries, 'TypeScript', { limit: 2 });
 
       expect(result).toHaveLength(2);
     });
 
     it('should handle empty entries array', async () => {
-      const result = await filter.filterByRelevance([], 'query');
+      const result = await filterByRelevance([], 'query');
       expect(result).toHaveLength(0);
     });
 
     it('should handle empty query string', async () => {
       const entries = [createEntry('content')];
-      const result = await filter.filterByRelevance(entries, '');
+      const result = await filterByRelevance(entries, '');
       expect(result).toHaveLength(1);
     });
   });
@@ -114,7 +115,7 @@ describe('RelevanceFilter', () => {
         createEntry('Third entry about hobbies', new Date('2025-01-16T10:00:00Z')),
       ];
 
-      const summary = await filter.generateContextSummary(entries);
+      const summary = await generateContextSummary(entries);
 
       expect(summary).toContain('Summary of 3 journal entries');
       expect(summary).toContain('2025-01-15');
@@ -125,7 +126,7 @@ describe('RelevanceFilter', () => {
     });
 
     it('should return empty message for no entries', async () => {
-      const summary = await filter.generateContextSummary([]);
+      const summary = await generateContextSummary([]);
       expect(summary).toBe('No journal entries available.');
     });
 
@@ -133,7 +134,7 @@ describe('RelevanceFilter', () => {
       const longContent = 'This is a very long entry '.repeat(10);
       const entries = [createEntry(longContent)];
 
-      const summary = await filter.generateContextSummary(entries);
+      const summary = await generateContextSummary(entries);
 
       expect(summary).toContain('...');
     });
@@ -144,7 +145,7 @@ describe('RelevanceFilter', () => {
         createEntry('new', new Date('2025-01-20T10:00:00Z')),
       ];
 
-      const summary = await filter.generateContextSummary(entries);
+      const summary = await generateContextSummary(entries);
 
       expect(summary).toContain('Time range: 2025-01-01 to 2025-01-20');
     });
@@ -158,7 +159,7 @@ describe('RelevanceFilter', () => {
         createEntry('middle', new Date('2025-01-15T10:00:00Z')),
       ];
 
-      const result = filter.getRecentEntries(entries, 3);
+      const result = getRecentEntries(entries, 3);
 
       expect(result).toHaveLength(3);
       expect(result[0].content).toBe('new');
@@ -173,7 +174,7 @@ describe('RelevanceFilter', () => {
         createEntry('3', new Date('2025-01-12')),
       ];
 
-      const result = filter.getRecentEntries(entries, 2);
+      const result = getRecentEntries(entries, 2);
 
       expect(result).toHaveLength(2);
     });
@@ -185,7 +186,7 @@ describe('RelevanceFilter', () => {
       ];
       const originalFirst = entries[0];
 
-      filter.getRecentEntries(entries, 2);
+      getRecentEntries(entries, 2);
 
       expect(entries[0]).toBe(originalFirst);
     });
@@ -199,7 +200,7 @@ describe('RelevanceFilter', () => {
         createEntry('month ago', new Date('2024-12-20T10:00:00Z')),
       ];
 
-      const result = await filter.filterByRelevance(entries);
+      const result = await filterByRelevance(entries);
 
       expect(result[0].entry.content).toBe('today');
       expect(result[0].score).toBeGreaterThan(result[1].score);

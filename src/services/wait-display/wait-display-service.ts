@@ -9,181 +9,41 @@ import {
 } from './types.js';
 
 /**
- * Service for managing wait time display during Claude Code processing
+ * Wait display service interface
  */
-export class WaitDisplayService {
-  private config: WaitDisplayConfig;
-  private processingDetector: ProcessingDetector;
-  private state: WaitDisplayState;
-  private listeners: Map<WaitDisplayEventType, Set<WaitDisplayEventCallback<WaitDisplayEventType>>>;
-  private showTimeoutId: ReturnType<typeof setTimeout> | undefined;
-  private elapsedIntervalId: ReturnType<typeof setInterval> | undefined;
-  private unsubscribeProcessing: (() => void) | undefined;
-  private isRunning = false;
+export interface WaitDisplayService {
+  start(): void;
+  stop(): void;
+  getState(): WaitDisplayState;
+  getConfig(): WaitDisplayConfig;
+  updateConfig(config: Partial<WaitDisplayConfig>): void;
+  on<K extends WaitDisplayEventType>(event: K, callback: WaitDisplayEventCallback<K>): () => void;
+  isActive(): boolean;
+}
 
-  constructor(processingDetector: ProcessingDetector, config: Partial<WaitDisplayConfig> = {}) {
-    this.processingDetector = processingDetector;
-    this.config = { ...DEFAULT_WAIT_DISPLAY_CONFIG, ...config };
-    this.state = {
-      isShowing: false,
-      elapsedMs: 0,
-    };
-    this.listeners = new Map();
-  }
+/**
+ * Create a new WaitDisplayService instance
+ */
+export function createWaitDisplayService(
+  processingDetector: ProcessingDetector,
+  initialConfig: Partial<WaitDisplayConfig> = {},
+): WaitDisplayService {
+  let config: WaitDisplayConfig = { ...DEFAULT_WAIT_DISPLAY_CONFIG, ...initialConfig };
+  const state: WaitDisplayState = {
+    isShowing: false,
+    elapsedMs: 0,
+  };
+  const listeners = new Map<
+    WaitDisplayEventType,
+    Set<WaitDisplayEventCallback<WaitDisplayEventType>>
+  >();
+  let showTimeoutId: ReturnType<typeof setTimeout> | undefined;
+  let elapsedIntervalId: ReturnType<typeof setInterval> | undefined;
+  let unsubscribeProcessing: (() => void) | undefined;
+  let isRunning = false;
 
-  /**
-   * Start the wait display service
-   */
-  start(): void {
-    if (!this.config.enabled || this.isRunning) {
-      return;
-    }
-
-    this.isRunning = true;
-
-    // Subscribe to processing state changes
-    this.unsubscribeProcessing = this.processingDetector.onStateChange((isProcessing) => {
-      if (isProcessing) {
-        this.onProcessingStart();
-      } else {
-        this.onProcessingEnd();
-      }
-    });
-
-    // Start monitoring
-    this.processingDetector.startMonitoring();
-  }
-
-  /**
-   * Stop the wait display service
-   */
-  stop(): void {
-    this.isRunning = false;
-
-    // Unsubscribe from processing state changes
-    if (this.unsubscribeProcessing) {
-      this.unsubscribeProcessing();
-      this.unsubscribeProcessing = undefined;
-    }
-
-    // Stop monitoring
-    this.processingDetector.stopMonitoring();
-
-    // Clear any pending timers
-    this.clearTimers();
-
-    // Hide display if showing
-    if (this.state.isShowing) {
-      this.hideDisplay();
-    }
-  }
-
-  /**
-   * Get the current state
-   */
-  getState(): WaitDisplayState {
-    return { ...this.state };
-  }
-
-  /**
-   * Get the current configuration
-   */
-  getConfig(): WaitDisplayConfig {
-    return { ...this.config };
-  }
-
-  /**
-   * Update the configuration
-   */
-  updateConfig(config: Partial<WaitDisplayConfig>): void {
-    this.config = { ...this.config, ...config };
-  }
-
-  /**
-   * Subscribe to events
-   */
-  on<K extends WaitDisplayEventType>(event: K, callback: WaitDisplayEventCallback<K>): () => void {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set());
-    }
-    this.listeners.get(event)?.add(callback as WaitDisplayEventCallback<WaitDisplayEventType>);
-
-    return () => {
-      this.listeners.get(event)?.delete(callback as WaitDisplayEventCallback<WaitDisplayEventType>);
-    };
-  }
-
-  /**
-   * Check if the service is currently running
-   */
-  isActive(): boolean {
-    return this.isRunning;
-  }
-
-  private onProcessingStart(): void {
-    // Set up timer to show display after minimum wait time
-    this.state.startTime = new Date();
-    this.state.elapsedMs = 0;
-
-    this.showTimeoutId = setTimeout(() => {
-      this.showDisplay();
-    }, this.config.minWaitTimeMs);
-
-    // Start tracking elapsed time
-    this.elapsedIntervalId = setInterval(() => {
-      if (this.state.startTime) {
-        this.state.elapsedMs = Date.now() - this.state.startTime.getTime();
-        this.emit('stateChange', this.getState());
-      }
-    }, 100);
-  }
-
-  private onProcessingEnd(): void {
-    this.clearTimers();
-
-    // Hide display if showing
-    if (this.state.isShowing) {
-      this.hideDisplay();
-    }
-
-    // Reset state
-    this.state.startTime = undefined;
-    this.state.elapsedMs = 0;
-  }
-
-  private showDisplay(): void {
-    if (this.state.isShowing) {
-      return;
-    }
-
-    this.state.isShowing = true;
-    this.emit('show', undefined);
-    this.emit('stateChange', this.getState());
-  }
-
-  private hideDisplay(): void {
-    if (!this.state.isShowing) {
-      return;
-    }
-
-    this.state.isShowing = false;
-    this.emit('hide', undefined);
-    this.emit('stateChange', this.getState());
-  }
-
-  private clearTimers(): void {
-    if (this.showTimeoutId) {
-      clearTimeout(this.showTimeoutId);
-      this.showTimeoutId = undefined;
-    }
-    if (this.elapsedIntervalId) {
-      clearInterval(this.elapsedIntervalId);
-      this.elapsedIntervalId = undefined;
-    }
-  }
-
-  private emit<K extends WaitDisplayEventType>(event: K, data: WaitDisplayEvents[K]): void {
-    const callbacks = this.listeners.get(event);
+  const emit = <K extends WaitDisplayEventType>(event: K, data: WaitDisplayEvents[K]): void => {
+    const callbacks = listeners.get(event);
     if (callbacks) {
       for (const callback of callbacks) {
         try {
@@ -193,15 +53,142 @@ export class WaitDisplayService {
         }
       }
     }
-  }
-}
+  };
 
-/**
- * Create a new WaitDisplayService instance
- */
-export function createWaitDisplayService(
-  processingDetector: ProcessingDetector,
-  config?: Partial<WaitDisplayConfig>,
-): WaitDisplayService {
-  return new WaitDisplayService(processingDetector, config);
+  const clearTimers = (): void => {
+    if (showTimeoutId) {
+      clearTimeout(showTimeoutId);
+      showTimeoutId = undefined;
+    }
+    if (elapsedIntervalId) {
+      clearInterval(elapsedIntervalId);
+      elapsedIntervalId = undefined;
+    }
+  };
+
+  const showDisplay = (): void => {
+    if (state.isShowing) {
+      return;
+    }
+
+    state.isShowing = true;
+    emit('show', undefined);
+    emit('stateChange', { ...state });
+  };
+
+  const hideDisplay = (): void => {
+    if (!state.isShowing) {
+      return;
+    }
+
+    state.isShowing = false;
+    emit('hide', undefined);
+    emit('stateChange', { ...state });
+  };
+
+  const onProcessingStart = (): void => {
+    // Set up timer to show display after minimum wait time
+    state.startTime = new Date();
+    state.elapsedMs = 0;
+
+    showTimeoutId = setTimeout(() => {
+      showDisplay();
+    }, config.minWaitTimeMs);
+
+    // Start tracking elapsed time
+    elapsedIntervalId = setInterval(() => {
+      if (state.startTime) {
+        state.elapsedMs = Date.now() - state.startTime.getTime();
+        emit('stateChange', { ...state });
+      }
+    }, 100);
+  };
+
+  const onProcessingEnd = (): void => {
+    clearTimers();
+
+    // Hide display if showing
+    if (state.isShowing) {
+      hideDisplay();
+    }
+
+    // Reset state
+    state.startTime = undefined;
+    state.elapsedMs = 0;
+  };
+
+  const start = (): void => {
+    if (!config.enabled || isRunning) {
+      return;
+    }
+
+    isRunning = true;
+
+    // Subscribe to processing state changes
+    unsubscribeProcessing = processingDetector.onStateChange((isProcessing) => {
+      if (isProcessing) {
+        onProcessingStart();
+      } else {
+        onProcessingEnd();
+      }
+    });
+
+    // Start monitoring
+    processingDetector.startMonitoring();
+  };
+
+  const stop = (): void => {
+    isRunning = false;
+
+    // Unsubscribe from processing state changes
+    if (unsubscribeProcessing) {
+      unsubscribeProcessing();
+      unsubscribeProcessing = undefined;
+    }
+
+    // Stop monitoring
+    processingDetector.stopMonitoring();
+
+    // Clear any pending timers
+    clearTimers();
+
+    // Hide display if showing
+    if (state.isShowing) {
+      hideDisplay();
+    }
+  };
+
+  const getState = (): WaitDisplayState => ({ ...state });
+
+  const getConfig = (): WaitDisplayConfig => ({ ...config });
+
+  const updateConfig = (newConfig: Partial<WaitDisplayConfig>): void => {
+    config = { ...config, ...newConfig };
+  };
+
+  const on = <K extends WaitDisplayEventType>(
+    event: K,
+    callback: WaitDisplayEventCallback<K>,
+  ): (() => void) => {
+    if (!listeners.has(event)) {
+      listeners.set(event, new Set());
+    }
+    listeners.get(event)?.add(callback as WaitDisplayEventCallback<WaitDisplayEventType>);
+
+    return () => {
+      listeners.get(event)?.delete(callback as WaitDisplayEventCallback<WaitDisplayEventType>);
+    };
+  };
+
+  const isActive = (): boolean => isRunning;
+
+  return {
+    start,
+    stop,
+    getState,
+    getConfig,
+    updateConfig,
+    on,
+    isActive,
+  };
 }
