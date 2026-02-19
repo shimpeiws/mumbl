@@ -4,6 +4,8 @@ import { type AgentDetectionResult, type AgentDetector, AgentType } from '../typ
  * Environment variables that indicate Claude Code is running
  */
 const CLAUDE_CODE_ENV_VARS = [
+  'CLAUDECODE',
+  'CLAUDE_CODE_ENTRYPOINT',
   'CLAUDE_CODE',
   'CLAUDE_CODE_VERSION',
   'CLAUDE_CODE_SESSION_ID',
