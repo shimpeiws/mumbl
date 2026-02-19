@@ -11,7 +11,7 @@ interface EntryListItemProps {
   reaction?: Reaction;
 }
 
-function formatReactionDisplay(reaction: Reaction): string {
+export function formatReactionDisplay(reaction: Reaction): string {
   switch (reaction.reactionType) {
     case 'read':
       return '·';
