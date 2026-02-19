@@ -1,7 +1,9 @@
 import { Box, Text, useInput } from 'ink';
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { JournalEntry } from '../../../repositories/types.js';
+import { useReactions } from '../../hooks/useReactions.js';
 import { formatFullDate } from '../../utils/date-formatter.js';
+import { formatReactionDisplay } from './EntryListItem.js';
 
 interface EntryDetailProps {
   entry: JournalEntry;
@@ -14,6 +16,10 @@ export function EntryDetail({ entry, onClose }: EntryDetailProps) {
       onClose();
     }
   });
+
+  const entryIds = useMemo(() => [entry.id], [entry.id]);
+  const { reactions } = useReactions(entryIds);
+  const reaction = reactions.get(entry.id);
 
   const metadata = entry.metadata;
   const hasTags = metadata.tags && metadata.tags.length > 0;
@@ -33,6 +39,12 @@ export function EntryDetail({ entry, onClose }: EntryDetailProps) {
         <Box marginBottom={1} flexDirection="column">
           <Text>{entry.content}</Text>
         </Box>
+
+        {reaction && (
+          <Box marginBottom={1}>
+            <Text dimColor>{formatReactionDisplay(reaction)}</Text>
+          </Box>
+        )}
 
         {hasMetadata && (
           <Box
