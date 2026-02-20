@@ -1,7 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentStatusInfo } from './useAgentStatus.js';
 import { AgentType } from './useAgentStatus.js';
-import { getAgentDisplayName, getTitle, setTerminalTitle } from './useTerminalTitle.js';
+import {
+  DOT_FRAMES,
+  THINKING_FRAMES,
+  getAgentDisplayName,
+  getTitleFrame,
+  setTerminalTitle,
+} from './useTerminalTitle.js';
 
 describe('useTerminalTitle', () => {
   let writeSpy: ReturnType<typeof vi.spyOn>;
@@ -48,30 +54,64 @@ describe('useTerminalTitle', () => {
     });
   });
 
-  describe('getTitle', () => {
-    it('should return Claude thinking title for thinking claude-code', () => {
+  describe('getTitleFrame', () => {
+    it('should return animated title for frame 0', () => {
       const info: AgentStatusInfo = { status: 'thinking', agent: AgentType.ClaudeCode };
-      expect(getTitle(info)).toBe('\u2699 Claude thinking...');
+      expect(getTitleFrame(info, 0)).toBe(`${THINKING_FRAMES[0]} Claude thinking${DOT_FRAMES[0]}`);
     });
 
-    it('should return Gemini thinking title for thinking gemini-cli', () => {
+    it('should return animated title for frame 1', () => {
+      const info: AgentStatusInfo = { status: 'thinking', agent: AgentType.ClaudeCode };
+      expect(getTitleFrame(info, 1)).toBe(`${THINKING_FRAMES[1]} Claude thinking${DOT_FRAMES[1]}`);
+    });
+
+    it('should return animated title for frame 2', () => {
+      const info: AgentStatusInfo = { status: 'thinking', agent: AgentType.ClaudeCode };
+      expect(getTitleFrame(info, 2)).toBe(`${THINKING_FRAMES[2]} Claude thinking${DOT_FRAMES[2]}`);
+    });
+
+    it('should return animated title for frame 3', () => {
+      const info: AgentStatusInfo = { status: 'thinking', agent: AgentType.ClaudeCode };
+      expect(getTitleFrame(info, 3)).toBe(`${THINKING_FRAMES[3]} Claude thinking${DOT_FRAMES[0]}`);
+    });
+
+    it('should loop frames correctly for frame 4', () => {
+      const info: AgentStatusInfo = { status: 'thinking', agent: AgentType.ClaudeCode };
+      expect(getTitleFrame(info, 4)).toBe(`${THINKING_FRAMES[0]} Claude thinking${DOT_FRAMES[1]}`);
+    });
+
+    it('should return Gemini thinking for gemini-cli', () => {
       const info: AgentStatusInfo = { status: 'thinking', agent: AgentType.GeminiCLI };
-      expect(getTitle(info)).toBe('\u2699 Gemini thinking...');
+      expect(getTitleFrame(info, 0)).toBe(`${THINKING_FRAMES[0]} Gemini thinking${DOT_FRAMES[0]}`);
     });
 
     it('should return Agent thinking for unknown agent', () => {
       const info: AgentStatusInfo = { status: 'thinking', agent: AgentType.Unknown };
-      expect(getTitle(info)).toBe('\u2699 Agent thinking...');
+      expect(getTitleFrame(info, 0)).toBe(`${THINKING_FRAMES[0]} Agent thinking${DOT_FRAMES[0]}`);
     });
 
-    it('should return mumbl for idle status', () => {
+    it('should return Cursor thinking for cursor', () => {
+      const info: AgentStatusInfo = { status: 'thinking', agent: AgentType.Cursor };
+      expect(getTitleFrame(info, 1)).toBe(`${THINKING_FRAMES[1]} Cursor thinking${DOT_FRAMES[1]}`);
+    });
+
+    it('should return Windsurf thinking for windsurf', () => {
+      const info: AgentStatusInfo = { status: 'thinking', agent: AgentType.Windsurf };
+      expect(getTitleFrame(info, 2)).toBe(
+        `${THINKING_FRAMES[2]} Windsurf thinking${DOT_FRAMES[2]}`,
+      );
+    });
+
+    it('should return mumbl for idle status regardless of frame', () => {
       const info: AgentStatusInfo = { status: 'idle', agent: AgentType.ClaudeCode };
-      expect(getTitle(info)).toBe('mumbl');
+      expect(getTitleFrame(info, 0)).toBe('mumbl');
+      expect(getTitleFrame(info, 5)).toBe('mumbl');
+      expect(getTitleFrame(info, 100)).toBe('mumbl');
     });
 
     it('should return mumbl for idle with any agent', () => {
       const info: AgentStatusInfo = { status: 'idle', agent: AgentType.GeminiCLI };
-      expect(getTitle(info)).toBe('mumbl');
+      expect(getTitleFrame(info, 0)).toBe('mumbl');
     });
   });
 });
