@@ -10,9 +10,13 @@ interface WriteState {
   content: string;
 }
 
+interface SwitchToListOptions {
+  selectLastEntry?: boolean;
+}
+
 interface NavigationContextValue {
   mode: AppMode;
-  switchToList: () => void;
+  switchToList: (options?: SwitchToListOptions) => void;
   switchToWrite: () => void;
   toggleMode: () => void;
   listState: ListState;
@@ -41,7 +45,10 @@ export function NavigationProvider({ children, initialMode = 'list' }: Navigatio
   const [listState, setListState] = useState<ListState>({ selectedIndex: 0 });
   const [writeState, setWriteState] = useState<WriteState>({ content: '' });
 
-  const switchToList = useCallback(() => {
+  const switchToList = useCallback((options?: SwitchToListOptions) => {
+    if (options?.selectLastEntry) {
+      setListState({ selectedIndex: -1 });
+    }
     setMode('list');
   }, []);
 

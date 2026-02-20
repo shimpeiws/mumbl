@@ -77,10 +77,16 @@ export function EntryList({ onViewingDetailChange }: EntryListProps) {
     [flatList],
   );
 
-  const { selectedIndex } = useKeyboardNavigation({
+  // Resolve -1 sentinel to last entry index
+  const resolvedInitialIndex =
+    listState.selectedIndex === -1 && entryItems.length > 0
+      ? entryItems.length - 1
+      : listState.selectedIndex;
+
+  const { selectedIndex, setSelectedIndex } = useKeyboardNavigation({
     itemCount: entryItems.length,
     enabled: !viewingEntry,
-    initialIndex: listState.selectedIndex,
+    initialIndex: resolvedInitialIndex,
     onAction: () => {
       const selectedEntry = entryItems[selectedIndex]?.entry;
       if (selectedEntry) {
@@ -91,6 +97,15 @@ export function EntryList({ onViewingDetailChange }: EntryListProps) {
       setListState({ selectedIndex: index });
     },
   });
+
+  // When entries load and sentinel was set, update to last entry
+  useEffect(() => {
+    if (listState.selectedIndex === -1 && entryItems.length > 0) {
+      const lastIndex = entryItems.length - 1;
+      setSelectedIndex(lastIndex);
+      setListState({ selectedIndex: lastIndex });
+    }
+  }, [listState.selectedIndex, entryItems.length, setSelectedIndex, setListState]);
 
   // Map flat list index to selected entry
   const selectedEntryId = entryItems[selectedIndex]?.entry?.id;
@@ -107,11 +122,11 @@ export function EntryList({ onViewingDetailChange }: EntryListProps) {
   // Calculate viewport height: terminal rows - header (2 lines) - padding (2 lines) - footer reserve (3 lines)
   const viewportHeight = Math.max(5, terminalRows - 7);
 
-  // Calculate item heights: entries with reactions = 2 lines, headers = 1 line, entries without reactions = 1 line
+  // Calculate item heights: entries with reactions = 2 lines, headers = 3 lines, entries without reactions = 1 line
   const itemHeights = useMemo(() => {
     return flatList.map((item) => {
       if (item.type === 'header') {
-        return 1;
+        return 3; // 1 line content + marginY={1} (1 above + 1 below)
       }
       // Entry with reaction takes 2 lines, without reaction takes 1 line
       return reactions.has(item.entry.id) ? 2 : 1;

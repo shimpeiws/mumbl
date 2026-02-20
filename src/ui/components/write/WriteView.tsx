@@ -24,7 +24,7 @@ export function WriteView() {
       if (trimmedContent) {
         entryService.create({ content: trimmedContent });
         setWriteState({ content: '' });
-        switchToList();
+        switchToList({ selectLastEntry: true });
       }
       return;
     }
