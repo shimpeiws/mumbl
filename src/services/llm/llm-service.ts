@@ -10,6 +10,7 @@ import {
 } from './message-history.js';
 import { createOllamaProvider } from './ollama-provider.js';
 import {
+  type ReactionPromptOptions,
   createChatMessages,
   createReactionPrompt,
   createReflectionPrompt,
@@ -57,7 +58,7 @@ export interface LLMServiceInterface {
   ): AsyncIterable<StreamChunk>;
   summarize(entries: string[]): Promise<ChatResponse>;
   reflect(entry: string): Promise<ChatResponse>;
-  react(entry: string): Promise<ChatResponse>;
+  react(entry: string, options?: ReactionPromptOptions): Promise<ChatResponse>;
   healthCheck(): Promise<{ primary: boolean; fallback?: boolean }>;
   clearHistory(sessionId?: string): void;
   getProviderInfo(): { provider: Provider; model: string };
@@ -199,8 +200,8 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
     }
   };
 
-  const react = async (entry: string): Promise<ChatResponse> => {
-    const messages = createReactionPrompt(entry, vocabulary);
+  const react = async (entry: string, options?: ReactionPromptOptions): Promise<ChatResponse> => {
+    const messages = createReactionPrompt(entry, options, vocabulary);
 
     try {
       return await primaryProvider.chat(messages);
@@ -273,8 +274,8 @@ export class LLMService implements LLMServiceInterface {
   reflect(entry: string) {
     return this._service.reflect(entry);
   }
-  react(entry: string) {
-    return this._service.react(entry);
+  react(entry: string, options?: ReactionPromptOptions) {
+    return this._service.react(entry, options);
   }
   healthCheck() {
     return this._service.healthCheck();

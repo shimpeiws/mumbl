@@ -2,6 +2,8 @@ import type { Database as DatabaseType } from 'better-sqlite3';
 import { createReactionRepository } from '../repositories/reaction-repository.js';
 import type { Reaction, ReactionType } from '../repositories/types.js';
 import { generateEntryId } from './id-service.js';
+import { detectLanguage } from './language/detect.js';
+import type { DetectedLanguage } from './language/types.js';
 import type { LLMServiceInterface } from './llm/llm-service.js';
 import type { VocabularySet } from './wordgrain/types.js';
 
@@ -9,6 +11,7 @@ export interface ReactionConfig {
   enabled: boolean;
   defaultReactionType: ReactionType;
   useLLM: boolean;
+  language?: 'auto' | 'ja' | 'en';
 }
 
 /**
@@ -117,6 +120,14 @@ export function createReactionService(
     return currentConfig.enabled;
   };
 
+  const resolveLanguage = (content: string): DetectedLanguage | undefined => {
+    const mode = currentConfig.language;
+    if (!mode || mode === 'auto') {
+      return detectLanguage(content);
+    }
+    return mode;
+  };
+
   const generateReaction = async (entryId: string, content: string): Promise<Reaction | null> => {
     if (!currentConfig.enabled) {
       return null;
@@ -127,7 +138,8 @@ export function createReactionService(
 
     if (currentConfig.useLLM && llmService) {
       try {
-        const response = await llmService.react(content);
+        const language = resolveLanguage(content);
+        const response = await llmService.react(content, { language });
         const trimmed = response.content.trim();
         // Use LLM response if non-empty, otherwise fallback
         if (trimmed) {
