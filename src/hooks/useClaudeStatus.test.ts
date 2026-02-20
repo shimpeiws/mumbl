@@ -12,7 +12,6 @@ vi.mock('node:fs', async () => {
 
 const fsMock = await import('node:fs');
 const readFileSyncMock = vi.mocked(fsMock.readFileSync);
-const watchMock = vi.mocked(fsMock.watch);
 
 describe('useClaudeStatus', () => {
   beforeEach(() => {
@@ -75,26 +74,12 @@ describe('useClaudeStatus', () => {
     });
   });
 
-  describe('useClaudeStatus hook', () => {
-    it('should set up watcher and polling on mount', async () => {
+  describe('useClaudeStatus deprecated wrapper', () => {
+    it('should be a function that wraps useAgentStatus', async () => {
       readFileSyncMock.mockReturnValue('idle');
-      const closeMock = vi.fn();
-      watchMock.mockReturnValue({ close: closeMock } as unknown as fsMock.FSWatcher);
-
       const { useClaudeStatus } = await import('./useClaudeStatus.js');
       expect(useClaudeStatus).toBeDefined();
       expect(typeof useClaudeStatus).toBe('function');
-    });
-
-    it('should handle watch throwing when file does not exist', () => {
-      readFileSyncMock.mockReturnValue('idle');
-      watchMock.mockImplementation(() => {
-        throw new Error('ENOENT');
-      });
-
-      expect(() => {
-        watchMock(STATUS_FILE_PATH, () => {});
-      }).toThrow('ENOENT');
     });
   });
 });

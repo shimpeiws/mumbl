@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AgentStatus } from './useClaudeStatus.js';
-import { getTitle, setTerminalTitle } from './useTerminalTitle.js';
+import type { AgentStatusInfo } from './useAgentStatus.js';
+import { AgentType } from './useAgentStatus.js';
+import { getAgentDisplayName, getTitle, setTerminalTitle } from './useTerminalTitle.js';
 
 describe('useTerminalTitle', () => {
   let writeSpy: ReturnType<typeof vi.spyOn>;
@@ -25,20 +26,52 @@ describe('useTerminalTitle', () => {
     });
   });
 
+  describe('getAgentDisplayName', () => {
+    it('should return Claude for ClaudeCode', () => {
+      expect(getAgentDisplayName(AgentType.ClaudeCode)).toBe('Claude');
+    });
+
+    it('should return Gemini for GeminiCLI', () => {
+      expect(getAgentDisplayName(AgentType.GeminiCLI)).toBe('Gemini');
+    });
+
+    it('should return Cursor for Cursor', () => {
+      expect(getAgentDisplayName(AgentType.Cursor)).toBe('Cursor');
+    });
+
+    it('should return Windsurf for Windsurf', () => {
+      expect(getAgentDisplayName(AgentType.Windsurf)).toBe('Windsurf');
+    });
+
+    it('should return Agent for Unknown', () => {
+      expect(getAgentDisplayName(AgentType.Unknown)).toBe('Agent');
+    });
+  });
+
   describe('getTitle', () => {
-    it('should return thinking title for thinking status', () => {
-      const result = getTitle('thinking');
-      expect(result).toBe('\u2699 Claude thinking...');
+    it('should return Claude thinking title for thinking claude-code', () => {
+      const info: AgentStatusInfo = { status: 'thinking', agent: AgentType.ClaudeCode };
+      expect(getTitle(info)).toBe('\u2699 Claude thinking...');
+    });
+
+    it('should return Gemini thinking title for thinking gemini-cli', () => {
+      const info: AgentStatusInfo = { status: 'thinking', agent: AgentType.GeminiCLI };
+      expect(getTitle(info)).toBe('\u2699 Gemini thinking...');
+    });
+
+    it('should return Agent thinking for unknown agent', () => {
+      const info: AgentStatusInfo = { status: 'thinking', agent: AgentType.Unknown };
+      expect(getTitle(info)).toBe('\u2699 Agent thinking...');
     });
 
     it('should return mumbl for idle status', () => {
-      const result = getTitle('idle');
-      expect(result).toBe('mumbl');
+      const info: AgentStatusInfo = { status: 'idle', agent: AgentType.ClaudeCode };
+      expect(getTitle(info)).toBe('mumbl');
     });
 
-    it('should return mumbl for any non-thinking status', () => {
-      const result = getTitle('idle' as AgentStatus);
-      expect(result).toBe('mumbl');
+    it('should return mumbl for idle with any agent', () => {
+      const info: AgentStatusInfo = { status: 'idle', agent: AgentType.GeminiCLI };
+      expect(getTitle(info)).toBe('mumbl');
     });
   });
 });

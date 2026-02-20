@@ -1,7 +1,9 @@
-import { type FSWatcher, readFileSync, watch } from 'node:fs';
-import { useEffect, useState } from 'react';
+import { readFileSync } from 'node:fs';
+import type { AgentActivityStatus } from './useAgentStatus.js';
+import { useAgentStatus } from './useAgentStatus.js';
 
-export type AgentStatus = 'thinking' | 'idle';
+/** @deprecated Use AgentActivityStatus from useAgentStatus instead */
+export type AgentStatus = AgentActivityStatus;
 
 export const STATUS_FILE_PATH = '/tmp/mumbl-claude-status';
 
@@ -14,33 +16,8 @@ export function readStatusFile(filePath: string = STATUS_FILE_PATH): AgentStatus
   }
 }
 
-export function useClaudeStatus(): AgentStatus {
-  const [status, setStatus] = useState<AgentStatus>(() => readStatusFile());
-
-  useEffect(() => {
-    let watcher: FSWatcher | undefined;
-
-    const updateStatus = () => {
-      setStatus(readStatusFile());
-    };
-
-    try {
-      watcher = watch(STATUS_FILE_PATH, () => {
-        updateStatus();
-      });
-    } catch {
-      // File may not exist yet, polling will handle it
-    }
-
-    const interval = setInterval(updateStatus, 1000);
-
-    return () => {
-      if (watcher) {
-        watcher.close();
-      }
-      clearInterval(interval);
-    };
-  }, []);
-
+/** @deprecated Use useAgentStatus instead */
+export function useClaudeStatus(): AgentActivityStatus {
+  const { status } = useAgentStatus();
   return status;
 }
