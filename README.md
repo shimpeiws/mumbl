@@ -46,11 +46,11 @@ ollama pull qwen2.5-coder:7b
 | `MUMBL_OLLAMA_MODEL` | `qwen2.5-coder:7b` | Default model to use |
 | `MUMBL_OLLAMA_TIMEOUT` | `30000` | Connection timeout (ms) |
 
-### Claude Code Integration
+### Agent Status Integration
 
-mumbl can display real-time AI agent activity in the terminal title. When Claude Code is processing, the terminal title updates to show its status.
+mumbl can display real-time AI agent activity in the terminal title. When a coding agent (Claude Code, Gemini CLI) is processing, the terminal title updates to show its status.
 
-#### Hook Configuration
+#### Claude Code
 
 Add the following to your Claude Code settings file (`~/.claude/settings.json`):
 
@@ -63,7 +63,7 @@ Add the following to your Claude Code settings file (`~/.claude/settings.json`):
         "hooks": [
           {
             "type": "command",
-            "command": "echo -n 'thinking' > /tmp/mumbl-claude-status"
+            "command": "echo -n 'thinking:claude-code' > /tmp/mumbl-agent-status"
           }
         ]
       }
@@ -74,7 +74,7 @@ Add the following to your Claude Code settings file (`~/.claude/settings.json`):
         "hooks": [
           {
             "type": "command",
-            "command": "echo -n 'idle' > /tmp/mumbl-claude-status"
+            "command": "echo -n 'idle:claude-code' > /tmp/mumbl-agent-status"
           }
         ]
       }
@@ -83,24 +83,48 @@ Add the following to your Claude Code settings file (`~/.claude/settings.json`):
 }
 ```
 
+#### Gemini CLI
+
+Add the following to your Gemini CLI settings file (`~/.gemini/settings.json`):
+
+```json
+{
+  "hooks": {
+    "BeforeTool": [
+      {
+        "command": "echo -n 'thinking:gemini-cli' > /tmp/mumbl-agent-status"
+      }
+    ],
+    "AfterAgent": [
+      {
+        "command": "echo -n 'idle:gemini-cli' > /tmp/mumbl-agent-status"
+      }
+    ]
+  }
+}
+```
+
 #### How It Works
 
-1. **Claude Code triggers a hook** before each tool use, writing `thinking` to the status file
-2. **mumbl watches the status file** (`/tmp/mumbl-claude-status`) for changes
-3. **The terminal title updates** to show the agent's current activity (e.g., "Claude thinking...")
-4. **When Claude Code stops**, the `Stop` hook writes `idle` and the title resets to "mumbl"
+1. **An agent triggers a hook** before each tool use, writing status to `/tmp/mumbl-agent-status`
+2. **mumbl watches the status file** for changes using `fs.watch` and polling
+3. **The terminal title updates** to show the agent's current activity (e.g., "Claude thinking...", "Gemini thinking...")
+4. **When the agent stops**, the hook writes `idle` and the title resets to "mumbl"
+
+The status file format supports an extended format (`thinking:agent-name`) for agent identification, and plain `thinking`/`idle` for backward compatibility.
 
 #### Verification
 
-You can manually test the integration without Claude Code:
+You can manually test the integration:
 
 ```bash
 # Start mumbl in one terminal
 pnpm dev
 
 # In another terminal, simulate agent activity:
-echo -n 'thinking' > /tmp/mumbl-claude-status   # Title changes to "Claude thinking..."
-echo -n 'idle' > /tmp/mumbl-claude-status        # Title resets to "mumbl"
+echo -n 'thinking:claude-code' > /tmp/mumbl-agent-status   # "Claude thinking..."
+echo -n 'thinking:gemini-cli' > /tmp/mumbl-agent-status    # "Gemini thinking..."
+echo -n 'idle:claude-code' > /tmp/mumbl-agent-status       # Title resets to "mumbl"
 ```
 
 ### Setup
