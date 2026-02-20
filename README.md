@@ -46,6 +46,63 @@ ollama pull qwen2.5-coder:7b
 | `MUMBL_OLLAMA_MODEL` | `qwen2.5-coder:7b` | Default model to use |
 | `MUMBL_OLLAMA_TIMEOUT` | `30000` | Connection timeout (ms) |
 
+### Claude Code Integration
+
+mumbl can display real-time AI agent activity in the terminal title. When Claude Code is processing, the terminal title updates to show its status.
+
+#### Hook Configuration
+
+Add the following to your Claude Code settings file (`~/.claude/settings.json`):
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo -n 'thinking' > /tmp/mumbl-claude-status"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo -n 'idle' > /tmp/mumbl-claude-status"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+#### How It Works
+
+1. **Claude Code triggers a hook** before each tool use, writing `thinking` to the status file
+2. **mumbl watches the status file** (`/tmp/mumbl-claude-status`) for changes
+3. **The terminal title updates** to show the agent's current activity (e.g., "Claude thinking...")
+4. **When Claude Code stops**, the `Stop` hook writes `idle` and the title resets to "mumbl"
+
+#### Verification
+
+You can manually test the integration without Claude Code:
+
+```bash
+# Start mumbl in one terminal
+pnpm dev
+
+# In another terminal, simulate agent activity:
+echo -n 'thinking' > /tmp/mumbl-claude-status   # Title changes to "Claude thinking..."
+echo -n 'idle' > /tmp/mumbl-claude-status        # Title resets to "mumbl"
+```
+
 ### Setup
 
 ```bash
