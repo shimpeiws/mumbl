@@ -131,3 +131,18 @@ export interface ConversationMemoryRow {
   created_at: number; // Unix timestamp in seconds
   updated_at: number; // Unix timestamp in seconds
 }
+
+/**
+ * Database row representation of a follow-up
+ */
+export interface FollowUpRow {
+  id: string;
+  entry_id: string;
+  scheduled_at: number; // Unix timestamp in seconds
+  interval_type: string;
+  status: string;
+  prompt_text: string | null;
+  response_entry_id: string | null;
+  created_at: number; // Unix timestamp in seconds
+  shown_at: number | null; // Unix timestamp in seconds
+}

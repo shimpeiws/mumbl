@@ -7,6 +7,7 @@ import type {
   ListEntriesOptions,
   UpdateEntryOptions,
 } from '../repositories/types.js';
+import type { FollowUpServiceInterface } from './follow-up/follow-up-service.js';
 import { generateEntryId } from './id-service.js';
 import type { ReactionService } from './reaction-service.js';
 
@@ -30,6 +31,7 @@ export interface EntryServiceInterface {
 export function createEntryService(
   db: DatabaseType,
   reactionService?: ReactionService,
+  followUpService?: FollowUpServiceInterface,
 ): EntryServiceInterface {
   const repository = createEntryRepository(db);
 
@@ -49,6 +51,13 @@ export function createEntryService(
     // Queue reaction generation (non-blocking)
     if (reactionService) {
       reactionService.queueReaction(entry.id, entry.content);
+    }
+
+    // Queue follow-up evaluation (fire-and-forget)
+    if (followUpService) {
+      followUpService.evaluateEntry(entry.id, entry.content).catch(() => {
+        // Silently fail - follow-ups are non-critical
+      });
     }
 
     return entry;
@@ -103,8 +112,12 @@ export function createEntryService(
 export class EntryService implements EntryServiceInterface {
   private readonly _service: EntryServiceInterface;
 
-  constructor(db: DatabaseType, reactionService?: ReactionService) {
-    this._service = createEntryService(db, reactionService);
+  constructor(
+    db: DatabaseType,
+    reactionService?: ReactionService,
+    followUpService?: FollowUpServiceInterface,
+  ) {
+    this._service = createEntryService(db, reactionService, followUpService);
   }
 
   create(options: CreateEntryOptions) {

@@ -4,7 +4,7 @@
 
 export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed';
 
-export type TaskType = 'react' | 'reflect' | 'summarize' | 'chat';
+export type TaskType = 'react' | 'reflect' | 'summarize' | 'chat' | 'follow-up-evaluate';
 
 /**
  * Base task interface
