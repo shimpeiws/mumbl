@@ -24,12 +24,20 @@ export function getAgentDisplayName(agent: AgentType): string {
   }
 }
 
+export function getEmojiFrame(frame: number): string {
+  const len = THINKING_FRAMES.length;
+  const e1 = THINKING_FRAMES[frame % len];
+  const e2 = THINKING_FRAMES[(frame + 1) % len];
+  const e3 = THINKING_FRAMES[(frame + 2) % len];
+  return `${e1}${e2}${e3}`;
+}
+
 export function getTitleFrame(statusInfo: AgentStatusInfo, frame: number): string {
   if (statusInfo.status === 'thinking') {
     const agentName = getAgentDisplayName(statusInfo.agent);
-    const emoji = THINKING_FRAMES[frame % THINKING_FRAMES.length];
+    const emojis = getEmojiFrame(frame);
     const dots = DOT_FRAMES[frame % DOT_FRAMES.length];
-    return `${emoji} ${agentName} thinking${dots}`;
+    return `${emojis} ${agentName} thinking${dots} ${emojis}`;
   }
   return 'mumbl';
 }
