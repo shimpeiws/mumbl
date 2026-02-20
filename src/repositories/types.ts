@@ -96,3 +96,38 @@ export interface ReactionRow {
   content: string;
   created_at: number; // Unix timestamp in seconds
 }
+
+/**
+ * Database row representation of a conversation
+ */
+export interface ConversationRow {
+  id: string;
+  title: string | null;
+  started_at: number; // Unix timestamp in seconds
+  updated_at: number; // Unix timestamp in seconds
+  status: string;
+  metadata: string | null; // JSON string
+}
+
+/**
+ * Database row representation of a conversation-entry link
+ */
+export interface ConversationEntryRow {
+  conversation_id: string;
+  entry_id: string;
+  position: number;
+  created_at: number; // Unix timestamp in seconds
+}
+
+/**
+ * Database row representation of a conversation memory
+ */
+export interface ConversationMemoryRow {
+  id: string;
+  conversation_id: string;
+  memory_type: string;
+  content: string; // JSON string
+  token_count: number;
+  created_at: number; // Unix timestamp in seconds
+  updated_at: number; // Unix timestamp in seconds
+}
