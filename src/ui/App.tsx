@@ -1,5 +1,7 @@
 import { Box, Text, useApp, useInput } from 'ink';
 import React, { useState } from 'react';
+import { useClaudeStatus } from '../hooks/useClaudeStatus.js';
+import { useTerminalTitle } from '../hooks/useTerminalTitle.js';
 import { HelpFooter } from './components/common/HelpFooter.js';
 import { ModeIndicator } from './components/common/ModeIndicator.js';
 import { EntryList } from './components/entries/EntryList.js';
@@ -13,6 +15,8 @@ function AppContent() {
   const { mode, toggleMode } = useNavigation();
   const { status: queueStatus } = useQueue();
   const [isViewingDetail, setIsViewingDetail] = useState(false);
+  const claudeStatus = useClaudeStatus();
+  useTerminalTitle(claudeStatus);
 
   useInput((input, key) => {
     if (input === 'q' || (key.ctrl && input === 'c')) {
