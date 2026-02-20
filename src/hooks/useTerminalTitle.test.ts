@@ -91,13 +91,30 @@ describe('useTerminalTitle', () => {
     it('should return animated title for frame 3', () => {
       const info: AgentStatusInfo = { status: 'thinking', agent: AgentType.ClaudeCode };
       const emojis = getEmojiFrame(3);
-      expect(getTitleFrame(info, 3)).toBe(`${emojis} Claude thinking${DOT_FRAMES[0]} ${emojis}`);
+      expect(getTitleFrame(info, 3)).toBe(`${emojis} Claude thinking${DOT_FRAMES[3]} ${emojis}`);
     });
 
     it('should loop frames correctly for frame 4', () => {
       const info: AgentStatusInfo = { status: 'thinking', agent: AgentType.ClaudeCode };
       const emojis = getEmojiFrame(4);
-      expect(getTitleFrame(info, 4)).toBe(`${emojis} Claude thinking${DOT_FRAMES[1]} ${emojis}`);
+      expect(getTitleFrame(info, 4)).toBe(`${emojis} Claude thinking${DOT_FRAMES[4]} ${emojis}`);
+    });
+
+    it('should have 10 dot frames from . to ..........', () => {
+      expect(DOT_FRAMES).toHaveLength(10);
+      expect(DOT_FRAMES[0]).toBe('.');
+      expect(DOT_FRAMES[9]).toBe('..........');
+    });
+
+    it('should loop dots after 10 frames', () => {
+      const info: AgentStatusInfo = { status: 'thinking', agent: AgentType.ClaudeCode };
+      const emojis10 = getEmojiFrame(10);
+      // frame 10: dots loop back to DOT_FRAMES[0]
+      expect(getTitleFrame(info, 10)).toBe(
+        `${emojis10} Claude thinking${DOT_FRAMES[0]} ${emojis10}`,
+      );
+      // emoji also loops (4 frames), so frame 0 and frame 0 match
+      expect(emojis10).toBe(getEmojiFrame(10 % THINKING_FRAMES.length));
     });
 
     it('should return Gemini thinking for gemini-cli', () => {

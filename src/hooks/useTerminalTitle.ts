@@ -2,7 +2,18 @@ import { useEffect, useRef } from 'react';
 import { type AgentStatusInfo, AgentType } from './useAgentStatus.js';
 
 export const THINKING_FRAMES = ['\u{1F9E0}', '\u{1F4AD}', '\u{1F914}', '\u26A1'] as const;
-export const DOT_FRAMES = ['.', '..', '...'] as const;
+export const DOT_FRAMES = [
+  '.',
+  '..',
+  '...',
+  '....',
+  '.....',
+  '......',
+  '.......',
+  '........',
+  '.........',
+  '..........',
+] as const;
 const ANIMATION_INTERVAL_MS = 500;
 
 export function setTerminalTitle(title: string): void {
