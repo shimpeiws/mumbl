@@ -71,7 +71,13 @@ export function useAgentStatus(): AgentStatusInfo {
     let watcher: FSWatcher | undefined;
 
     const updateStatus = () => {
-      setStatusInfo(readAgentStatusFile());
+      const next = readAgentStatusFile();
+      setStatusInfo((prev) => {
+        if (prev.status === next.status && prev.agent === next.agent) {
+          return prev;
+        }
+        return next;
+      });
     };
 
     try {
