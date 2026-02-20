@@ -12,6 +12,9 @@ interface HelpFooterProps {
 
 export function HelpFooter({ mode, isViewingDetail = false, queueStatus }: HelpFooterProps) {
   const getShortcuts = () => {
+    if (mode === 'conversation') {
+      return 'Enter: send | Esc: end conversation';
+    }
     if (mode === 'write') {
       return 'Tab: list | Esc: cancel | q: quit';
     }
