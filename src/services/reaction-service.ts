@@ -3,6 +3,7 @@ import { createReactionRepository } from '../repositories/reaction-repository.js
 import type { Reaction, ReactionType } from '../repositories/types.js';
 import { generateEntryId } from './id-service.js';
 import type { LLMServiceInterface } from './llm/llm-service.js';
+import type { VocabularySet } from './wordgrain/types.js';
 
 export interface ReactionConfig {
   enabled: boolean;
@@ -50,6 +51,7 @@ export interface ReactionServiceInterface {
   deleteReaction(entryId: string): boolean;
   updateConfig(config: Partial<ReactionConfig>): void;
   getConfig(): ReactionConfig;
+  setVocabulary(vocabulary: VocabularySet): void;
 }
 
 /**
@@ -71,6 +73,18 @@ export function createReactionService(
 ): ReactionServiceInterface {
   const repository = createReactionRepository(db);
   let currentConfig: ReactionConfig = { ...DEFAULT_CONFIG, ...config };
+  let vocabulary: VocabularySet | undefined;
+
+  const setVocabulary = (v: VocabularySet): void => {
+    vocabulary = v;
+  };
+
+  const getVocabularyFallback = (): string | undefined => {
+    if (!vocabulary || vocabulary.words.length === 0) return undefined;
+    const index = Math.floor(Math.random() * vocabulary.words.length);
+    return vocabulary.words[index];
+  };
+
   const listeners: Map<
     ReactionEventType,
     Set<ReactionEventCallback<ReactionEventType>>
@@ -123,8 +137,8 @@ export function createReactionService(
           reactionContent = getDefaultContent(reactionType);
         }
       } catch {
-        // Fallback to default reaction on LLM failure
-        reactionContent = getDefaultContent(reactionType);
+        // Fallback: vocabulary word if available, otherwise default
+        reactionContent = getVocabularyFallback() ?? getDefaultContent(reactionType);
       }
     } else {
       reactionContent = getDefaultContent(reactionType);
@@ -183,6 +197,7 @@ export function createReactionService(
     deleteReaction,
     updateConfig,
     getConfig,
+    setVocabulary,
   };
 }
 
@@ -227,5 +242,8 @@ export class ReactionService implements ReactionServiceInterface {
   }
   getConfig() {
     return this._service.getConfig();
+  }
+  setVocabulary(v: VocabularySet) {
+    return this._service.setVocabulary(v);
   }
 }

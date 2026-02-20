@@ -1,4 +1,5 @@
 import type { ResolvedConfig } from '../../config/types.js';
+import type { VocabularySet } from '../wordgrain/types.js';
 import { createAnthropicProvider } from './anthropic-provider.js';
 import { ProviderUnavailableError } from './errors.js';
 import {
@@ -60,6 +61,7 @@ export interface LLMServiceInterface {
   healthCheck(): Promise<{ primary: boolean; fallback?: boolean }>;
   clearHistory(sessionId?: string): void;
   getProviderInfo(): { provider: Provider; model: string };
+  setVocabulary(vocabulary: VocabularySet): void;
 }
 
 /**
@@ -94,6 +96,12 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
 
   const sessionHistory: SessionMessageHistoryInterface = createSessionMessageHistory();
 
+  let vocabulary: VocabularySet | undefined;
+
+  const setVocabulary = (v: VocabularySet): void => {
+    vocabulary = v;
+  };
+
   const chat = async (
     userMessage: string,
     options?: { sessionId?: string; includeHistory?: boolean },
@@ -105,7 +113,7 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
       ? sessionHistory.getSession(sessionId)
       : createMessageHistory(0);
 
-    const messages = createChatMessages(userMessage, history.getMessages());
+    const messages = createChatMessages(userMessage, history.getMessages(), vocabulary);
 
     try {
       const response = await primaryProvider.chat(messages);
@@ -139,7 +147,7 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
       ? sessionHistory.getSession(sessionId)
       : createMessageHistory(0);
 
-    const messages = createChatMessages(userMessage, history.getMessages());
+    const messages = createChatMessages(userMessage, history.getMessages(), vocabulary);
 
     let fullResponse = '';
 
@@ -166,7 +174,7 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
   }
 
   const summarize = async (entries: string[]): Promise<ChatResponse> => {
-    const messages = createSummaryPrompt(entries);
+    const messages = createSummaryPrompt(entries, vocabulary);
 
     try {
       return await primaryProvider.chat(messages);
@@ -179,7 +187,7 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
   };
 
   const reflect = async (entry: string): Promise<ChatResponse> => {
-    const messages = createReflectionPrompt(entry);
+    const messages = createReflectionPrompt(entry, vocabulary);
 
     try {
       return await primaryProvider.chat(messages);
@@ -192,7 +200,7 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
   };
 
   const react = async (entry: string): Promise<ChatResponse> => {
-    const messages = createReactionPrompt(entry);
+    const messages = createReactionPrompt(entry, vocabulary);
 
     try {
       return await primaryProvider.chat(messages);
@@ -238,6 +246,7 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
     healthCheck,
     clearHistory,
     getProviderInfo,
+    setVocabulary,
   };
 }
 
@@ -275,6 +284,9 @@ export class LLMService implements LLMServiceInterface {
   }
   getProviderInfo() {
     return this._service.getProviderInfo();
+  }
+  setVocabulary(v: VocabularySet) {
+    return this._service.setVocabulary(v);
   }
 }
 
