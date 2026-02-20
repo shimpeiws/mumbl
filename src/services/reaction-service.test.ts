@@ -165,7 +165,9 @@ describe('ReactionService', () => {
 
       const reaction = await llmService.generateReaction('entry-1', 'work is killing me');
 
-      expect(mockLLMService.react).toHaveBeenCalledWith('work is killing me');
+      expect(mockLLMService.react).toHaveBeenCalledWith('work is killing me', {
+        language: 'en',
+      });
       expect(reaction?.content).toBe("that's rough");
       expect(reaction?.reactionType).toBe('custom');
     });
