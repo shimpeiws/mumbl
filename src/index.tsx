@@ -9,6 +9,7 @@ import { createLLMServiceFromConfig } from './services/llm/llm-service.js';
 import { ollamaService } from './services/ollama-service.js';
 import { QueueService } from './services/queue/index.js';
 import { ReactionService } from './services/reaction-service.js';
+import { loadVocabulary } from './services/wordgrain/index.js';
 import { App } from './ui/App.js';
 import { QueueProvider } from './ui/context/QueueContext.js';
 import { ServiceProvider } from './ui/context/ServiceContext.js';
@@ -43,6 +44,15 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
   const reactionConfig = getReactionConfig();
   const reactionLLMService = reactionConfig.useLLM ? llmService : undefined;
   const reactionService = new ReactionService(db, reactionConfig, reactionLLMService);
+
+  // Load wordgrain vocabulary if configured
+  if (config.wordgrainDir) {
+    const vocabulary = loadVocabulary(config.wordgrainDir);
+    if (vocabulary) {
+      llmService.setVocabulary(vocabulary);
+      reactionService.setVocabulary(vocabulary);
+    }
+  }
 
   // Create queue service for background processing
   const queueService = new QueueService(llmService, reactionService);
