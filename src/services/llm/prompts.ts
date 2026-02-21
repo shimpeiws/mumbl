@@ -237,6 +237,41 @@ ${examples}`;
 }
 
 /**
+ * Create a callout prompt from recent journal entries
+ * Used by the generate-callout command for hook-driven messages
+ */
+export function createCalloutPrompt(entries: string[]): Message[] {
+  const entriesText = entries
+    .slice(0, 5)
+    .map((e, i) => `${i + 1}. ${e}`)
+    .join('\n');
+
+  return [
+    {
+      role: 'system',
+      content: `You generate a brief callout message based on someone's recent journal entries.
+
+Style:
+- One short sentence, casual tone
+- Reference something specific from their entries
+- Mumble rap vibe - keep it chill
+- No questions, no advice
+- Max 50 characters
+
+Examples:
+- "still on that grind huh"
+- "sleep been rough lately"
+- "that project tho"
+- "vibes been shifting"`,
+    },
+    {
+      role: 'user',
+      content: `Generate a callout from these recent entries:\n\n${entriesText}`,
+    },
+  ];
+}
+
+/**
  * Create a trend summary prompt from topic counts
  */
 export function createTrendSummaryPrompt(topicCounts: Record<string, number>): {

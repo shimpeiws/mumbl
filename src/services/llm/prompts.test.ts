@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   MUMBL_SYSTEM_PROMPT,
+  createCalloutPrompt,
   createChatMessages,
   createReflectionPrompt,
   createSummaryPrompt,
@@ -147,5 +148,56 @@ describe('createReflectionPrompt', () => {
 
     expect(messages[0].content).toContain('Good:');
     expect(messages[0].content).toContain('Bad:');
+  });
+});
+
+describe('createCalloutPrompt', () => {
+  it('should create messages with system and user roles', () => {
+    const entries = ['worked late', 'tired today'];
+
+    const messages = createCalloutPrompt(entries);
+
+    expect(messages).toHaveLength(2);
+    expect(messages[0]?.role).toBe('system');
+    expect(messages[1]?.role).toBe('user');
+  });
+
+  it('should include numbered entries in user message', () => {
+    const entries = ['entry one', 'entry two', 'entry three'];
+
+    const messages = createCalloutPrompt(entries);
+
+    expect(messages[1]?.content).toContain('1. entry one');
+    expect(messages[1]?.content).toContain('2. entry two');
+    expect(messages[1]?.content).toContain('3. entry three');
+  });
+
+  it('should limit entries to first 5', () => {
+    const entries = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+
+    const messages = createCalloutPrompt(entries);
+
+    expect(messages[1]?.content).toContain('5. e');
+    expect(messages[1]?.content).not.toContain('6. f');
+  });
+
+  it('should handle empty entries array', () => {
+    const messages = createCalloutPrompt([]);
+
+    expect(messages).toHaveLength(2);
+    expect(messages[1]?.role).toBe('user');
+  });
+
+  it('should specify casual tone and max character limit', () => {
+    const messages = createCalloutPrompt(['test']);
+
+    expect(messages[0]?.content).toContain('casual tone');
+    expect(messages[0]?.content).toContain('Max 50 characters');
+  });
+
+  it('should prohibit questions and advice', () => {
+    const messages = createCalloutPrompt(['test']);
+
+    expect(messages[0]?.content).toContain('No questions, no advice');
   });
 });
