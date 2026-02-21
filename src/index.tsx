@@ -10,6 +10,7 @@ import { createLLMServiceFromConfig } from './services/llm/llm-service.js';
 import { ollamaService } from './services/ollama-service.js';
 import { QueueService } from './services/queue/index.js';
 import { ReactionService } from './services/reaction-service.js';
+import { createTrendService } from './services/trends/trend-service.js';
 import { loadVocabulary } from './services/wordgrain/index.js';
 import { App } from './ui/App.js';
 import { QueueProvider } from './ui/context/QueueContext.js';
@@ -59,8 +60,11 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
   const queueService = new QueueService(llmService, reactionService);
   queueService.start();
 
-  // Create entry service with reaction support
-  const entryService = new EntryService(db, reactionService);
+  // Create trend service for topic analysis
+  const trendService = createTrendService(db, llmService);
+
+  // Create entry service with reaction and trend support
+  const entryService = new EntryService(db, reactionService, trendService);
   // ollamaService is imported as a singleton object
 
   // Create conversation service for memory tracking
@@ -74,6 +78,7 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
       reactionService={reactionService}
       queueService={queueService}
       conversationService={conversationService}
+      trendService={trendService}
     >
       <QueueProvider queueService={queueService}>
         <App />

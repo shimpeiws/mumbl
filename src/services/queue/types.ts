@@ -4,7 +4,7 @@
 
 export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed';
 
-export type TaskType = 'react' | 'reflect' | 'summarize' | 'chat';
+export type TaskType = 'react' | 'reflect' | 'summarize' | 'chat' | 'trend-analyze';
 
 /**
  * Base task interface
@@ -54,11 +54,20 @@ export interface ChatTaskPayload {
   sessionId?: string;
 }
 
+/**
+ * Payload for trend analysis tasks
+ */
+export interface TrendAnalyzeTaskPayload {
+  entryId: string;
+  entryContent: string;
+}
+
 export type TaskPayload =
   | ReactTaskPayload
   | ReflectTaskPayload
   | SummarizeTaskPayload
-  | ChatTaskPayload;
+  | ChatTaskPayload
+  | TrendAnalyzeTaskPayload;
 
 /**
  * Queue status summary
