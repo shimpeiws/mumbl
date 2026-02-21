@@ -10,6 +10,7 @@ export interface MumblConfig {
   model?: string;
   provider?: Provider;
   baseUrl?: string;
+  wordgrainDir?: string;
 }
 
 /**
@@ -20,6 +21,7 @@ export interface ResolvedConfig {
   provider: Provider;
   baseUrl?: string;
   apiKey?: string;
+  wordgrainDir?: string;
 }
 
 /**
