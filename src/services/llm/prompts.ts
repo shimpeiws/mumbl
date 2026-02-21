@@ -6,6 +6,7 @@
  */
 import type { DetectedLanguage } from '../language/types.js';
 import { getWordListForLanguage } from '../language/word-lists.js';
+import type { VocabularySet } from '../wordgrain/types.js';
 import type { Message } from './types.js';
 
 /**
@@ -26,7 +27,7 @@ export const MUMBL_SYSTEM_PROMPT = `You are mumbl. A presence that receives mumb
 - Match their energy - if they're brief, you're brief
 
 ## Phrases You Can Use
-- "·" (just a read receipt)
+- "\u00B7" (just a read receipt)
 - "hearing you"
 - "that's rough"
 - "pour it out"
@@ -49,13 +50,40 @@ Even then, keep it short.
 - Respect privacy`;
 
 /**
+ * Build a vocabulary reference section for prompts
+ */
+function buildVocabularySection(vocabulary: VocabularySet): string {
+  const parts: string[] = [
+    '\n\n## Vocabulary Reference',
+    'Draw from these words and phrases for flavor:',
+  ];
+
+  if (vocabulary.words.length > 0) {
+    parts.push(`Words: ${vocabulary.words.join(', ')}`);
+  }
+  if (vocabulary.phrases.length > 0) {
+    parts.push(`Phrases: ${vocabulary.phrases.join(', ')}`);
+  }
+
+  return parts.join('\n');
+}
+
+/**
  * Create a chat message array with the system prompt
  */
-export function createChatMessages(userMessage: string, history?: Message[]): Message[] {
+export function createChatMessages(
+  userMessage: string,
+  history?: Message[],
+  vocabulary?: VocabularySet,
+): Message[] {
+  const systemContent = vocabulary
+    ? MUMBL_SYSTEM_PROMPT + buildVocabularySection(vocabulary)
+    : MUMBL_SYSTEM_PROMPT;
+
   const messages: Message[] = [
     {
       role: 'system',
-      content: MUMBL_SYSTEM_PROMPT,
+      content: systemContent,
     },
   ];
 
@@ -74,13 +102,10 @@ export function createChatMessages(userMessage: string, history?: Message[]): Me
 /**
  * Create a summary prompt for journal entries
  */
-export function createSummaryPrompt(entries: string[]): Message[] {
+export function createSummaryPrompt(entries: string[], vocabulary?: VocabularySet): Message[] {
   const entriesText = entries.map((e, i) => `${i + 1}. ${e}`).join('\n');
 
-  return [
-    {
-      role: 'system',
-      content: `You're summarizing someone's mumbles.
+  const baseContent = `You're summarizing someone's mumbles.
 
 Style:
 - Notice patterns, don't judge them
@@ -90,7 +115,14 @@ Style:
 
 Example: "lots of work stress lately. sleep's been rough. weekend was a break."
 
-Not this: "I notice you're experiencing stress! Have you considered..."`,
+Not this: "I notice you're experiencing stress! Have you considered..."`;
+
+  const systemContent = vocabulary ? baseContent + buildVocabularySection(vocabulary) : baseContent;
+
+  return [
+    {
+      role: 'system',
+      content: systemContent,
     },
     {
       role: 'user',
@@ -102,11 +134,8 @@ Not this: "I notice you're experiencing stress! Have you considered..."`,
 /**
  * Create a reflection prompt for a single entry
  */
-export function createReflectionPrompt(entry: string): Message[] {
-  return [
-    {
-      role: 'system',
-      content: `You're reflecting on someone's mumble.
+export function createReflectionPrompt(entry: string, vocabulary?: VocabularySet): Message[] {
+  const baseContent = `You're reflecting on someone's mumble.
 
 Style:
 - One short observation or question, max
@@ -116,7 +145,14 @@ Style:
 
 Good: "that meeting sounds heavy"
 Good: "sleep thing again?"
-Bad: "It sounds like you're processing a lot. What do you think is driving these feelings?"`,
+Bad: "It sounds like you're processing a lot. What do you think is driving these feelings?"`;
+
+  const systemContent = vocabulary ? baseContent + buildVocabularySection(vocabulary) : baseContent;
+
+  return [
+    {
+      role: 'system',
+      content: systemContent,
     },
     {
       role: 'user',
@@ -133,7 +169,11 @@ export interface ReactionPromptOptions {
  * Create a reaction prompt for a journal entry
  * This produces minimal, mumbl-style reactions
  */
-export function createReactionPrompt(entry: string, options?: ReactionPromptOptions): Message[] {
+export function createReactionPrompt(
+  entry: string,
+  options?: ReactionPromptOptions,
+  vocabulary?: VocabularySet,
+): Message[] {
   const language = options?.language;
   const wordList = language ? getWordListForLanguage(language) : getWordListForLanguage('en');
 
@@ -168,10 +208,7 @@ export function createReactionPrompt(entry: string, options?: ReactionPromptOpti
 "same thing again" -> bruh
 "nice weather" -> valid`;
 
-  return [
-    {
-      role: 'system',
-      content: `You respond with ONE word only. ${styleLabel}. Curt and distant. Vary your responses.
+  const baseContent = `You respond with ONE word only. ${styleLabel}. Curt and distant. Vary your responses.
 
 Word options (pick different ones each time):
 ${wordList}
@@ -182,7 +219,14 @@ NEVER use:
 - Questions
 - Emojis
 
-${examples}`,
+${examples}`;
+
+  const systemContent = vocabulary ? baseContent + buildVocabularySection(vocabulary) : baseContent;
+
+  return [
+    {
+      role: 'system',
+      content: systemContent,
     },
     {
       role: 'user',
