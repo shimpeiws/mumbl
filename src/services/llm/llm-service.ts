@@ -1,4 +1,5 @@
 import type { ResolvedConfig } from '../../config/types.js';
+import type { ConversationContext } from '../conversation/types.js';
 import type { VocabularySet } from '../wordgrain/types.js';
 import { createAnthropicProvider } from './anthropic-provider.js';
 import { ProviderUnavailableError } from './errors.js';
@@ -12,6 +13,7 @@ import { createOllamaProvider } from './ollama-provider.js';
 import {
   type ReactionPromptOptions,
   createChatMessages,
+  createContextualChatMessages,
   createReactionPrompt,
   createReflectionPrompt,
   createSummaryPrompt,
@@ -52,6 +54,7 @@ export interface LLMServiceInterface {
     userMessage: string,
     options?: { sessionId?: string; includeHistory?: boolean },
   ): Promise<ChatResponse>;
+  chatWithContext(message: string, context: ConversationContext): Promise<ChatResponse>;
   stream(
     userMessage: string,
     options?: { sessionId?: string; includeHistory?: boolean },
@@ -132,6 +135,22 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
         history.add({ role: 'assistant', content: response.content });
 
         return response;
+      }
+      throw error;
+    }
+  };
+
+  const chatWithContext = async (
+    message: string,
+    context: ConversationContext,
+  ): Promise<ChatResponse> => {
+    const messages = createContextualChatMessages(message, context);
+
+    try {
+      return await primaryProvider.chat(messages);
+    } catch (error) {
+      if (error instanceof ProviderUnavailableError && fallbackProvider) {
+        return await fallbackProvider.chat(messages);
       }
       throw error;
     }
@@ -240,6 +259,7 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
 
   return {
     chat,
+    chatWithContext,
     stream,
     summarize,
     reflect,
@@ -264,6 +284,9 @@ export class LLMService implements LLMServiceInterface {
 
   chat(userMessage: string, options?: { sessionId?: string; includeHistory?: boolean }) {
     return this._service.chat(userMessage, options);
+  }
+  chatWithContext(message: string, context: ConversationContext) {
+    return this._service.chatWithContext(message, context);
   }
   stream(userMessage: string, options?: { sessionId?: string; includeHistory?: boolean }) {
     return this._service.stream(userMessage, options);

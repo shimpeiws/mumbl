@@ -4,6 +4,7 @@
  * Core concept: "A place to throw your mumbles, with AI just being there"
  * Inspired by: Future, mumble rap, Freebandz, Pluto
  */
+import type { ConversationContext } from '../conversation/types.js';
 import type { DetectedLanguage } from '../language/types.js';
 import { getWordListForLanguage } from '../language/word-lists.js';
 import type { VocabularySet } from '../wordgrain/types.js';
@@ -268,4 +269,71 @@ Examples:
       content: `Generate a callout from these recent entries:\n\n${entriesText}`,
     },
   ];
+}
+
+/**
+ * Build a contextual system prompt that includes conversation history and memory
+ */
+function buildContextualSystemPrompt(context: ConversationContext): string {
+  const parts: string[] = [MUMBL_SYSTEM_PROMPT];
+
+  // Add memory summaries if available
+  const summaries = context.memory.filter((m) => m.memoryType === 'summary');
+  if (summaries.length > 0) {
+    const summaryTexts = summaries
+      .map((s) => {
+        const content = s.content as { summary?: string };
+        return content.summary ?? '';
+      })
+      .filter((s) => s.length > 0);
+
+    if (summaryTexts.length > 0) {
+      parts.push(`\n\n## Previous Context (summarized)\n${summaryTexts.join('\n')}`);
+    }
+  }
+
+  // Add recent buffer entries if available
+  const buffers = context.memory.filter((m) => m.memoryType === 'buffer');
+  if (buffers.length > 0) {
+    const bufferEntries: string[] = [];
+    for (const buf of buffers) {
+      const content = buf.content as { entries?: string[] };
+      if (content.entries) {
+        bufferEntries.push(...content.entries);
+      }
+    }
+
+    if (bufferEntries.length > 0) {
+      parts.push(`\n\n## Recent Mumbles\n${bufferEntries.join('\n')}`);
+    }
+  }
+
+  return parts.join('');
+}
+
+/**
+ * Create a contextual chat message array with conversation context
+ */
+export function createContextualChatMessages(
+  message: string,
+  context: ConversationContext,
+  history?: Message[],
+): Message[] {
+  const messages: Message[] = [
+    {
+      role: 'system',
+      content: buildContextualSystemPrompt(context),
+    },
+  ];
+
+  if (history) {
+    messages.push(...history);
+  }
+
+  messages.push({
+    role: 'user',
+    content: message,
+  });
+
+  return messages;
 }
