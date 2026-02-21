@@ -6,6 +6,7 @@ import type { LLMServiceInterface } from '../../services/llm/llm-service.js';
 import type { OllamaService } from '../../services/ollama-service.js';
 import type { QueueServiceInterface } from '../../services/queue/index.js';
 import type { ReactionServiceInterface } from '../../services/reaction-service.js';
+import type { TrendServiceInterface } from '../../services/trends/types.js';
 
 interface ServiceContextValue {
   entryService: EntryServiceInterface;
@@ -14,6 +15,7 @@ interface ServiceContextValue {
   reactionService: ReactionServiceInterface;
   queueService: QueueServiceInterface;
   conversationService?: ConversationServiceInterface;
+  trendService?: TrendServiceInterface;
   followUpService?: FollowUpServiceInterface;
 }
 
@@ -34,6 +36,7 @@ interface ServiceProviderProps {
   reactionService: ReactionServiceInterface;
   queueService: QueueServiceInterface;
   conversationService?: ConversationServiceInterface;
+  trendService?: TrendServiceInterface;
   followUpService?: FollowUpServiceInterface;
   children: React.ReactNode;
 }
@@ -45,6 +48,7 @@ export function ServiceProvider({
   reactionService,
   queueService,
   conversationService,
+  trendService,
   followUpService,
   children,
 }: ServiceProviderProps) {
@@ -57,6 +61,7 @@ export function ServiceProvider({
         reactionService,
         queueService,
         conversationService,
+        trendService,
         followUpService,
       }}
     >

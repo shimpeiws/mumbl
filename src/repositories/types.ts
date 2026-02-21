@@ -133,6 +133,41 @@ export interface ConversationMemoryRow {
 }
 
 /**
+ * Database row representation of a topic
+ */
+export interface TopicRow {
+  id: string;
+  name: string;
+  first_seen: number; // Unix timestamp in seconds
+  last_seen: number; // Unix timestamp in seconds
+  total_count: number;
+  metadata: string; // JSON string
+}
+
+/**
+ * Database row representation of an entry-topic link
+ */
+export interface EntryTopicRow {
+  entry_id: string;
+  topic_id: string;
+  relevance: number;
+  created_at: number; // Unix timestamp in seconds
+}
+
+/**
+ * Database row representation of a trend summary
+ */
+export interface TrendSummaryRow {
+  id: string;
+  period_type: string;
+  period_start: number; // Unix timestamp in seconds
+  period_end: number; // Unix timestamp in seconds
+  content: string;
+  topic_counts: string; // JSON string
+  created_at: number; // Unix timestamp in seconds
+}
+
+/**
  * Database row representation of a follow-up
  */
 export interface FollowUpRow {

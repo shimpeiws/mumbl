@@ -10,6 +10,7 @@ import type {
 import type { FollowUpServiceInterface } from './follow-up/follow-up-service.js';
 import { generateEntryId } from './id-service.js';
 import type { ReactionService } from './reaction-service.js';
+import type { TrendServiceInterface } from './trends/types.js';
 
 /**
  * Entry service interface
@@ -31,6 +32,7 @@ export interface EntryServiceInterface {
 export function createEntryService(
   db: DatabaseType,
   reactionService?: ReactionService,
+  trendService?: TrendServiceInterface,
   followUpService?: FollowUpServiceInterface,
 ): EntryServiceInterface {
   const repository = createEntryRepository(db);
@@ -51,6 +53,13 @@ export function createEntryService(
     // Queue reaction generation (non-blocking)
     if (reactionService) {
       reactionService.queueReaction(entry.id, entry.content);
+    }
+
+    // Queue trend analysis (non-blocking, fire-and-forget)
+    if (trendService) {
+      trendService.analyzeEntry(entry.id, entry.content).catch(() => {
+        // Silently ignore trend analysis errors
+      });
     }
 
     // Queue follow-up evaluation (fire-and-forget)
@@ -115,9 +124,10 @@ export class EntryService implements EntryServiceInterface {
   constructor(
     db: DatabaseType,
     reactionService?: ReactionService,
+    trendService?: TrendServiceInterface,
     followUpService?: FollowUpServiceInterface,
   ) {
-    this._service = createEntryService(db, reactionService, followUpService);
+    this._service = createEntryService(db, reactionService, trendService, followUpService);
   }
 
   create(options: CreateEntryOptions) {

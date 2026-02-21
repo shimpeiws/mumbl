@@ -272,6 +272,26 @@ Examples:
 }
 
 /**
+ * Create a trend summary prompt from topic counts
+ */
+export function createTrendSummaryPrompt(topicCounts: Record<string, number>): {
+  role: 'user';
+  content: string;
+} {
+  const topicList = Object.entries(topicCounts)
+    .sort(([, a], [, b]) => b - a)
+    .map(([name, count]) => `- ${name}: ${count} mentions`)
+    .join('\n');
+
+  const content =
+    topicList.length > 0
+      ? `Summarize these trending topics from recent mumbles in 2-3 brief sentences. Notice patterns, don't judge. No advice.\n\nTopics:\n${topicList}`
+      : 'No topics found in this period. Say something brief about it being quiet.';
+
+  return { role: 'user', content };
+}
+
+/**
  * Create a follow-up evaluation prompt for a journal entry
  * LLM decides whether the entry warrants a follow-up check-in
  */
