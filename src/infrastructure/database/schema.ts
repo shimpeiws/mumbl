@@ -168,9 +168,34 @@ export const CREATE_TREND_SUMMARIES_PERIOD_INDEX = `
 `;
 
 /**
+ * SQL schema for user_context table
+ */
+export const CREATE_USER_CONTEXT_TABLE = `
+  CREATE TABLE IF NOT EXISTS user_context (
+    id TEXT PRIMARY KEY,
+    context_type TEXT NOT NULL,
+    key TEXT NOT NULL,
+    value TEXT NOT NULL,
+    confidence REAL DEFAULT 0.5,
+    source_count INTEGER DEFAULT 1,
+    first_derived INTEGER NOT NULL,
+    last_updated INTEGER NOT NULL,
+    is_private INTEGER DEFAULT 0,
+    UNIQUE(context_type, key)
+  )
+`;
+
+/**
+ * Index on user_context for type lookups
+ */
+export const CREATE_USER_CONTEXT_TYPE_INDEX = `
+  CREATE INDEX IF NOT EXISTS idx_user_context_type ON user_context(context_type)
+`;
+
+/**
  * Schema version for future migrations
  */
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 /**
  * Initialize database schema
@@ -195,6 +220,8 @@ export function initializeSchema(db: {
   db.exec(CREATE_TREND_SUMMARIES_TABLE);
   db.exec(CREATE_ENTRY_TOPICS_INDEX);
   db.exec(CREATE_TREND_SUMMARIES_PERIOD_INDEX);
+  db.exec(CREATE_USER_CONTEXT_TABLE);
+  db.exec(CREATE_USER_CONTEXT_TYPE_INDEX);
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS schema_version (
@@ -251,6 +278,15 @@ export function migrateToVersion4(db: { exec: (sql: string) => void }): void {
 }
 
 /**
+ * Migrate from version 4 to version 5
+ * Adds user_context table for context accumulation
+ */
+export function migrateToVersion5(db: { exec: (sql: string) => void }): void {
+  db.exec(CREATE_USER_CONTEXT_TABLE);
+  db.exec(CREATE_USER_CONTEXT_TYPE_INDEX);
+}
+
+/**
  * Run any pending migrations
  */
 export function runMigrations(db: {
@@ -282,5 +318,11 @@ export function runMigrations(db: {
     migrateToVersion4(db);
     db.exec('DELETE FROM schema_version');
     db.exec('INSERT INTO schema_version (version) VALUES (4)');
+  }
+
+  if (currentVersion < 5) {
+    migrateToVersion5(db);
+    db.exec('DELETE FROM schema_version');
+    db.exec('INSERT INTO schema_version (version) VALUES (5)');
   }
 }

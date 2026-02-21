@@ -7,6 +7,7 @@ import type {
   ListEntriesOptions,
   UpdateEntryOptions,
 } from '../repositories/types.js';
+import type { ContextServiceInterface } from './context/types.js';
 import { generateEntryId } from './id-service.js';
 import type { ReactionService } from './reaction-service.js';
 import type { TrendServiceInterface } from './trends/types.js';
@@ -32,6 +33,7 @@ export function createEntryService(
   db: DatabaseType,
   reactionService?: ReactionService,
   trendService?: TrendServiceInterface,
+  contextService?: ContextServiceInterface,
 ): EntryServiceInterface {
   const repository = createEntryRepository(db);
 
@@ -57,6 +59,13 @@ export function createEntryService(
     if (trendService) {
       trendService.analyzeEntry(entry.id, entry.content).catch(() => {
         // Silently ignore trend analysis errors
+      });
+    }
+
+    // Queue context extraction (non-blocking, fire-and-forget)
+    if (contextService) {
+      contextService.processEntry(entry.id, entry.content).catch(() => {
+        // Silently ignore context extraction errors
       });
     }
 
@@ -116,8 +125,9 @@ export class EntryService implements EntryServiceInterface {
     db: DatabaseType,
     reactionService?: ReactionService,
     trendService?: TrendServiceInterface,
+    contextService?: ContextServiceInterface,
   ) {
-    this._service = createEntryService(db, reactionService, trendService);
+    this._service = createEntryService(db, reactionService, trendService, contextService);
   }
 
   create(options: CreateEntryOptions) {

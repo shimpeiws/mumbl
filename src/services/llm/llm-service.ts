@@ -1,4 +1,5 @@
 import type { ResolvedConfig } from '../../config/types.js';
+import type { ContextServiceInterface } from '../context/types.js';
 import type { ConversationContext } from '../conversation/types.js';
 import { createAnthropicProvider } from './anthropic-provider.js';
 import { ProviderUnavailableError } from './errors.js';
@@ -63,6 +64,7 @@ export interface LLMServiceInterface {
   healthCheck(): Promise<{ primary: boolean; fallback?: boolean }>;
   clearHistory(sessionId?: string): void;
   getProviderInfo(): { provider: Provider; model: string };
+  setContextService(service: ContextServiceInterface): void;
 }
 
 /**
@@ -96,6 +98,13 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
   }
 
   const sessionHistory: SessionMessageHistoryInterface = createSessionMessageHistory();
+  let contextService: ContextServiceInterface | undefined;
+
+  const getUserContext = (): string | undefined => {
+    if (!contextService) return undefined;
+    const ctx = contextService.getContextForLLM();
+    return ctx.length > 0 ? ctx : undefined;
+  };
 
   const chat = async (
     userMessage: string,
@@ -108,7 +117,7 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
       ? sessionHistory.getSession(sessionId)
       : createMessageHistory(0);
 
-    const messages = createChatMessages(userMessage, history.getMessages());
+    const messages = createChatMessages(userMessage, history.getMessages(), getUserContext());
 
     try {
       const response = await primaryProvider.chat(messages);
@@ -135,7 +144,7 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
     message: string,
     context: ConversationContext,
   ): Promise<ChatResponse> => {
-    const messages = createContextualChatMessages(message, context);
+    const messages = createContextualChatMessages(message, context, undefined, getUserContext());
 
     try {
       return await primaryProvider.chat(messages);
@@ -158,7 +167,7 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
       ? sessionHistory.getSession(sessionId)
       : createMessageHistory(0);
 
-    const messages = createChatMessages(userMessage, history.getMessages());
+    const messages = createChatMessages(userMessage, history.getMessages(), getUserContext());
 
     let fullResponse = '';
 
@@ -248,6 +257,10 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
     };
   };
 
+  const setContextServiceFn = (service: ContextServiceInterface): void => {
+    contextService = service;
+  };
+
   return {
     chat,
     chatWithContext,
@@ -258,6 +271,7 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
     healthCheck,
     clearHistory,
     getProviderInfo,
+    setContextService: setContextServiceFn,
   };
 }
 
@@ -298,6 +312,9 @@ export class LLMService implements LLMServiceInterface {
   }
   getProviderInfo() {
     return this._service.getProviderInfo();
+  }
+  setContextService(service: ContextServiceInterface) {
+    return this._service.setContextService(service);
   }
 }
 

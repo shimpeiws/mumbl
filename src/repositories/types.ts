@@ -166,3 +166,18 @@ export interface TrendSummaryRow {
   topic_counts: string; // JSON string
   created_at: number; // Unix timestamp in seconds
 }
+
+/**
+ * Database row representation of a user context item
+ */
+export interface UserContextRow {
+  id: string;
+  context_type: string;
+  key: string;
+  value: string; // JSON string
+  confidence: number;
+  source_count: number;
+  first_derived: number; // Unix timestamp in seconds
+  last_updated: number; // Unix timestamp in seconds
+  is_private: number; // 0 or 1
+}
