@@ -1,13 +1,21 @@
 import { Box, Text, useInput } from 'ink';
-import React from 'react';
+import React, { useState } from 'react';
+import { detectConversationTrigger } from '../../../services/conversation/trigger-detector.js';
 import { useNavigation } from '../../context/NavigationContext.js';
 import { useServices } from '../../context/ServiceContext.js';
+import { ConversationPrompt } from '../conversation/ConversationPrompt.js';
 
 export function WriteView() {
-  const { switchToList, writeState, setWriteState } = useNavigation();
-  const { entryService } = useServices();
+  const { switchToList, switchToConversation, writeState, setWriteState } = useNavigation();
+  const { entryService, conversationService } = useServices();
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [pendingContent, setPendingContent] = useState('');
 
   useInput((input, key) => {
+    if (showPrompt) {
+      return;
+    }
+
     if (key.escape) {
       switchToList();
       return;
@@ -18,18 +26,23 @@ export function WriteView() {
       return;
     }
 
-    // Save entry on Enter (only if content is not empty)
     if (key.return) {
       const trimmedContent = writeState.content.trim();
       if (trimmedContent) {
         entryService.create({ content: trimmedContent });
         setWriteState({ content: '' });
+
+        if (conversationService && detectConversationTrigger(trimmedContent)) {
+          setPendingContent(trimmedContent);
+          setShowPrompt(true);
+          return;
+        }
+
         switchToList({ selectLastEntry: true });
       }
       return;
     }
 
-    // Basic text input handling
     if (key.backspace || key.delete) {
       setWriteState({ content: writeState.content.slice(0, -1) });
       return;
@@ -39,6 +52,38 @@ export function WriteView() {
       setWriteState({ content: writeState.content + input });
     }
   });
+
+  const handleAcceptConversation = () => {
+    if (!conversationService) {
+      setShowPrompt(false);
+      switchToList({ selectLastEntry: true });
+      return;
+    }
+
+    const conversation = conversationService.startConversation();
+    const entry = entryService.create({ content: pendingContent });
+    conversationService.addEntry(conversation.id, entry.id, pendingContent);
+    setShowPrompt(false);
+    setPendingContent('');
+    switchToConversation(conversation.id);
+  };
+
+  const handleDeclineConversation = () => {
+    setShowPrompt(false);
+    setPendingContent('');
+    switchToList({ selectLastEntry: true });
+  };
+
+  if (showPrompt) {
+    return (
+      <Box flexDirection="column" padding={1}>
+        <ConversationPrompt
+          onAccept={handleAcceptConversation}
+          onDecline={handleDeclineConversation}
+        />
+      </Box>
+    );
+  }
 
   return (
     <Box flexDirection="column" padding={1}>

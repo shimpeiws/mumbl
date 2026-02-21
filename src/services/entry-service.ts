@@ -8,6 +8,7 @@ import type {
   UpdateEntryOptions,
 } from '../repositories/types.js';
 import type { ContextServiceInterface } from './context/types.js';
+import type { FollowUpServiceInterface } from './follow-up/follow-up-service.js';
 import { generateEntryId } from './id-service.js';
 import type { ReactionService } from './reaction-service.js';
 import type { TrendServiceInterface } from './trends/types.js';
@@ -34,6 +35,7 @@ export function createEntryService(
   reactionService?: ReactionService,
   trendService?: TrendServiceInterface,
   contextService?: ContextServiceInterface,
+  followUpService?: FollowUpServiceInterface,
 ): EntryServiceInterface {
   const repository = createEntryRepository(db);
 
@@ -66,6 +68,13 @@ export function createEntryService(
     if (contextService) {
       contextService.processEntry(entry.id, entry.content).catch(() => {
         // Silently ignore context extraction errors
+      });
+    }
+
+    // Queue follow-up evaluation (fire-and-forget)
+    if (followUpService) {
+      followUpService.evaluateEntry(entry.id, entry.content).catch(() => {
+        // Silently fail - follow-ups are non-critical
       });
     }
 
@@ -126,8 +135,15 @@ export class EntryService implements EntryServiceInterface {
     reactionService?: ReactionService,
     trendService?: TrendServiceInterface,
     contextService?: ContextServiceInterface,
+    followUpService?: FollowUpServiceInterface,
   ) {
-    this._service = createEntryService(db, reactionService, trendService, contextService);
+    this._service = createEntryService(
+      db,
+      reactionService,
+      trendService,
+      contextService,
+      followUpService,
+    );
   }
 
   create(options: CreateEntryOptions) {

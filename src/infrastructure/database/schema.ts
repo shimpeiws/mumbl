@@ -186,10 +186,45 @@ export const CREATE_USER_CONTEXT_TABLE = `
 `;
 
 /**
+ * SQL schema for follow_ups table
+ */
+export const CREATE_FOLLOW_UPS_TABLE = `
+  CREATE TABLE IF NOT EXISTS follow_ups (
+    id TEXT PRIMARY KEY,
+    entry_id TEXT NOT NULL,
+    scheduled_at INTEGER NOT NULL,
+    interval_type TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    prompt_text TEXT,
+    response_entry_id TEXT,
+    created_at INTEGER DEFAULT (strftime('%s', 'now')),
+    shown_at INTEGER,
+    FOREIGN KEY (entry_id) REFERENCES entries(id) ON DELETE CASCADE,
+    FOREIGN KEY (response_entry_id) REFERENCES entries(id) ON DELETE SET NULL
+  )
+`;
+
+/**
  * Index on user_context for type lookups
  */
 export const CREATE_USER_CONTEXT_TYPE_INDEX = `
   CREATE INDEX IF NOT EXISTS idx_user_context_type ON user_context(context_type)
+`;
+
+/**
+ * Index on follow_ups scheduled_at for efficient due queries
+ */
+export const CREATE_FOLLOW_UPS_SCHEDULED_INDEX = `
+  CREATE INDEX IF NOT EXISTS idx_follow_ups_scheduled_at
+  ON follow_ups(scheduled_at)
+`;
+
+/**
+ * Index on follow_ups entry_id for efficient lookups
+ */
+export const CREATE_FOLLOW_UPS_ENTRY_INDEX = `
+  CREATE INDEX IF NOT EXISTS idx_follow_ups_entry_id
+  ON follow_ups(entry_id)
 `;
 
 /**
@@ -222,6 +257,9 @@ export function initializeSchema(db: {
   db.exec(CREATE_TREND_SUMMARIES_PERIOD_INDEX);
   db.exec(CREATE_USER_CONTEXT_TABLE);
   db.exec(CREATE_USER_CONTEXT_TYPE_INDEX);
+  db.exec(CREATE_FOLLOW_UPS_TABLE);
+  db.exec(CREATE_FOLLOW_UPS_SCHEDULED_INDEX);
+  db.exec(CREATE_FOLLOW_UPS_ENTRY_INDEX);
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS schema_version (
@@ -267,7 +305,7 @@ export function migrateToVersion3(db: { exec: (sql: string) => void }): void {
 
 /**
  * Migrate from version 3 to version 4
- * Adds topics, entry_topics, and trend_summaries tables
+ * Adds topics, entry_topics, trend_summaries, and follow_ups tables
  */
 export function migrateToVersion4(db: { exec: (sql: string) => void }): void {
   db.exec(CREATE_TOPICS_TABLE);
@@ -275,6 +313,9 @@ export function migrateToVersion4(db: { exec: (sql: string) => void }): void {
   db.exec(CREATE_TREND_SUMMARIES_TABLE);
   db.exec(CREATE_ENTRY_TOPICS_INDEX);
   db.exec(CREATE_TREND_SUMMARIES_PERIOD_INDEX);
+  db.exec(CREATE_FOLLOW_UPS_TABLE);
+  db.exec(CREATE_FOLLOW_UPS_SCHEDULED_INDEX);
+  db.exec(CREATE_FOLLOW_UPS_ENTRY_INDEX);
 }
 
 /**

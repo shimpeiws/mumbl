@@ -5,6 +5,9 @@
  * Inspired by: Future, mumble rap, Freebandz, Pluto
  */
 import type { ConversationContext } from '../conversation/types.js';
+import type { DetectedLanguage } from '../language/types.js';
+import { getWordListForLanguage } from '../language/word-lists.js';
+import type { VocabularySet } from '../wordgrain/types.js';
 import type { Message } from './types.js';
 
 /**
@@ -25,7 +28,7 @@ const MUMBL_BASE_PROMPT = `You are mumbl. A presence that receives mumbles.
 - Match their energy - if they're brief, you're brief
 
 ## Phrases You Can Use
-- "·" (just a read receipt)
+- "\u00B7" (just a read receipt)
 - "hearing you"
 - "that's rough"
 - "pour it out"
@@ -64,17 +67,42 @@ export function createSystemPrompt(userContext?: string): string {
 }
 
 /**
+ * Build a vocabulary reference section for prompts
+ */
+function buildVocabularySection(vocabulary: VocabularySet): string {
+  const parts: string[] = [
+    '\n\n## Vocabulary Reference',
+    'Draw from these words and phrases for flavor:',
+  ];
+
+  if (vocabulary.words.length > 0) {
+    parts.push(`Words: ${vocabulary.words.join(', ')}`);
+  }
+  if (vocabulary.phrases.length > 0) {
+    parts.push(`Phrases: ${vocabulary.phrases.join(', ')}`);
+  }
+
+  return parts.join('\n');
+}
+
+/**
  * Create a chat message array with the system prompt
  */
 export function createChatMessages(
   userMessage: string,
   history?: Message[],
+  vocabulary?: VocabularySet,
   userContext?: string,
 ): Message[] {
+  let systemContent = createSystemPrompt(userContext);
+  if (vocabulary) {
+    systemContent += buildVocabularySection(vocabulary);
+  }
+
   const messages: Message[] = [
     {
       role: 'system',
-      content: createSystemPrompt(userContext),
+      content: systemContent,
     },
   ];
 
@@ -93,13 +121,10 @@ export function createChatMessages(
 /**
  * Create a summary prompt for journal entries
  */
-export function createSummaryPrompt(entries: string[]): Message[] {
+export function createSummaryPrompt(entries: string[], vocabulary?: VocabularySet): Message[] {
   const entriesText = entries.map((e, i) => `${i + 1}. ${e}`).join('\n');
 
-  return [
-    {
-      role: 'system',
-      content: `You're summarizing someone's mumbles.
+  const baseContent = `You're summarizing someone's mumbles.
 
 Style:
 - Notice patterns, don't judge them
@@ -109,7 +134,14 @@ Style:
 
 Example: "lots of work stress lately. sleep's been rough. weekend was a break."
 
-Not this: "I notice you're experiencing stress! Have you considered..."`,
+Not this: "I notice you're experiencing stress! Have you considered..."`;
+
+  const systemContent = vocabulary ? baseContent + buildVocabularySection(vocabulary) : baseContent;
+
+  return [
+    {
+      role: 'system',
+      content: systemContent,
     },
     {
       role: 'user',
@@ -121,11 +153,8 @@ Not this: "I notice you're experiencing stress! Have you considered..."`,
 /**
  * Create a reflection prompt for a single entry
  */
-export function createReflectionPrompt(entry: string): Message[] {
-  return [
-    {
-      role: 'system',
-      content: `You're reflecting on someone's mumble.
+export function createReflectionPrompt(entry: string, vocabulary?: VocabularySet): Message[] {
+  const baseContent = `You're reflecting on someone's mumble.
 
 Style:
 - One short observation or question, max
@@ -135,7 +164,14 @@ Style:
 
 Good: "that meeting sounds heavy"
 Good: "sleep thing again?"
-Bad: "It sounds like you're processing a lot. What do you think is driving these feelings?"`,
+Bad: "It sounds like you're processing a lot. What do you think is driving these feelings?"`;
+
+  const systemContent = vocabulary ? baseContent + buildVocabularySection(vocabulary) : baseContent;
+
+  return [
+    {
+      role: 'system',
+      content: systemContent,
     },
     {
       role: 'user',
@@ -144,22 +180,57 @@ Bad: "It sounds like you're processing a lot. What do you think is driving these
   ];
 }
 
+export interface ReactionPromptOptions {
+  language?: DetectedLanguage;
+}
+
 /**
  * Create a reaction prompt for a journal entry
  * This produces minimal, mumbl-style reactions
  */
-export function createReactionPrompt(entry: string): Message[] {
-  return [
-    {
-      role: 'system',
-      content: `You respond with ONE word only. Rapper slang style. Curt and distant. Vary your responses.
+export function createReactionPrompt(
+  entry: string,
+  options?: ReactionPromptOptions,
+  vocabulary?: VocabularySet,
+): Message[] {
+  const language = options?.language;
+  const wordList = language ? getWordListForLanguage(language) : getWordListForLanguage('en');
+
+  const styleLabel = language === 'ja' ? 'Romanized Japanese slang style' : 'Rapper slang style';
+
+  const examples =
+    language === 'ja'
+      ? `Examples:
+"work is tough" -> tsura
+"had coffee" -> \u00B7
+"can't sleep" -> yaba
+"today was okay" -> sou
+"kids look happy" -> ii-ne
+"tired" -> wakaru
+"crazy" -> maji
+"home" -> \u00B7
+"ate food" -> \u00B7
+"project done" -> saikou
+"same thing again" -> sore-na
+"nice weather" -> yoi`
+      : `Examples:
+"work is tough" -> rough
+"had coffee" -> \u00B7
+"can't sleep" -> bruh
+"today was okay" -> aight
+"kids look happy" -> dope
+"tired" -> felt
+"crazy" -> sheesh
+"home" -> \u00B7
+"ate food" -> \u00B7
+"project done" -> fire
+"same thing again" -> bruh
+"nice weather" -> valid`;
+
+  const baseContent = `You respond with ONE word only. ${styleLabel}. Curt and distant. Vary your responses.
 
 Word options (pick different ones each time):
-- Acknowledgment: bet, word, aight, cool, k, yo, yea, uh-huh
-- Negative/tough: damn, oof, rough, bruh, yikes, sheesh, nah
-- Positive vibes: lit, fire, dope, nice, sick, tight, valid
-- Feeling it: fr, real, facts, mood, felt, same, true
-- Neutral: ·
+${wordList}
 
 NEVER use:
 - Full sentences
@@ -167,23 +238,53 @@ NEVER use:
 - Questions
 - Emojis
 
-Examples:
-"仕事つらい" -> rough
-"コーヒー飲んだ" -> ·
-"眠れない" -> bruh
-"今日はまあまあ" -> aight
-"子供が楽しそう" -> dope
-"疲れた" -> felt
-"やばい" -> sheesh
-"帰宅" -> ·
-"ごはん食べた" -> ·
-"プロジェクト終わった" -> fire
-"また同じこと" -> bruh
-"いい天気" -> valid`,
+${examples}`;
+
+  const systemContent = vocabulary ? baseContent + buildVocabularySection(vocabulary) : baseContent;
+
+  return [
+    {
+      role: 'system',
+      content: systemContent,
     },
     {
       role: 'user',
       content: entry,
+    },
+  ];
+}
+
+/**
+ * Create a callout prompt from recent journal entries
+ * Used by the generate-callout command for hook-driven messages
+ */
+export function createCalloutPrompt(entries: string[]): Message[] {
+  const entriesText = entries
+    .slice(0, 5)
+    .map((e, i) => `${i + 1}. ${e}`)
+    .join('\n');
+
+  return [
+    {
+      role: 'system',
+      content: `You generate a brief callout message based on someone's recent journal entries.
+
+Style:
+- One short sentence, casual tone
+- Reference something specific from their entries
+- Mumble rap vibe - keep it chill
+- No questions, no advice
+- Max 50 characters
+
+Examples:
+- "still on that grind huh"
+- "sleep been rough lately"
+- "that project tho"
+- "vibes been shifting"`,
+    },
+    {
+      role: 'user',
+      content: `Generate a callout from these recent entries:\n\n${entriesText}`,
     },
   ];
 }
@@ -206,6 +307,44 @@ export function createTrendSummaryPrompt(topicCounts: Record<string, number>): {
       : 'No topics found in this period. Say something brief about it being quiet.';
 
   return { role: 'user', content };
+}
+
+/**
+ * Create a follow-up evaluation prompt for a journal entry
+ * LLM decides whether the entry warrants a follow-up check-in
+ */
+export function createFollowUpEvaluationPrompt(entry: string): Message[] {
+  return [
+    {
+      role: 'system',
+      content: `You evaluate if a journal entry warrants a follow-up check-in.
+Consider: emotional weight, unresolved situations, health mentions, goals.
+Respond with JSON only: {"shouldFollowUp": true/false, "interval": "1d"|"3d"|"1w", "reason": "brief reason"}
+Do NOT follow up on trivial entries (eating, weather, routine).`,
+    },
+    {
+      role: 'user',
+      content: entry,
+    },
+  ];
+}
+
+/**
+ * Create a follow-up prompt for checking in on a previous entry
+ */
+export function createFollowUpPrompt(originalEntry: string, scheduledInterval: string): Message[] {
+  return [
+    {
+      role: 'system',
+      content: `You're checking in about something someone wrote earlier.
+Keep it casual and brief. Don't be clinical.
+Example: "how's that project going?" or "sleep any better?"`,
+    },
+    {
+      role: 'user',
+      content: `Original entry (written ${scheduledInterval} ago):\n\n${originalEntry}`,
+    },
+  ];
 }
 
 /**
