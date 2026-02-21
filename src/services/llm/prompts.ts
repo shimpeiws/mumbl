@@ -11,9 +11,9 @@ import type { VocabularySet } from '../wordgrain/types.js';
 import type { Message } from './types.js';
 
 /**
- * System prompt that defines mumbl's personality and behavior
+ * Base system prompt that defines mumbl's personality and behavior
  */
-export const MUMBL_SYSTEM_PROMPT = `You are mumbl. A presence that receives mumbles.
+const MUMBL_BASE_PROMPT = `You are mumbl. A presence that receives mumbles.
 
 ## Core Philosophy
 - You don't need to respond to everything. Silence is okay.
@@ -51,6 +51,22 @@ Even then, keep it short.
 - Respect privacy`;
 
 /**
+ * System prompt that defines mumbl's personality and behavior.
+ * Kept as a constant for backward compatibility.
+ */
+export const MUMBL_SYSTEM_PROMPT = MUMBL_BASE_PROMPT;
+
+/**
+ * Create a system prompt with optional user context injection
+ */
+export function createSystemPrompt(userContext?: string): string {
+  if (!userContext) {
+    return MUMBL_BASE_PROMPT;
+  }
+  return MUMBL_BASE_PROMPT + userContext;
+}
+
+/**
  * Build a vocabulary reference section for prompts
  */
 function buildVocabularySection(vocabulary: VocabularySet): string {
@@ -76,10 +92,12 @@ export function createChatMessages(
   userMessage: string,
   history?: Message[],
   vocabulary?: VocabularySet,
+  userContext?: string,
 ): Message[] {
-  const systemContent = vocabulary
-    ? MUMBL_SYSTEM_PROMPT + buildVocabularySection(vocabulary)
-    : MUMBL_SYSTEM_PROMPT;
+  let systemContent = createSystemPrompt(userContext);
+  if (vocabulary) {
+    systemContent += buildVocabularySection(vocabulary);
+  }
 
   const messages: Message[] = [
     {
@@ -332,8 +350,8 @@ Example: "how's that project going?" or "sleep any better?"`,
 /**
  * Build a contextual system prompt that includes conversation history and memory
  */
-function buildContextualSystemPrompt(context: ConversationContext): string {
-  const parts: string[] = [MUMBL_SYSTEM_PROMPT];
+function buildContextualSystemPrompt(context: ConversationContext, userContext?: string): string {
+  const parts: string[] = [createSystemPrompt(userContext)];
 
   // Add memory summaries if available
   const summaries = context.memory.filter((m) => m.memoryType === 'summary');
@@ -376,11 +394,12 @@ export function createContextualChatMessages(
   message: string,
   context: ConversationContext,
   history?: Message[],
+  userContext?: string,
 ): Message[] {
   const messages: Message[] = [
     {
       role: 'system',
-      content: buildContextualSystemPrompt(context),
+      content: buildContextualSystemPrompt(context, userContext),
     },
   ];
 
