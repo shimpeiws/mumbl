@@ -44,24 +44,24 @@ describe('TrendService', () => {
   describe('analyzeEntry', () => {
     it('should extract topics from entry content and store them', async () => {
       insertEntry('entry-1');
-      await trendService.analyzeEntry('entry-1', 'Work project deadline stress');
+      await trendService.analyzeEntry('entry-1', 'Coffee project deadline stress');
 
       const topTopics = trendService.getTopTopics(10);
       expect(topTopics.length).toBeGreaterThan(0);
       const topicNames = topTopics.map((t) => t.topic.name);
-      expect(topicNames).toContain('work');
+      expect(topicNames).toContain('coffee');
     });
 
     it('should increment topic count for repeated topics', async () => {
       insertEntry('entry-1');
       insertEntry('entry-2');
-      await trendService.analyzeEntry('entry-1', 'Work project deadline');
-      await trendService.analyzeEntry('entry-2', 'Work stress today');
+      await trendService.analyzeEntry('entry-1', 'Coffee project deadline');
+      await trendService.analyzeEntry('entry-2', 'Coffee stress morning');
 
       const topTopics = trendService.getTopTopics(10);
-      const workTopic = topTopics.find((t) => t.topic.name === 'work');
-      expect(workTopic).toBeDefined();
-      expect(workTopic?.count).toBeGreaterThanOrEqual(2);
+      const coffeeTopic = topTopics.find((t) => t.topic.name === 'coffee');
+      expect(coffeeTopic).toBeDefined();
+      expect(coffeeTopic?.count).toBeGreaterThanOrEqual(2);
     });
 
     it('should handle empty content gracefully', async () => {
@@ -88,9 +88,9 @@ describe('TrendService', () => {
       insertEntry('entry-1');
       insertEntry('entry-2');
       insertEntry('entry-3');
-      await trendService.analyzeEntry('entry-1', 'Work project deadline');
-      await trendService.analyzeEntry('entry-2', 'Work stress management');
-      await trendService.analyzeEntry('entry-3', 'Coffee morning routine');
+      await trendService.analyzeEntry('entry-1', 'Coffee project deadline');
+      await trendService.analyzeEntry('entry-2', 'Coffee stress management');
+      await trendService.analyzeEntry('entry-3', 'Running morning routine');
     });
 
     it('should return top topics for a period', () => {
@@ -125,7 +125,7 @@ describe('TrendService', () => {
     beforeEach(async () => {
       insertEntry('entry-1');
       insertEntry('entry-2');
-      await trendService.analyzeEntry('entry-1', 'Work project deadline');
+      await trendService.analyzeEntry('entry-1', 'Coffee project deadline');
       await trendService.analyzeEntry('entry-2', 'Sleep deprivation stress');
     });
 
@@ -165,9 +165,9 @@ describe('TrendService', () => {
       insertEntry('entry-1');
       insertEntry('entry-2');
       insertEntry('entry-3');
-      await trendService.analyzeEntry('entry-1', 'work stress');
-      await trendService.analyzeEntry('entry-2', 'work deadline');
-      await trendService.analyzeEntry('entry-3', 'coffee break');
+      await trendService.analyzeEntry('entry-1', 'coffee stress');
+      await trendService.analyzeEntry('entry-2', 'coffee deadline');
+      await trendService.analyzeEntry('entry-3', 'running break');
 
       const topTopics = trendService.getTopTopics(10);
       expect(topTopics.length).toBeGreaterThan(0);
