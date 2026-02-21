@@ -8,10 +8,10 @@ describe('extractTopics', () => {
   });
 
   it('should extract single-word topics from English text', () => {
-    const topics = extractTopics('Work was stressful today');
-    expect(topics).toContain('work');
+    const topics = extractTopics('Coffee was stressful morning');
+    expect(topics).toContain('coffee');
     expect(topics).toContain('stressful');
-    expect(topics).toContain('today');
+    expect(topics).toContain('morning');
   });
 
   it('should filter out English stop words', () => {
@@ -45,8 +45,8 @@ describe('extractTopics', () => {
   });
 
   it('should handle punctuation correctly', () => {
-    const topics = extractTopics('work, sleep, repeat!');
-    expect(topics).toContain('work');
+    const topics = extractTopics('coffee, sleep, repeat!');
+    expect(topics).toContain('coffee');
     expect(topics).toContain('sleep');
     expect(topics).toContain('repeat');
   });
@@ -75,9 +75,9 @@ describe('extractTopics', () => {
   });
 
   it('should filter out short tokens', () => {
-    const topics = extractTopics('I a x test');
+    const topics = extractTopics('I a x coffee');
     expect(topics).not.toContain('x');
-    expect(topics).toContain('test');
+    expect(topics).toContain('coffee');
   });
 
   it('should handle mixed content with special characters', () => {
