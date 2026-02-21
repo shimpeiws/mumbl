@@ -292,6 +292,44 @@ export function createTrendSummaryPrompt(topicCounts: Record<string, number>): {
 }
 
 /**
+ * Create a follow-up evaluation prompt for a journal entry
+ * LLM decides whether the entry warrants a follow-up check-in
+ */
+export function createFollowUpEvaluationPrompt(entry: string): Message[] {
+  return [
+    {
+      role: 'system',
+      content: `You evaluate if a journal entry warrants a follow-up check-in.
+Consider: emotional weight, unresolved situations, health mentions, goals.
+Respond with JSON only: {"shouldFollowUp": true/false, "interval": "1d"|"3d"|"1w", "reason": "brief reason"}
+Do NOT follow up on trivial entries (eating, weather, routine).`,
+    },
+    {
+      role: 'user',
+      content: entry,
+    },
+  ];
+}
+
+/**
+ * Create a follow-up prompt for checking in on a previous entry
+ */
+export function createFollowUpPrompt(originalEntry: string, scheduledInterval: string): Message[] {
+  return [
+    {
+      role: 'system',
+      content: `You're checking in about something someone wrote earlier.
+Keep it casual and brief. Don't be clinical.
+Example: "how's that project going?" or "sleep any better?"`,
+    },
+    {
+      role: 'user',
+      content: `Original entry (written ${scheduledInterval} ago):\n\n${originalEntry}`,
+    },
+  ];
+}
+
+/**
  * Build a contextual system prompt that includes conversation history and memory
  */
 function buildContextualSystemPrompt(context: ConversationContext): string {

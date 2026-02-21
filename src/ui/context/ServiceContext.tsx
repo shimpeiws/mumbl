@@ -1,6 +1,7 @@
 import React, { createContext, useContext } from 'react';
 import type { ConversationServiceInterface } from '../../services/conversation/conversation-service.js';
 import type { EntryServiceInterface } from '../../services/entry-service.js';
+import type { FollowUpServiceInterface } from '../../services/follow-up/follow-up-service.js';
 import type { LLMServiceInterface } from '../../services/llm/llm-service.js';
 import type { OllamaService } from '../../services/ollama-service.js';
 import type { QueueServiceInterface } from '../../services/queue/index.js';
@@ -15,6 +16,7 @@ interface ServiceContextValue {
   queueService: QueueServiceInterface;
   conversationService?: ConversationServiceInterface;
   trendService?: TrendServiceInterface;
+  followUpService?: FollowUpServiceInterface;
 }
 
 export const ServiceContext = createContext<ServiceContextValue | null>(null);
@@ -35,6 +37,7 @@ interface ServiceProviderProps {
   queueService: QueueServiceInterface;
   conversationService?: ConversationServiceInterface;
   trendService?: TrendServiceInterface;
+  followUpService?: FollowUpServiceInterface;
   children: React.ReactNode;
 }
 
@@ -46,6 +49,7 @@ export function ServiceProvider({
   queueService,
   conversationService,
   trendService,
+  followUpService,
   children,
 }: ServiceProviderProps) {
   return (
@@ -58,6 +62,7 @@ export function ServiceProvider({
         queueService,
         conversationService,
         trendService,
+        followUpService,
       }}
     >
       {children}

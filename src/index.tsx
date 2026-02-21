@@ -6,6 +6,7 @@ import { getReactionConfig } from './infrastructure/config/reaction-config.js';
 import { closeDatabase, getDatabase } from './infrastructure/database/client.js';
 import { createConversationService } from './services/conversation/conversation-service.js';
 import { EntryService } from './services/entry-service.js';
+import { createFollowUpService } from './services/follow-up/follow-up-service.js';
 import { createLLMServiceFromConfig } from './services/llm/llm-service.js';
 import { ollamaService } from './services/ollama-service.js';
 import { QueueService } from './services/queue/index.js';
@@ -63,8 +64,11 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
   // Create trend service for topic analysis
   const trendService = createTrendService(db, llmService);
 
-  // Create entry service with reaction and trend support
-  const entryService = new EntryService(db, reactionService, trendService);
+  // Create follow-up service for delayed check-ins
+  const followUpService = createFollowUpService(db, llmService);
+
+  // Create entry service with reaction, trend, and follow-up support
+  const entryService = new EntryService(db, reactionService, trendService, followUpService);
   // ollamaService is imported as a singleton object
 
   // Create conversation service for memory tracking
@@ -79,6 +83,7 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
       queueService={queueService}
       conversationService={conversationService}
       trendService={trendService}
+      followUpService={followUpService}
     >
       <QueueProvider queueService={queueService}>
         <App />
