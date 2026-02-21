@@ -17,6 +17,13 @@ import { QueueProvider } from './ui/context/QueueContext.js';
 import { ServiceProvider } from './ui/context/ServiceContext.js';
 
 (async () => {
+  // Check for CLI subcommands first
+  if (process.argv.includes('generate-callout')) {
+    const { generateCallout } = await import('./commands/generate-callout.js');
+    await generateCallout();
+    process.exit(0);
+  }
+
   if (!process.stdin.isTTY) {
     console.log('mumbl - AI-powered communication tool');
     console.log('');
