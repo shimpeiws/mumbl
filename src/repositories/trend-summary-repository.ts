@@ -2,16 +2,13 @@
  * Repository for trend summary data
  */
 import type Database from 'better-sqlite3';
+import { toUnixSeconds } from '../utils/date.js';
 import type { TrendSummaryRow } from './types.js';
 
 export interface TrendSummaryRepositoryInterface {
   insert(summary: TrendSummaryRow): void;
   findByPeriod(periodType: string, start: Date, end: Date): TrendSummaryRow | null;
   findAll(options?: { limit?: number; offset?: number }): TrendSummaryRow[];
-}
-
-function toUnixSeconds(date: Date): number {
-  return Math.floor(date.getTime() / 1000);
 }
 
 export function createTrendSummaryRepository(

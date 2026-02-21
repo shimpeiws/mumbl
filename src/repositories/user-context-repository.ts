@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
  * Repository for user context data
  */
 import type Database from 'better-sqlite3';
+import { toUnixSeconds } from '../utils/date.js';
 import type { UserContextRow } from './types.js';
 
 export interface UserContextRepositoryInterface {
@@ -32,10 +33,6 @@ export interface UserContextRepositoryInterface {
   delete(id: string): boolean;
   applyDecay(rate: number): void;
   count(): number;
-}
-
-function toUnixSeconds(date: Date): number {
-  return Math.floor(date.getTime() / 1000);
 }
 
 export function createUserContextRepository(db: Database.Database): UserContextRepositoryInterface {

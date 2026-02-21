@@ -1,13 +1,7 @@
 import type Database from 'better-sqlite3';
 import { EntryNotFoundError, InvalidEntryError } from '../infrastructure/errors/domain-errors.js';
+import { toUnixSeconds } from '../utils/date.js';
 import type { EntryRow, JournalEntry } from './types.js';
-
-/**
- * Convert Date to Unix timestamp in seconds
- */
-function toUnixSeconds(date: Date): number {
-  return Math.floor(date.getTime() / 1000);
-}
 
 /**
  * Convert database row to JournalEntry

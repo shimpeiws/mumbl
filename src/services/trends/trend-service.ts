@@ -12,6 +12,7 @@ import {
   createTrendSummaryRepository,
 } from '../../repositories/trend-summary-repository.js';
 import type { TopicRow } from '../../repositories/types.js';
+import { toUnixSeconds } from '../../utils/date.js';
 import type { LLMServiceInterface } from '../llm/llm-service.js';
 import { createTrendSummaryPrompt } from '../llm/prompts.js';
 import { extractTopics } from './topic-extractor.js';
@@ -22,10 +23,6 @@ import type {
   TrendServiceInterface,
   TrendSummary,
 } from './types.js';
-
-function toUnixSeconds(date: Date): number {
-  return Math.floor(date.getTime() / 1000);
-}
 
 function topicRowToDomain(row: TopicRow): Topic {
   return {

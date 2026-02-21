@@ -1,13 +1,7 @@
 import type Database from 'better-sqlite3';
 import type { FollowUp, FollowUpStatus } from '../services/follow-up/types.js';
+import { toUnixSeconds } from '../utils/date.js';
 import type { FollowUpRow } from './types.js';
-
-/**
- * Convert Date to Unix timestamp in seconds
- */
-function toUnixSeconds(date: Date): number {
-  return Math.floor(date.getTime() / 1000);
-}
 
 /**
  * Convert database row to FollowUp

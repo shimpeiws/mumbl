@@ -1,12 +1,6 @@
 import type Database from 'better-sqlite3';
+import { toUnixSeconds } from '../utils/date.js';
 import type { Reaction, ReactionRow, ReactionType } from './types.js';
-
-/**
- * Convert Date to Unix timestamp in seconds
- */
-function toUnixSeconds(date: Date): number {
-  return Math.floor(date.getTime() / 1000);
-}
 
 /**
  * Convert database row to Reaction

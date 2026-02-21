@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
  * Repository for topic and entry-topic data
  */
 import type Database from 'better-sqlite3';
+import { toUnixSeconds } from '../utils/date.js';
 import type { TopicRow } from './types.js';
 
 export interface TopicRepositoryInterface {
@@ -13,10 +14,6 @@ export interface TopicRepositoryInterface {
   addEntryTopic(entryId: string, topicId: string, relevance: number): void;
   getTopicCountsForPeriod(start: Date, end: Date): Array<{ name: string; count: number }>;
   getTopTopics(limit: number): Array<{ topic: TopicRow; count: number }>;
-}
-
-function toUnixSeconds(date: Date): number {
-  return Math.floor(date.getTime() / 1000);
 }
 
 export function createTopicRepository(db: Database.Database): TopicRepositoryInterface {
