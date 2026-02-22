@@ -51,6 +51,10 @@ export function loadConfigFile(): Partial<MumblConfig> {
       result.baseUrl = config['baseUrl'];
     }
 
+    if (typeof config['wordgrainDir'] === 'string') {
+      result.wordgrainDir = config['wordgrainDir'];
+    }
+
     return result;
   } catch {
     // Silently ignore config file errors (missing, malformed JSON)
