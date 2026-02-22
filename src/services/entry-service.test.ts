@@ -1,16 +1,16 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { initializeSchema } from '../infrastructure/database/schema.js';
-import { EntryService } from './entry-service.js';
+import { type EntryServiceInterface, createEntryService } from './entry-service.js';
 
 describe('EntryService', () => {
   let db: Database.Database;
-  let service: EntryService;
+  let service: EntryServiceInterface;
 
   beforeEach(() => {
     db = new Database(':memory:');
     initializeSchema(db);
-    service = new EntryService(db);
+    service = createEntryService(db);
   });
 
   afterEach(() => {

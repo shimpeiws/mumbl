@@ -1,4 +1,5 @@
 import type Database from 'better-sqlite3';
+import { toUnixSeconds } from '../utils/date.js';
 import type { ConversationRow } from './types.js';
 
 /**
@@ -14,13 +15,6 @@ export interface Conversation {
 }
 
 /**
- * Convert Date to Unix timestamp in seconds
- */
-function toUnixSeconds(date: Date): number {
-  return Math.floor(date.getTime() / 1000);
-}
-
-/**
  * Convert database row to Conversation
  */
 function rowToConversation(row: ConversationRow): Conversation {
@@ -29,7 +23,7 @@ function rowToConversation(row: ConversationRow): Conversation {
     title: row.title,
     startedAt: new Date(row.started_at * 1000),
     updatedAt: new Date(row.updated_at * 1000),
-    status: row.status as 'active' | 'archived',
+    status: row.status,
     metadata: row.metadata ? JSON.parse(row.metadata) : {},
   };
 }

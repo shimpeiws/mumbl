@@ -1,12 +1,6 @@
 import type Database from 'better-sqlite3';
+import { toUnixSeconds } from '../utils/date.js';
 import type { Reaction, ReactionRow, ReactionType } from './types.js';
-
-/**
- * Convert Date to Unix timestamp in seconds
- */
-function toUnixSeconds(date: Date): number {
-  return Math.floor(date.getTime() / 1000);
-}
 
 /**
  * Convert database row to Reaction
@@ -112,35 +106,4 @@ export function createReactionRepository(db: Database.Database): ReactionReposit
     delete: deleteReaction,
     count,
   };
-}
-
-/**
- * Legacy class export for backward compatibility
- * @deprecated Use createReactionRepository() instead
- */
-export class ReactionRepository implements ReactionRepositoryInterface {
-  private readonly _repo: ReactionRepositoryInterface;
-
-  constructor(db: Database.Database) {
-    this._repo = createReactionRepository(db);
-  }
-
-  insert(reaction: Reaction) {
-    return this._repo.insert(reaction);
-  }
-  findByEntryId(entryId: string) {
-    return this._repo.findByEntryId(entryId);
-  }
-  findByEntryIds(entryIds: string[]) {
-    return this._repo.findByEntryIds(entryIds);
-  }
-  deleteByEntryId(entryId: string) {
-    return this._repo.deleteByEntryId(entryId);
-  }
-  delete(id: string) {
-    return this._repo.delete(id);
-  }
-  count() {
-    return this._repo.count();
-  }
 }

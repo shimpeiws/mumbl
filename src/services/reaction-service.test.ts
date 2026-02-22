@@ -1,16 +1,16 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initializeSchema } from '../infrastructure/database/schema.js';
-import { ReactionService } from './reaction-service.js';
+import { type ReactionServiceInterface, createReactionService } from './reaction-service.js';
 
 describe('ReactionService', () => {
   let db: Database.Database;
-  let service: ReactionService;
+  let service: ReactionServiceInterface;
 
   beforeEach(() => {
     db = new Database(':memory:');
     initializeSchema(db);
-    service = new ReactionService(db);
+    service = createReactionService(db);
 
     // Insert test entries
     db.prepare(
@@ -29,7 +29,7 @@ describe('ReactionService', () => {
     });
 
     it('should return false when disabled', () => {
-      const disabledService = new ReactionService(db, { enabled: false });
+      const disabledService = createReactionService(db, { enabled: false });
       expect(disabledService.isEnabled()).toBe(false);
     });
   });
@@ -45,14 +45,14 @@ describe('ReactionService', () => {
     });
 
     it('should return null when disabled', async () => {
-      const disabledService = new ReactionService(db, { enabled: false });
+      const disabledService = createReactionService(db, { enabled: false });
       const reaction = await disabledService.generateReaction('entry-1', 'test content');
 
       expect(reaction).toBeNull();
     });
 
     it('should use default reaction type from config', async () => {
-      const heardService = new ReactionService(db, { defaultReactionType: 'heard' });
+      const heardService = createReactionService(db, { defaultReactionType: 'heard' });
       const reaction = await heardService.generateReaction('entry-1', 'test content');
 
       expect(reaction?.reactionType).toBe('heard');
@@ -66,7 +66,7 @@ describe('ReactionService', () => {
     });
 
     it('should not queue when disabled', () => {
-      const disabledService = new ReactionService(db, { enabled: false });
+      const disabledService = createReactionService(db, { enabled: false });
       disabledService.queueReaction('entry-1', 'test content');
 
       // Reaction should not be created
@@ -155,12 +155,10 @@ describe('ReactionService', () => {
         react: vi.fn().mockResolvedValue({ content: "that's rough" }),
       };
 
-      const llmService = new ReactionService(
+      const llmService = createReactionService(
         db,
         { useLLM: true },
-        mockLLMService as unknown as Parameters<
-          (typeof ReactionService.prototype)['generateReaction']
-        >[2],
+        mockLLMService as unknown as Parameters<typeof createReactionService>[2],
       );
 
       const reaction = await llmService.generateReaction('entry-1', 'work is killing me');
@@ -177,12 +175,10 @@ describe('ReactionService', () => {
         react: vi.fn().mockRejectedValue(new Error('LLM unavailable')),
       };
 
-      const llmService = new ReactionService(
+      const llmService = createReactionService(
         db,
         { useLLM: true },
-        mockLLMService as unknown as Parameters<
-          (typeof ReactionService.prototype)['generateReaction']
-        >[2],
+        mockLLMService as unknown as Parameters<typeof createReactionService>[2],
       );
 
       const reaction = await llmService.generateReaction('entry-1', 'test content');

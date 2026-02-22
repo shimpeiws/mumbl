@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LLMServiceInterface } from '../llm/llm-service.js';
 import type { ReactionServiceInterface } from '../reaction-service.js';
-import { QueueService } from './queue-service.js';
+import { type QueueServiceInterface, createQueueService } from './queue-service.js';
 
 // Mock LLM service
 function createMockLLMService(): LLMServiceInterface {
@@ -40,13 +40,13 @@ function createMockReactionService(): ReactionServiceInterface {
 describe('QueueService', () => {
   let llmService: LLMServiceInterface;
   let reactionService: ReactionServiceInterface;
-  let queueService: QueueService;
+  let queueService: QueueServiceInterface;
 
   beforeEach(() => {
     vi.useFakeTimers();
     llmService = createMockLLMService();
     reactionService = createMockReactionService();
-    queueService = new QueueService(llmService, reactionService);
+    queueService = createQueueService(llmService, reactionService);
   });
 
   afterEach(() => {
@@ -493,7 +493,7 @@ describe('QueueService', () => {
 
   describe('without reaction service', () => {
     it('should fall back to LLM service for react tasks', async () => {
-      const queueWithoutReaction = new QueueService(llmService, null);
+      const queueWithoutReaction = createQueueService(llmService, null);
 
       queueWithoutReaction.enqueueReact('entry-1', 'test content');
 

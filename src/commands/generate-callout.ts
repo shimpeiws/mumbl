@@ -5,10 +5,14 @@ import { createEntryRepository } from '../repositories/entry-repository.js';
 import { createProvider } from '../services/llm/llm-service.js';
 import { createCalloutPrompt } from '../services/llm/prompts.js';
 import { DEFAULT_ANTHROPIC_MODEL, DEFAULT_OLLAMA_MODEL } from '../services/llm/types.js';
+import { debugLog } from '../utils/log.js';
 
 export const COOLDOWN_FILE = '/tmp/mumbl-callout-timestamp';
 export const MESSAGE_FILE = '/tmp/mumbl-message';
 export const DEFAULT_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+
+/** Maximum number of recent entries to consider for callout generation */
+const RECENT_ENTRIES_LIMIT = 20;
 
 /**
  * Check if cooldown period has elapsed since last callout
@@ -20,7 +24,8 @@ export function isCooldownActive(): boolean {
     }
     const timestamp = Number(fs.readFileSync(COOLDOWN_FILE, 'utf-8').trim());
     return Date.now() - timestamp < DEFAULT_COOLDOWN_MS;
-  } catch {
+  } catch (err) {
+    debugLog('callout-cooldown', err);
     return false;
   }
 }
@@ -44,7 +49,7 @@ export async function generateCallout(): Promise<void> {
 
     const db = getDatabase();
     const entryRepo = createEntryRepository(db);
-    const entries = entryRepo.findAll({ limit: 20, order: 'desc' });
+    const entries = entryRepo.findAll({ limit: RECENT_ENTRIES_LIMIT, order: 'desc' });
 
     // No entries, nothing to generate
     if (entries.length === 0) {
@@ -73,7 +78,7 @@ export async function generateCallout(): Promise<void> {
     fs.writeFileSync(COOLDOWN_FILE, String(Date.now()), 'utf-8');
 
     closeDatabase();
-  } catch {
-    // Silent failure - this runs inside a hook and must never crash
+  } catch (err) {
+    debugLog('callout-generate', err);
   }
 }

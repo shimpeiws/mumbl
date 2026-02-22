@@ -36,7 +36,7 @@ export { OllamaProvider } from './ollama-provider.js';
 export { AnthropicProvider } from './anthropic-provider.js';
 
 // Message History
-export { MessageHistory, SessionMessageHistory } from './message-history.js';
+export { createMessageHistory, createSessionMessageHistory } from './message-history.js';
 
 // Prompts
 export {
@@ -48,4 +48,4 @@ export {
 
 // Main Service
 export type { LLMServiceConfig } from './llm-service.js';
-export { LLMService, createProvider, createLLMServiceFromConfig } from './llm-service.js';
+export { createProvider, createLLMServiceFromConfig } from './llm-service.js';

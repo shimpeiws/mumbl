@@ -19,12 +19,23 @@ import type {
   UserContextItem,
 } from './types.js';
 
+/**
+ * Default configuration for context accumulation.
+ * - minConfidence: minimum confidence score (0-1) for a context item to be included in LLM prompts
+ * - decayRate: multiplier applied periodically to reduce confidence of stale context items
+ */
 const DEFAULT_CONFIG: ContextConfig = {
   enabled: true,
   privacyMode: 'normal',
   minConfidence: 0.3,
   decayRate: 0.95,
 };
+
+/** Confidence at or above this value is labeled "high" */
+const CONFIDENCE_HIGH_THRESHOLD = 0.7;
+
+/** Confidence at or above this value (but below high) is labeled "medium" */
+const CONFIDENCE_MEDIUM_THRESHOLD = 0.4;
 
 function rowToItem(row: UserContextRow): UserContextItem {
   return {
@@ -41,8 +52,8 @@ function rowToItem(row: UserContextRow): UserContextItem {
 }
 
 function confidenceLabel(confidence: number): string {
-  if (confidence >= 0.7) return 'high';
-  if (confidence >= 0.4) return 'medium';
+  if (confidence >= CONFIDENCE_HIGH_THRESHOLD) return 'high';
+  if (confidence >= CONFIDENCE_MEDIUM_THRESHOLD) return 'medium';
   return 'low';
 }
 

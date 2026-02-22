@@ -1,13 +1,7 @@
 import type Database from 'better-sqlite3';
 import { EntryNotFoundError, InvalidEntryError } from '../infrastructure/errors/domain-errors.js';
+import { toUnixSeconds } from '../utils/date.js';
 import type { EntryRow, JournalEntry } from './types.js';
-
-/**
- * Convert Date to Unix timestamp in seconds
- */
-function toUnixSeconds(date: Date): number {
-  return Math.floor(date.getTime() / 1000);
-}
 
 /**
  * Convert database row to JournalEntry
@@ -240,52 +234,4 @@ export function createEntryRepository(db: Database.Database): EntryRepositoryInt
     count,
     search,
   };
-}
-
-/**
- * Legacy class export for backward compatibility
- * @deprecated Use createEntryRepository() instead
- */
-export class EntryRepository implements EntryRepositoryInterface {
-  private readonly _repo: EntryRepositoryInterface;
-
-  constructor(db: Database.Database) {
-    this._repo = createEntryRepository(db);
-  }
-
-  insert(entry: JournalEntry) {
-    return this._repo.insert(entry);
-  }
-  findById(id: string) {
-    return this._repo.findById(id);
-  }
-  findAll(options?: {
-    limit?: number;
-    offset?: number;
-    sortBy?: 'timestamp' | 'createdAt' | 'updatedAt';
-    order?: 'asc' | 'desc';
-    since?: Date;
-    until?: Date;
-  }) {
-    return this._repo.findAll(options);
-  }
-  update(
-    id: string,
-    updates: {
-      content?: string;
-      metadata?: Record<string, unknown>;
-      timestamp?: Date;
-    },
-  ) {
-    return this._repo.update(id, updates);
-  }
-  delete(id: string) {
-    return this._repo.delete(id);
-  }
-  count() {
-    return this._repo.count();
-  }
-  search(query: string) {
-    return this._repo.search(query);
-  }
 }

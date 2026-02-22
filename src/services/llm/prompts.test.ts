@@ -1,12 +1,20 @@
 import { describe, expect, it } from 'vitest';
+import type { VocabularySet } from '../wordgrain/types.js';
 import {
   MUMBL_SYSTEM_PROMPT,
   createCalloutPrompt,
   createChatMessages,
+  createFollowUpEvaluationPrompt,
+  createFollowUpPrompt,
   createReflectionPrompt,
   createSummaryPrompt,
 } from './prompts.js';
 import type { Message } from './types.js';
+
+const testVocabulary: VocabularySet = {
+  words: ['vibe', 'drip'],
+  phrases: ['on god'],
+};
 
 describe('MUMBL_SYSTEM_PROMPT', () => {
   it('should be defined and non-empty', () => {
@@ -199,5 +207,49 @@ describe('createCalloutPrompt', () => {
     const messages = createCalloutPrompt(['test']);
 
     expect(messages[0]?.content).toContain('No questions, no advice');
+  });
+
+  it('should include vocabulary when provided', () => {
+    const messages = createCalloutPrompt(['test'], testVocabulary);
+
+    expect(messages[0]?.content).toContain('Vocabulary Reference');
+    expect(messages[0]?.content).toContain('vibe');
+    expect(messages[0]?.content).toContain('on god');
+  });
+});
+
+describe('createFollowUpEvaluationPrompt', () => {
+  it('should create messages with system and user roles', () => {
+    const messages = createFollowUpEvaluationPrompt('feeling stressed');
+
+    expect(messages).toHaveLength(2);
+    expect(messages[0]?.role).toBe('system');
+    expect(messages[1]?.role).toBe('user');
+    expect(messages[1]?.content).toBe('feeling stressed');
+  });
+
+  it('should include vocabulary when provided', () => {
+    const messages = createFollowUpEvaluationPrompt('feeling stressed', testVocabulary);
+
+    expect(messages[0]?.content).toContain('Vocabulary Reference');
+    expect(messages[0]?.content).toContain('drip');
+  });
+});
+
+describe('createFollowUpPrompt', () => {
+  it('should create messages with system and user roles', () => {
+    const messages = createFollowUpPrompt('big deadline tomorrow', '1d');
+
+    expect(messages).toHaveLength(2);
+    expect(messages[0]?.role).toBe('system');
+    expect(messages[1]?.content).toContain('big deadline tomorrow');
+    expect(messages[1]?.content).toContain('1d ago');
+  });
+
+  it('should include vocabulary when provided', () => {
+    const messages = createFollowUpPrompt('big deadline', '3d', testVocabulary);
+
+    expect(messages[0]?.content).toContain('Vocabulary Reference');
+    expect(messages[0]?.content).toContain('vibe');
   });
 });

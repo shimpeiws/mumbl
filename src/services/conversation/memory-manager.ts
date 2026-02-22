@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type Database from 'better-sqlite3';
 import type { ConversationMemoryRow } from '../../repositories/types.js';
+import { toUnixSeconds } from '../../utils/date.js';
 import type { LLMServiceInterface } from '../llm/llm-service.js';
 import type { ConversationMemory } from './types.js';
 
@@ -57,19 +58,12 @@ function rowToMemory(row: ConversationMemoryRow): ConversationMemory {
   return {
     id: row.id,
     conversationId: row.conversation_id,
-    memoryType: row.memory_type as 'buffer' | 'summary' | 'context',
+    memoryType: row.memory_type,
     content: JSON.parse(row.content),
     tokenCount: row.token_count,
     createdAt: new Date(row.created_at * 1000),
     updatedAt: new Date(row.updated_at * 1000),
   };
-}
-
-/**
- * Convert Date to Unix timestamp in seconds
- */
-function toUnixSeconds(date: Date): number {
-  return Math.floor(date.getTime() / 1000);
 }
 
 /**

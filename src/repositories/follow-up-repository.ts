@@ -1,13 +1,7 @@
 import type Database from 'better-sqlite3';
-import type { FollowUp, FollowUpStatus } from '../services/follow-up/types.js';
+import type { FollowUp } from '../services/follow-up/types.js';
+import { toUnixSeconds } from '../utils/date.js';
 import type { FollowUpRow } from './types.js';
-
-/**
- * Convert Date to Unix timestamp in seconds
- */
-function toUnixSeconds(date: Date): number {
-  return Math.floor(date.getTime() / 1000);
-}
 
 /**
  * Convert database row to FollowUp
@@ -17,8 +11,8 @@ function rowToFollowUp(row: FollowUpRow): FollowUp {
     id: row.id,
     entryId: row.entry_id,
     scheduledAt: new Date(row.scheduled_at * 1000),
-    intervalType: row.interval_type as FollowUp['intervalType'],
-    status: row.status as FollowUpStatus,
+    intervalType: row.interval_type,
+    status: row.status,
     promptText: row.prompt_text,
     responseEntryId: row.response_entry_id,
     createdAt: new Date(row.created_at * 1000),

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAnthropicProvider } from './anthropic-provider.js';
 import { ProviderUnavailableError } from './errors.js';
-import { LLMService, createProvider } from './llm-service.js';
+import { type LLMServiceInterface, createLLMService, createProvider } from './llm-service.js';
 import { createOllamaProvider } from './ollama-provider.js';
 import type { ChatResponse, ModelConfig, StreamChunk } from './types.js';
 
@@ -58,7 +58,7 @@ describe('createProvider', () => {
 });
 
 describe('LLMService', () => {
-  let service: LLMService;
+  let service: LLMServiceInterface;
   let mockOllamaChat: ReturnType<typeof vi.fn>;
   let mockOllamaStream: ReturnType<typeof vi.fn>;
   let mockOllamaHealthCheck: ReturnType<typeof vi.fn>;
@@ -88,7 +88,7 @@ describe('LLMService', () => {
       getModelName: vi.fn().mockReturnValue('qwen2.5-coder:7b'),
     }));
 
-    service = new LLMService({
+    service = createLLMService({
       provider: 'ollama',
     });
   });
@@ -183,7 +183,7 @@ describe('LLMService', () => {
         getModelName: vi.fn().mockReturnValue('claude-sonnet-4-20250514'),
       }));
 
-      const serviceWithFallback = new LLMService({
+      const serviceWithFallback = createLLMService({
         provider: 'ollama',
         fallbackProvider: 'anthropic',
         apiKey: 'test-key',
@@ -250,7 +250,7 @@ describe('LLMService', () => {
 
       mockOllamaChat.mockRejectedValue(new ProviderUnavailableError('ollama'));
 
-      const serviceWithFallback = new LLMService({
+      const serviceWithFallback = createLLMService({
         provider: 'ollama',
         fallbackProvider: 'anthropic',
         apiKey: 'test-key',

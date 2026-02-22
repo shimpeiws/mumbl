@@ -97,6 +97,11 @@ export interface ReactionRow {
   created_at: number; // Unix timestamp in seconds
 }
 
+export type ConversationStatus = 'active' | 'archived';
+export type MemoryType = 'buffer' | 'summary' | 'context';
+export type FollowUpStatus = 'pending' | 'shown' | 'dismissed' | 'responded';
+export type IntervalType = '1d' | '3d' | '1w';
+
 /**
  * Database row representation of a conversation
  */
@@ -105,7 +110,7 @@ export interface ConversationRow {
   title: string | null;
   started_at: number; // Unix timestamp in seconds
   updated_at: number; // Unix timestamp in seconds
-  status: string;
+  status: ConversationStatus;
   metadata: string | null; // JSON string
 }
 
@@ -125,7 +130,7 @@ export interface ConversationEntryRow {
 export interface ConversationMemoryRow {
   id: string;
   conversation_id: string;
-  memory_type: string;
+  memory_type: MemoryType;
   content: string; // JSON string
   token_count: number;
   created_at: number; // Unix timestamp in seconds
@@ -189,8 +194,8 @@ export interface FollowUpRow {
   id: string;
   entry_id: string;
   scheduled_at: number; // Unix timestamp in seconds
-  interval_type: string;
-  status: string;
+  interval_type: IntervalType;
+  status: FollowUpStatus;
   prompt_text: string | null;
   response_entry_id: string | null;
   created_at: number; // Unix timestamp in seconds

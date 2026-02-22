@@ -3,20 +3,18 @@ import { randomUUID } from 'node:crypto';
  * Repository for topic and entry-topic data
  */
 import type Database from 'better-sqlite3';
+import { toUnixSeconds } from '../utils/date.js';
 import type { TopicRow } from './types.js';
 
 export interface TopicRepositoryInterface {
   upsert(name: string): TopicRow;
   findByName(name: string): TopicRow | null;
+  findByNames(names: string[]): TopicRow[];
   findAll(options?: { limit?: number; offset?: number }): TopicRow[];
   incrementCount(id: string, lastSeen: Date): void;
   addEntryTopic(entryId: string, topicId: string, relevance: number): void;
   getTopicCountsForPeriod(start: Date, end: Date): Array<{ name: string; count: number }>;
   getTopTopics(limit: number): Array<{ topic: TopicRow; count: number }>;
-}
-
-function toUnixSeconds(date: Date): number {
-  return Math.floor(date.getTime() / 1000);
 }
 
 export function createTopicRepository(db: Database.Database): TopicRepositoryInterface {
@@ -50,6 +48,16 @@ export function createTopicRepository(db: Database.Database): TopicRepositoryInt
     );
     const row = stmt.get(name) as TopicRow | undefined;
     return row ?? null;
+  };
+
+  const findByNames = (names: string[]): TopicRow[] => {
+    if (names.length === 0) return [];
+
+    const placeholders = names.map(() => '?').join(',');
+    const stmt = db.prepare(
+      `SELECT id, name, first_seen, last_seen, total_count, metadata FROM topics WHERE name IN (${placeholders})`,
+    );
+    return stmt.all(...names) as TopicRow[];
   };
 
   const findAll = (options?: { limit?: number; offset?: number }): TopicRow[] => {
@@ -128,6 +136,7 @@ export function createTopicRepository(db: Database.Database): TopicRepositoryInt
   return {
     upsert,
     findByName,
+    findByNames,
     findAll,
     incrementCount,
     addEntryTopic,
