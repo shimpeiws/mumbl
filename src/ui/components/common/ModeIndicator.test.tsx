@@ -26,4 +26,10 @@ describe('ModeIndicator', () => {
 
     expect(lastFrame()).toContain('Write');
   });
+
+  it('should display config mode indicator', () => {
+    const { lastFrame } = render(<ModeIndicator currentMode="config" />);
+
+    expect(lastFrame()).toContain('Config');
+  });
 });

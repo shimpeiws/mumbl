@@ -17,6 +17,11 @@ function TestComponent() {
   );
 }
 
+function ModeDisplayComponent() {
+  const { mode } = useNavigation();
+  return <Text>mode:{mode}</Text>;
+}
+
 describe('NavigationContext', () => {
   it('should provide default mode as list', () => {
     const { lastFrame } = render(
@@ -56,5 +61,15 @@ describe('NavigationContext', () => {
     );
 
     expect(lastFrame()).toContain('writeContent:');
+  });
+
+  it('should support config as initial mode', () => {
+    const { lastFrame } = render(
+      <NavigationProvider initialMode="config">
+        <ModeDisplayComponent />
+      </NavigationProvider>,
+    );
+
+    expect(lastFrame()).toContain('mode:config');
   });
 });

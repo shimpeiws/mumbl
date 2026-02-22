@@ -4,6 +4,7 @@ import { useAgentStatus } from '../hooks/useAgentStatus.js';
 import { useTerminalTitle } from '../hooks/useTerminalTitle.js';
 import { HelpFooter } from './components/common/HelpFooter.js';
 import { ModeIndicator } from './components/common/ModeIndicator.js';
+import { ConfigView } from './components/config/ConfigView.js';
 import { ConversationView } from './components/conversation/ConversationView.js';
 import { EntryList } from './components/entries/EntryList.js';
 import { SplashScreen } from './components/splash/SplashScreen.js';
@@ -13,7 +14,7 @@ import { useQueue } from './context/QueueContext.js';
 
 function AppContent() {
   const { exit } = useApp();
-  const { mode, toggleMode } = useNavigation();
+  const { mode, toggleMode, switchToConfig } = useNavigation();
   const { status: queueStatus } = useQueue();
   const [isViewingDetail, setIsViewingDetail] = useState(false);
   const agentStatus = useAgentStatus();
@@ -27,6 +28,10 @@ function AppContent() {
 
     if (key.tab && mode === 'list' && !isViewingDetail) {
       toggleMode();
+    }
+
+    if (input === 'c' && mode === 'list' && !isViewingDetail) {
+      switchToConfig();
     }
   });
 
@@ -46,6 +51,7 @@ function AppContent() {
         {mode === 'list' && <EntryList onViewingDetailChange={setIsViewingDetail} />}
         {mode === 'write' && <WriteView />}
         {mode === 'conversation' && <ConversationView />}
+        {mode === 'config' && <ConfigView />}
       </Box>
 
       <HelpFooter mode={mode} isViewingDetail={isViewingDetail} queueStatus={queueStatus} />

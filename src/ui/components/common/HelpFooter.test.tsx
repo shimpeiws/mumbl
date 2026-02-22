@@ -31,4 +31,21 @@ describe('HelpFooter', () => {
     expect(lastFrame()).toContain('Esc/q: back');
     expect(lastFrame()).toContain('Tab: write');
   });
+
+  it('should show config mode shortcuts', () => {
+    const { lastFrame } = render(<HelpFooter mode="config" />);
+
+    expect(lastFrame()).toContain('j/k: navigate');
+    expect(lastFrame()).toContain('a: add');
+    expect(lastFrame()).toContain('d: delete');
+    expect(lastFrame()).toContain('r: reload');
+    expect(lastFrame()).toContain('Esc: back');
+    expect(lastFrame()).toContain('q: quit');
+  });
+
+  it('should show config hint in list mode shortcuts', () => {
+    const { lastFrame } = render(<HelpFooter mode="list" />);
+
+    expect(lastFrame()).toContain('c: config');
+  });
 });

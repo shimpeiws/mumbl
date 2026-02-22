@@ -3,7 +3,14 @@
  */
 export type { Grain, VocabularySet, WordgrainFile } from './types.js';
 export { extractVocabulary } from './vocabulary-extractor.js';
-export { loadWordgrainDir } from './wordgrain-loader.js';
+export { loadWordgrainDir, parseWordgrainFile } from './wordgrain-loader.js';
+export type { WordgrainFileInfo, WordgrainStats } from './wordgrain-manager.js';
+export {
+  addWordgrainFile,
+  getWordgrainStats,
+  listWordgrainFiles,
+  removeWordgrainFile,
+} from './wordgrain-manager.js';
 
 import type { VocabularySet } from './types.js';
 import { extractVocabulary } from './vocabulary-extractor.js';

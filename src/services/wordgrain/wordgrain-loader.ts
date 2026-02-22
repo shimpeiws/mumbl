@@ -23,7 +23,7 @@ function isValidGrain(obj: unknown): obj is Grain {
 /**
  * Parse a single .wg.json file
  */
-function parseWordgrainFile(filePath: string): WordgrainFile | null {
+export function parseWordgrainFile(filePath: string): WordgrainFile | null {
   try {
     const content = fs.readFileSync(filePath, 'utf-8');
     const parsed: unknown = JSON.parse(content);
