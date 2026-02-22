@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import { resolveConfig } from '../config/index.js';
+import { debugLog } from '../utils/log.js';
 import { closeDatabase, getDatabase } from '../infrastructure/database/client.js';
 import { createEntryRepository } from '../repositories/entry-repository.js';
 import { createProvider } from '../services/llm/llm-service.js';
@@ -20,7 +21,8 @@ export function isCooldownActive(): boolean {
     }
     const timestamp = Number(fs.readFileSync(COOLDOWN_FILE, 'utf-8').trim());
     return Date.now() - timestamp < DEFAULT_COOLDOWN_MS;
-  } catch {
+  } catch (err) {
+    debugLog('callout-cooldown', err);
     return false;
   }
 }
@@ -73,7 +75,7 @@ export async function generateCallout(): Promise<void> {
     fs.writeFileSync(COOLDOWN_FILE, String(Date.now()), 'utf-8');
 
     closeDatabase();
-  } catch {
-    // Silent failure - this runs inside a hook and must never crash
+  } catch (err) {
+    debugLog('callout-generate', err);
   }
 }

@@ -1,6 +1,7 @@
 import type { Database as DatabaseType } from 'better-sqlite3';
 import { EntryNotFoundError } from '../infrastructure/errors/domain-errors.js';
 import { createEntryRepository } from '../repositories/entry-repository.js';
+import { debugLog } from '../utils/log.js';
 import type {
   CreateEntryOptions,
   JournalEntry,
@@ -59,23 +60,23 @@ export function createEntryService(
 
     // Queue trend analysis (non-blocking, fire-and-forget)
     if (trendService) {
-      trendService.analyzeEntry(entry.id, entry.content).catch(() => {
-        // Silently ignore trend analysis errors
-      });
+      trendService
+        .analyzeEntry(entry.id, entry.content)
+        .catch((err) => debugLog('trend-analysis', err));
     }
 
     // Queue context extraction (non-blocking, fire-and-forget)
     if (contextService) {
-      contextService.processEntry(entry.id, entry.content).catch(() => {
-        // Silently ignore context extraction errors
-      });
+      contextService
+        .processEntry(entry.id, entry.content)
+        .catch((err) => debugLog('context-extraction', err));
     }
 
     // Queue follow-up evaluation (fire-and-forget)
     if (followUpService) {
-      followUpService.evaluateEntry(entry.id, entry.content).catch(() => {
-        // Silently fail - follow-ups are non-critical
-      });
+      followUpService
+        .evaluateEntry(entry.id, entry.content)
+        .catch((err) => debugLog('follow-up-evaluation', err));
     }
 
     return entry;
