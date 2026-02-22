@@ -53,6 +53,22 @@ describe('config-file', () => {
       expect(result.baseUrl).toBe('http://localhost:8080');
     });
 
+    it('should parse valid config file with wordgrainDir', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(
+        JSON.stringify({ wordgrainDir: '/custom/wordgrain' }),
+      );
+      const result = loadConfigFile();
+      expect(result.wordgrainDir).toBe('/custom/wordgrain');
+    });
+
+    it('should ignore non-string wordgrainDir values', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ wordgrainDir: 123 }));
+      const result = loadConfigFile();
+      expect(result.wordgrainDir).toBeUndefined();
+    });
+
     it('should parse valid config file with all fields', () => {
       vi.mocked(fs.existsSync).mockReturnValue(true);
       vi.mocked(fs.readFileSync).mockReturnValue(
@@ -60,12 +76,14 @@ describe('config-file', () => {
           model: 'gpt-4',
           provider: 'anthropic',
           baseUrl: 'http://localhost:8080',
+          wordgrainDir: '/custom/wordgrain',
         }),
       );
       const result = loadConfigFile();
       expect(result.model).toBe('gpt-4');
       expect(result.provider).toBe('anthropic');
       expect(result.baseUrl).toBe('http://localhost:8080');
+      expect(result.wordgrainDir).toBe('/custom/wordgrain');
     });
 
     it('should return empty object for malformed JSON', () => {
