@@ -1,6 +1,7 @@
 import type { ResolvedConfig } from '../../config/types.js';
 import type { ContextServiceInterface } from '../context/types.js';
 import type { ConversationContext } from '../conversation/types.js';
+import type { DetectedLanguage } from '../language/types.js';
 import type { VocabularySet } from '../wordgrain/types.js';
 import { createAnthropicProvider } from './anthropic-provider.js';
 import { ProviderUnavailableError } from './errors.js';
@@ -53,15 +54,19 @@ export function createProvider(config: ModelConfig): LLMProvider {
 export interface LLMServiceInterface {
   chat(
     userMessage: string,
-    options?: { sessionId?: string; includeHistory?: boolean },
+    options?: { sessionId?: string; includeHistory?: boolean; language?: DetectedLanguage },
   ): Promise<ChatResponse>;
-  chatWithContext(message: string, context: ConversationContext): Promise<ChatResponse>;
+  chatWithContext(
+    message: string,
+    context: ConversationContext,
+    language?: DetectedLanguage,
+  ): Promise<ChatResponse>;
   stream(
     userMessage: string,
-    options?: { sessionId?: string; includeHistory?: boolean },
+    options?: { sessionId?: string; includeHistory?: boolean; language?: DetectedLanguage },
   ): AsyncIterable<StreamChunk>;
-  summarize(entries: string[]): Promise<ChatResponse>;
-  reflect(entry: string): Promise<ChatResponse>;
+  summarize(entries: string[], language?: DetectedLanguage): Promise<ChatResponse>;
+  reflect(entry: string, language?: DetectedLanguage): Promise<ChatResponse>;
   react(entry: string, options?: ReactionPromptOptions): Promise<ChatResponse>;
   healthCheck(): Promise<{ primary: boolean; fallback?: boolean }>;
   clearHistory(sessionId?: string): void;
@@ -117,7 +122,7 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
 
   const chat = async (
     userMessage: string,
-    options?: { sessionId?: string; includeHistory?: boolean },
+    options?: { sessionId?: string; includeHistory?: boolean; language?: DetectedLanguage },
   ): Promise<ChatResponse> => {
     const sessionId = options?.sessionId ?? 'default';
     const includeHistory = options?.includeHistory ?? true;
@@ -131,6 +136,7 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
       history.getMessages(),
       vocabulary,
       getUserContext(),
+      options?.language,
     );
 
     try {
@@ -157,8 +163,15 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
   const chatWithContext = async (
     message: string,
     context: ConversationContext,
+    language?: DetectedLanguage,
   ): Promise<ChatResponse> => {
-    const messages = createContextualChatMessages(message, context, undefined, getUserContext());
+    const messages = createContextualChatMessages(
+      message,
+      context,
+      undefined,
+      getUserContext(),
+      language,
+    );
 
     try {
       return await primaryProvider.chat(messages);
@@ -172,7 +185,7 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
 
   async function* stream(
     userMessage: string,
-    options?: { sessionId?: string; includeHistory?: boolean },
+    options?: { sessionId?: string; includeHistory?: boolean; language?: DetectedLanguage },
   ): AsyncIterable<StreamChunk> {
     const sessionId = options?.sessionId ?? 'default';
     const includeHistory = options?.includeHistory ?? true;
@@ -186,6 +199,7 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
       history.getMessages(),
       vocabulary,
       getUserContext(),
+      options?.language,
     );
 
     let fullResponse = '';
@@ -212,8 +226,11 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
     history.add({ role: 'assistant', content: fullResponse });
   }
 
-  const summarize = async (entries: string[]): Promise<ChatResponse> => {
-    const messages = createSummaryPrompt(entries, vocabulary);
+  const summarize = async (
+    entries: string[],
+    language?: DetectedLanguage,
+  ): Promise<ChatResponse> => {
+    const messages = createSummaryPrompt(entries, vocabulary, language);
 
     try {
       return await primaryProvider.chat(messages);
@@ -225,8 +242,8 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
     }
   };
 
-  const reflect = async (entry: string): Promise<ChatResponse> => {
-    const messages = createReflectionPrompt(entry, vocabulary);
+  const reflect = async (entry: string, language?: DetectedLanguage): Promise<ChatResponse> => {
+    const messages = createReflectionPrompt(entry, vocabulary, language);
 
     try {
       return await primaryProvider.chat(messages);
