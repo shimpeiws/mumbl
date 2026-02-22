@@ -119,16 +119,16 @@ export function EntryList({ onViewingDetailChange }: EntryListProps) {
   // Calculate viewport height: terminal rows - header (2 lines) - padding (2 lines) - footer reserve (3 lines)
   const viewportHeight = Math.max(5, terminalRows - 7);
 
-  // Calculate item heights: entries with reactions = 2 lines, headers = 3 lines, entries without reactions = 1 line
+  // Calculate item heights: entries = 2 lines (always reserve space for reaction), headers = 3 lines
   const itemHeights = useMemo(() => {
     return flatList.map((item) => {
       if (item.type === 'header') {
         return 3; // 1 line content + marginY={1} (1 above + 1 below)
       }
-      // Entry with reaction takes 2 lines, without reaction takes 1 line
-      return reactions.has(item.entry.id) ? 2 : 1;
+      // Always 2 lines: content + reaction area (prevents layout shift)
+      return 2;
     });
-  }, [flatList, reactions]);
+  }, [flatList]);
 
   // Use scrollable list hook for scroll management with variable item heights
   const { visibleStartIndex, visibleEndIndex, hasItemsAbove, hasItemsBelow } = useScrollableList({
