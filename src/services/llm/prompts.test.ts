@@ -9,6 +9,8 @@ import {
   createReactionPrompt,
   createReflectionPrompt,
   createSummaryPrompt,
+  createSystemPrompt,
+  createTrendSummaryPrompt,
 } from './prompts.js';
 import type { Message } from './types.js';
 
@@ -307,5 +309,146 @@ describe('createFollowUpPrompt', () => {
 
     expect(messages[0]?.content).toContain('Vocabulary Reference');
     expect(messages[0]?.content).toContain('vibe');
+  });
+
+  it('should use Japanese prompts when language is ja', () => {
+    const messages = createFollowUpPrompt('big deadline', '1d', undefined, 'ja');
+
+    expect(messages[0]?.content).toContain('以前書いたことについて');
+    expect(messages[1]?.content).toContain('1d前に書いたもの');
+  });
+});
+
+describe('createTrendSummaryPrompt', () => {
+  it('should create user message with topic counts', () => {
+    const message = createTrendSummaryPrompt({ work: 5, sleep: 3 });
+
+    expect(message.role).toBe('user');
+    expect(message.content).toContain('work: 5 mentions');
+    expect(message.content).toContain('sleep: 3 mentions');
+  });
+
+  it('should handle empty topics', () => {
+    const message = createTrendSummaryPrompt({});
+
+    expect(message.content).toContain('No topics found');
+  });
+
+  it('should use Japanese prompts when language is ja', () => {
+    const message = createTrendSummaryPrompt({ work: 5 }, 'ja');
+
+    expect(message.content).toContain('トレンドトピック');
+    expect(message.content).toContain('work: 5回');
+  });
+
+  it('should handle empty topics in Japanese', () => {
+    const message = createTrendSummaryPrompt({}, 'ja');
+
+    expect(message.content).toContain('トピックはなし');
+  });
+});
+
+describe('Japanese language support', () => {
+  describe('createSystemPrompt', () => {
+    it('should return Japanese base prompt when language is ja', () => {
+      const prompt = createSystemPrompt('ja');
+
+      expect(prompt).toContain('あなたはmumbl');
+      expect(prompt).toContain('pluto mode');
+      expect(prompt).toContain('freebandz');
+      expect(prompt).not.toContain('You are mumbl');
+    });
+
+    it('should return English base prompt when language is en', () => {
+      const prompt = createSystemPrompt('en');
+
+      expect(prompt).toContain('You are mumbl');
+      expect(prompt).not.toContain('あなたはmumbl');
+    });
+
+    it('should return English base prompt when language is undefined', () => {
+      const prompt = createSystemPrompt();
+
+      expect(prompt).toBe(MUMBL_SYSTEM_PROMPT);
+    });
+
+    it('should append user context to Japanese prompt', () => {
+      const prompt = createSystemPrompt('ja', '\n\nExtra context');
+
+      expect(prompt).toContain('あなたはmumbl');
+      expect(prompt).toContain('Extra context');
+    });
+  });
+
+  describe('createChatMessages', () => {
+    it('should use Japanese system prompt when language is ja', () => {
+      const messages = createChatMessages('hello', undefined, undefined, undefined, 'ja');
+
+      expect(messages[0]?.content).toContain('あなたはmumbl');
+    });
+  });
+
+  describe('createSummaryPrompt', () => {
+    it('should use Japanese prompts when language is ja', () => {
+      const messages = createSummaryPrompt(['test entry'], undefined, 'ja');
+
+      expect(messages[0]?.content).toContain('つぶやきを要約');
+      expect(messages[0]?.content).toContain('アドバイスしない');
+      expect(messages[1]?.content).toContain('エントリーを要約して');
+    });
+  });
+
+  describe('createReflectionPrompt', () => {
+    it('should use Japanese prompts when language is ja', () => {
+      const messages = createReflectionPrompt('test entry', undefined, 'ja');
+
+      expect(messages[0]?.content).toContain('つぶやきを振り返ります');
+      expect(messages[0]?.content).toContain('セラピストにならない');
+      expect(messages[1]?.content).toContain('短く振り返って');
+    });
+  });
+
+  describe('createCalloutPrompt', () => {
+    it('should use Japanese prompts when language is ja', () => {
+      const messages = createCalloutPrompt(['test'], undefined, 'ja');
+
+      expect(messages[0]?.content).toContain('声かけメッセージ');
+      expect(messages[0]?.content).toContain('アドバイスしない');
+      expect(messages[1]?.content).toContain('声かけを生成して');
+    });
+  });
+
+  describe('createFollowUpEvaluationPrompt', () => {
+    it('should use Japanese prompts when language is ja', () => {
+      const messages = createFollowUpEvaluationPrompt('stressed', undefined, 'ja');
+
+      expect(messages[0]?.content).toContain('フォローアップが必要か');
+      expect(messages[0]?.content).toContain('JSONのみで回答');
+    });
+  });
+
+  describe('createFollowUpPrompt', () => {
+    it('should use Japanese prompts when language is ja', () => {
+      const messages = createFollowUpPrompt('deadline', '1d', undefined, 'ja');
+
+      expect(messages[0]?.content).toContain('以前書いたことについて');
+      expect(messages[1]?.content).toContain('1d前に書いたもの');
+    });
+  });
+
+  describe('vocabulary section', () => {
+    it('should use Japanese header when language is ja', () => {
+      const messages = createSummaryPrompt(['test'], testVocabulary, 'ja');
+
+      expect(messages[0]?.content).toContain('ボキャブラリー参考');
+      expect(messages[0]?.content).toContain('参考にして');
+    });
+
+    it('should use English header when language is en', () => {
+      const messages = createSummaryPrompt(['test'], testVocabulary, 'en');
+
+      expect(messages[0]?.content).toContain('Vocabulary Reference');
+      expect(messages[0]?.content).toContain('Draw from these');
+    });
   });
 });
