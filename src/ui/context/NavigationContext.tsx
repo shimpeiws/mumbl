@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useState } from 'react';
 
-export type AppMode = 'list' | 'write' | 'conversation';
+export type AppMode = 'list' | 'write';
 
 interface ListState {
   selectedIndex: number;
@@ -18,13 +18,11 @@ interface NavigationContextValue {
   mode: AppMode;
   switchToList: (options?: SwitchToListOptions) => void;
   switchToWrite: () => void;
-  switchToConversation: (conversationId?: string) => void;
   toggleMode: () => void;
   listState: ListState;
   setListState: (state: ListState) => void;
   writeState: WriteState;
   setWriteState: (state: WriteState) => void;
-  conversationId: string | null;
 }
 
 export const NavigationContext = createContext<NavigationContextValue | null>(null);
@@ -46,8 +44,6 @@ export function NavigationProvider({ children, initialMode = 'list' }: Navigatio
   const [mode, setMode] = useState<AppMode>(initialMode);
   const [listState, setListState] = useState<ListState>({ selectedIndex: 0 });
   const [writeState, setWriteState] = useState<WriteState>({ content: '' });
-  const [conversationId, setConversationId] = useState<string | null>(null);
-
   const switchToList = useCallback((options?: SwitchToListOptions) => {
     if (options?.selectLastEntry) {
       setListState({ selectedIndex: -1 });
@@ -57,11 +53,6 @@ export function NavigationProvider({ children, initialMode = 'list' }: Navigatio
 
   const switchToWrite = useCallback(() => {
     setMode('write');
-  }, []);
-
-  const switchToConversation = useCallback((id?: string) => {
-    setConversationId(id ?? null);
-    setMode('conversation');
   }, []);
 
   const toggleMode = useCallback(() => {
@@ -74,13 +65,11 @@ export function NavigationProvider({ children, initialMode = 'list' }: Navigatio
         mode,
         switchToList,
         switchToWrite,
-        switchToConversation,
         toggleMode,
         listState,
         setListState,
         writeState,
         setWriteState,
-        conversationId,
       }}
     >
       {children}

@@ -4,7 +4,6 @@ import { useAgentStatus } from '../hooks/useAgentStatus.js';
 import { useTerminalTitle } from '../hooks/useTerminalTitle.js';
 import { HelpFooter } from './components/common/HelpFooter.js';
 import { ModeIndicator } from './components/common/ModeIndicator.js';
-import { ConversationView } from './components/conversation/ConversationView.js';
 import { EntryList } from './components/entries/EntryList.js';
 import { SplashScreen } from './components/splash/SplashScreen.js';
 import { WriteView } from './components/write/WriteView.js';
@@ -21,7 +20,6 @@ function AppContent() {
 
   useInput((input, key) => {
     if (input === 'q' || (key.ctrl && input === 'c')) {
-      if (mode === 'conversation') return;
       exit();
     }
 
@@ -45,7 +43,6 @@ function AppContent() {
       <Box flexGrow={1}>
         {mode === 'list' && <EntryList onViewingDetailChange={setIsViewingDetail} />}
         {mode === 'write' && <WriteView />}
-        {mode === 'conversation' && <ConversationView />}
       </Box>
 
       <HelpFooter mode={mode} isViewingDetail={isViewingDetail} queueStatus={queueStatus} />
