@@ -21,7 +21,7 @@ export const REACTION_WORDS: Record<DetectedLanguage, WordCategory[]> = {
   ],
   ja: [
     { label: 'Acknowledgment', words: ['な', 'うん', 'そう', 'おけ', 'はい', 'あぁ', 'んん'] },
-    { label: 'Negative/tough', words: ['つら', 'やば', 'うわ', 'げ', 'マジ', '俺も', 'いた'] },
+    { label: 'Negative/tough', words: ['やば', 'うわ', 'げ', 'つら', 'マジ', '俺も', 'いた'] },
     {
       label: 'Positive vibes',
       words: ['いい', 'よい', '最高', '神', 'よし', 'いいね', 'ないすー'],
