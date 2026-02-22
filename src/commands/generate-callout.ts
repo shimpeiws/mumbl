@@ -11,6 +11,9 @@ export const COOLDOWN_FILE = '/tmp/mumbl-callout-timestamp';
 export const MESSAGE_FILE = '/tmp/mumbl-message';
 export const DEFAULT_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 
+/** Maximum number of recent entries to consider for callout generation */
+const RECENT_ENTRIES_LIMIT = 20;
+
 /**
  * Check if cooldown period has elapsed since last callout
  */
@@ -46,7 +49,7 @@ export async function generateCallout(): Promise<void> {
 
     const db = getDatabase();
     const entryRepo = createEntryRepository(db);
-    const entries = entryRepo.findAll({ limit: 20, order: 'desc' });
+    const entries = entryRepo.findAll({ limit: RECENT_ENTRIES_LIMIT, order: 'desc' });
 
     // No entries, nothing to generate
     if (entries.length === 0) {
