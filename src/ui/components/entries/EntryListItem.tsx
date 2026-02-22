@@ -48,13 +48,11 @@ export function EntryListItem({ entry, isSelected, maxWidth = 60, reaction }: En
         <Text>{padding}</Text>
         <Text dimColor>{timestamp}</Text>
       </Box>
-      {/* Second line: reaction (if exists) */}
-      {reaction && (
-        <Box>
-          <Text>{'  '}</Text>
-          <Text dimColor>{formatReactionDisplay(reaction)}</Text>
-        </Box>
-      )}
+      {/* Second line: reaction area (always rendered to prevent layout shift) */}
+      <Box>
+        <Text>{'  '}</Text>
+        <Text dimColor>{reaction ? formatReactionDisplay(reaction) : ' '}</Text>
+      </Box>
     </Box>
   );
 }
