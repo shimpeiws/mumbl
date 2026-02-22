@@ -14,6 +14,7 @@ import { createReactionService } from './services/reaction-service.js';
 import { createTrendService } from './services/trends/trend-service.js';
 import { loadVocabulary } from './services/wordgrain/index.js';
 import { App } from './ui/App.js';
+import { ConfigProvider } from './ui/context/ConfigContext.js';
 import { QueueProvider } from './ui/context/QueueContext.js';
 import { ServiceProvider } from './ui/context/ServiceContext.js';
 
@@ -93,7 +94,9 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
       followUpService={followUpService}
     >
       <QueueProvider queueService={queueService}>
-        <App />
+        <ConfigProvider config={config}>
+          <App />
+        </ConfigProvider>
       </QueueProvider>
     </ServiceProvider>,
   );

@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useState } from 'react';
 
-export type AppMode = 'list' | 'write';
+export type AppMode = 'list' | 'write' | 'config';
 
 interface ListState {
   selectedIndex: number;
@@ -18,6 +18,7 @@ interface NavigationContextValue {
   mode: AppMode;
   switchToList: (options?: SwitchToListOptions) => void;
   switchToWrite: () => void;
+  switchToConfig: () => void;
   toggleMode: () => void;
   listState: ListState;
   setListState: (state: ListState) => void;
@@ -55,6 +56,10 @@ export function NavigationProvider({ children, initialMode = 'list' }: Navigatio
     setMode('write');
   }, []);
 
+  const switchToConfig = useCallback(() => {
+    setMode('config');
+  }, []);
+
   const toggleMode = useCallback(() => {
     setMode((current) => (current === 'list' ? 'write' : 'list'));
   }, []);
@@ -65,6 +70,7 @@ export function NavigationProvider({ children, initialMode = 'list' }: Navigatio
         mode,
         switchToList,
         switchToWrite,
+        switchToConfig,
         toggleMode,
         listState,
         setListState,

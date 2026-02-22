@@ -20,6 +20,16 @@ export function ModeIndicator({ currentMode }: ModeIndicatorProps) {
         List
       </Text>
       <Text dimColor>{']'}</Text>
+      {currentMode === 'config' && (
+        <>
+          <Text dimColor> | </Text>
+          <Text dimColor>{'['}</Text>
+          <Text color="yellow" bold>
+            Config
+          </Text>
+          <Text dimColor>{']'}</Text>
+        </>
+      )}
     </Box>
   );
 }
