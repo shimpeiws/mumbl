@@ -79,9 +79,7 @@ export function EntryList({ onViewingDetailChange }: EntryListProps) {
 
   // Resolve -1 sentinel to last entry index
   const resolvedInitialIndex =
-    listState.selectedIndex === -1 && entryItems.length > 0
-      ? entryItems.length - 1
-      : listState.selectedIndex;
+    listState.selectedIndex === -1 && entryItems.length > 0 ? 0 : listState.selectedIndex;
 
   const { selectedIndex, setSelectedIndex } = useKeyboardNavigation({
     itemCount: entryItems.length,
@@ -101,9 +99,8 @@ export function EntryList({ onViewingDetailChange }: EntryListProps) {
   // When entries load and sentinel was set, update to last entry
   useEffect(() => {
     if (listState.selectedIndex === -1 && entryItems.length > 0) {
-      const lastIndex = entryItems.length - 1;
-      setSelectedIndex(lastIndex);
-      setListState({ selectedIndex: lastIndex });
+      setSelectedIndex(0);
+      setListState({ selectedIndex: 0 });
     }
   }, [listState.selectedIndex, entryItems.length, setSelectedIndex, setListState]);
 

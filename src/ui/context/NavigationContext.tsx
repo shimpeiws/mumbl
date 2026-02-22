@@ -41,7 +41,7 @@ interface NavigationProviderProps {
   initialMode?: AppMode;
 }
 
-export function NavigationProvider({ children, initialMode = 'list' }: NavigationProviderProps) {
+export function NavigationProvider({ children, initialMode = 'write' }: NavigationProviderProps) {
   const [mode, setMode] = useState<AppMode>(initialMode);
   const [listState, setListState] = useState<ListState>({ selectedIndex: 0 });
   const [writeState, setWriteState] = useState<WriteState>({ content: '' });

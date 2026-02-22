@@ -23,14 +23,14 @@ function ModeDisplayComponent() {
 }
 
 describe('NavigationContext', () => {
-  it('should provide default mode as list', () => {
+  it('should provide default mode as write', () => {
     const { lastFrame } = render(
       <NavigationProvider>
         <TestComponent />
       </NavigationProvider>,
     );
 
-    expect(lastFrame()).toContain('mode:list');
+    expect(lastFrame()).toContain('mode:write');
   });
 
   it('should allow setting initial mode', () => {
