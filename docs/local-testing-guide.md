@@ -117,33 +117,21 @@ MUMBL_REACTION_LANGUAGE=invalid pnpm dev
 
 ### 3.2 PR #90: Wordgrain語彙統合
 
-#### テストデータの作成
+#### 通常動作（実データ）
+
+barscanで生成済みのKOHHのWordgrainファイルを使用:
 
 ```bash
-mkdir -p /tmp/mumbl-wordgrain-test
-cat > /tmp/mumbl-wordgrain-test/test-artist.wg.json << 'EOF'
-{
-  "name": "test-artist",
-  "grains": [
-    { "word": "drip", "tags": ["style"] },
-    { "word": "go hard", "context": "motivation" },
-    { "word": "flame", "tags": ["fire", "positive"] }
-  ]
-}
-EOF
-```
-
-#### 通常動作
-
-```bash
-MUMBL_WORDGRAIN_DIR=/tmp/mumbl-wordgrain-test pnpm dev
-# エントリを入力 -> 語彙がLLMプロンプトに注入される（リアクションに反映される場合あり）
+MUMBL_WORDGRAIN_DIR=/Users/shin/src/github.com/shimpeiws/barscan pnpm dev
+# エントリを入力 -> KOHHの語彙（cbd, 吸うなど）がLLMプロンプトに注入される（リアクションに反映される場合あり）
 ```
 
 #### エラーハンドリング
 
 ```bash
 MUMBL_WORDGRAIN_DIR=/nonexistent/path pnpm dev    # 正常に起動（空配列で続行）
+
+mkdir -p /tmp/mumbl-wordgrain-test
 echo "{ invalid }" > /tmp/mumbl-wordgrain-test/bad.wg.json
 MUMBL_WORDGRAIN_DIR=/tmp/mumbl-wordgrain-test pnpm dev  # 無効なファイルをスキップ
 ```
@@ -156,7 +144,8 @@ MUMBL_WORDGRAIN_DIR=/tmp/mumbl-wordgrain-test pnpm dev  # 無効なファイル�
 rm -f /tmp/mumbl-callout-timestamp /tmp/mumbl-message
 pnpm dev generate-callout
 echo "Exit code: $?"
-cat /tmp/mumbl-message  # calloutメッセージが生成される
+# calloutメッセージが生成されていることを確認
+cat /tmp/mumbl-message
 ```
 
 #### クールダウン（5分）
@@ -282,7 +271,7 @@ sqlite3 ~/.mumbl/mumbl.db "SELECT context_type, key, value, confidence FROM user
 ### 全機能同時実行
 
 ```bash
-MUMBL_WORDGRAIN_DIR=/tmp/mumbl-wordgrain-test pnpm dev
+MUMBL_WORDGRAIN_DIR=/Users/shin/src/github.com/shimpeiws/barscan pnpm dev
 ```
 
 エントリを作成: `I'm stressed about the coffee shop project deadline, wondering if I should ask for help`
