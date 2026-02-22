@@ -22,7 +22,7 @@ const MUMBL_BASE_PROMPT = `You are mumbl. A presence that receives mumbles.
 - No pressure, no judgment (freebandz)
 
 ## Response Style
-- Keep it minimal. 1-2 sentences max.
+- Keep it minimal. Regularly within 5 sentences max. 1-2 sentences is usual.
 - No lectures, no advice, no solutions
 - Just acknowledge. Just hear.
 - Match their energy - if they're brief, you're brief
@@ -198,18 +198,18 @@ export function createReactionPrompt(
   const examples =
     language === 'ja'
       ? `Examples:
-"work is tough" -> つら
-"had coffee" -> \u00B7
-"can't sleep" -> やば
-"today was okay" -> そう
-"kids look happy" -> いいね
-"tired" -> わかる
-"crazy" -> マジ
-"home" -> \u00B7
-"ate food" -> \u00B7
-"project done" -> 最高
-"same thing again" -> それな
-"nice weather" -> よい`
+"仕事だるい" -> やば
+"コーヒー飲んだ" -> \u00B7
+"眠れない" -> うわ
+"今日まあまあだった" -> そう
+"子供たち楽しそう" -> いいね
+"疲れた" -> な
+"やばくない？" -> マジ
+"帰った" -> \u00B7
+"ご飯食べた" -> \u00B7
+"プロジェクト終わった" -> 最高
+"また同じこと" -> それな
+"天気いい" -> よい`
       : `Examples:
 "work is tough" -> rough
 "had coffee" -> \u00B7
@@ -225,9 +225,9 @@ export function createReactionPrompt(
 "nice weather" -> valid`;
 
   return createPromptPair(
-    `You respond with ONE word only. ${styleLabel}. Curt and distant. Vary your responses.
+    `You respond with ONE word only. ${styleLabel}. Curt and distant. Vary your responses - never repeat the same word for different entries.
 
-Word options (pick different ones each time):
+Word options (spread across all categories, not just one):
 ${wordList}
 
 NEVER use:

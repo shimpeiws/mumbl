@@ -6,6 +6,7 @@ import {
   createChatMessages,
   createFollowUpEvaluationPrompt,
   createFollowUpPrompt,
+  createReactionPrompt,
   createReflectionPrompt,
   createSummaryPrompt,
 } from './prompts.js';
@@ -215,6 +216,61 @@ describe('createCalloutPrompt', () => {
     expect(messages[0]?.content).toContain('Vocabulary Reference');
     expect(messages[0]?.content).toContain('vibe');
     expect(messages[0]?.content).toContain('on god');
+  });
+});
+
+describe('createReactionPrompt', () => {
+  it('should create messages with system and user roles', () => {
+    const messages = createReactionPrompt('feeling tired');
+
+    expect(messages).toHaveLength(2);
+    expect(messages[0]?.role).toBe('system');
+    expect(messages[1]?.role).toBe('user');
+    expect(messages[1]?.content).toBe('feeling tired');
+  });
+
+  it('should use Japanese examples with Japanese input text for ja language', () => {
+    const messages = createReactionPrompt('疲れた', { language: 'ja' });
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Japanese slang style');
+    expect(systemContent).toContain('仕事だるい');
+    expect(systemContent).toContain('コーヒー飲んだ');
+    expect(systemContent).toContain('眠れない');
+    expect(systemContent).not.toContain('"work is tough"');
+    expect(systemContent).not.toContain('"had coffee"');
+  });
+
+  it('should not have tsura as first example mapping for ja language', () => {
+    const messages = createReactionPrompt('テスト', { language: 'ja' });
+    const systemContent = messages[0]?.content ?? '';
+    const examplesStart = systemContent.indexOf('Examples:');
+    const firstMapping = systemContent.slice(examplesStart, examplesStart + 100);
+
+    expect(firstMapping).not.toContain('-> つら');
+  });
+
+  it('should use English examples for en language', () => {
+    const messages = createReactionPrompt('test', { language: 'en' });
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Rapper slang style');
+    expect(systemContent).toContain('"work is tough"');
+  });
+
+  it('should include variation instruction', () => {
+    const messages = createReactionPrompt('test');
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('never repeat the same word for different entries');
+    expect(systemContent).toContain('spread across all categories');
+  });
+
+  it('should include vocabulary when provided', () => {
+    const messages = createReactionPrompt('test', undefined, testVocabulary);
+
+    expect(messages[0]?.content).toContain('Vocabulary Reference');
+    expect(messages[0]?.content).toContain('vibe');
   });
 });
 
