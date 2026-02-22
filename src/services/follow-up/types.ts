@@ -1,5 +1,10 @@
-export type IntervalType = '1d' | '3d' | '1w';
-export type FollowUpStatus = 'pending' | 'shown' | 'dismissed' | 'responded';
+import type {
+  FollowUpStatus as FollowUpStatusType,
+  IntervalType as IntervalTypeAlias,
+} from '../../repositories/types.js';
+
+export type FollowUpStatus = FollowUpStatusType;
+export type IntervalType = IntervalTypeAlias;
 
 export interface FollowUp {
   id: string;

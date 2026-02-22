@@ -23,7 +23,7 @@ function rowToConversation(row: ConversationRow): Conversation {
     title: row.title,
     startedAt: new Date(row.started_at * 1000),
     updatedAt: new Date(row.updated_at * 1000),
-    status: row.status as 'active' | 'archived',
+    status: row.status,
     metadata: row.metadata ? JSON.parse(row.metadata) : {},
   };
 }

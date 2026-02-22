@@ -1,13 +1,14 @@
 /**
  * Conversation domain types
  */
+import type { ConversationStatus, MemoryType } from '../../repositories/types.js';
 
 export interface Conversation {
   id: string;
   title: string | null;
   startedAt: Date;
   updatedAt: Date;
-  status: 'active' | 'archived';
+  status: ConversationStatus;
   metadata: Record<string, unknown>;
 }
 
@@ -20,7 +21,7 @@ export interface ConversationContext {
 export interface ConversationMemory {
   id: string;
   conversationId: string;
-  memoryType: 'buffer' | 'summary' | 'context';
+  memoryType: MemoryType;
   content: Record<string, unknown>;
   tokenCount: number;
   createdAt: Date;

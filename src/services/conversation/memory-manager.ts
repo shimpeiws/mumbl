@@ -58,7 +58,7 @@ function rowToMemory(row: ConversationMemoryRow): ConversationMemory {
   return {
     id: row.id,
     conversationId: row.conversation_id,
-    memoryType: row.memory_type as 'buffer' | 'summary' | 'context',
+    memoryType: row.memory_type,
     content: JSON.parse(row.content),
     tokenCount: row.token_count,
     createdAt: new Date(row.created_at * 1000),
