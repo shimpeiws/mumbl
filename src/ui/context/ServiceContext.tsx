@@ -1,6 +1,5 @@
 import React, { createContext, useContext } from 'react';
 import type { ContextServiceInterface } from '../../services/context/types.js';
-import type { ConversationServiceInterface } from '../../services/conversation/conversation-service.js';
 import type { EntryServiceInterface } from '../../services/entry-service.js';
 import type { FollowUpServiceInterface } from '../../services/follow-up/follow-up-service.js';
 import type { LLMServiceInterface } from '../../services/llm/llm-service.js';
@@ -15,7 +14,6 @@ interface ServiceContextValue {
   llmService: LLMServiceInterface;
   reactionService: ReactionServiceInterface;
   queueService: QueueServiceInterface;
-  conversationService?: ConversationServiceInterface;
   trendService?: TrendServiceInterface;
   contextService?: ContextServiceInterface;
   followUpService?: FollowUpServiceInterface;
@@ -37,7 +35,6 @@ interface ServiceProviderProps {
   llmService: LLMServiceInterface;
   reactionService: ReactionServiceInterface;
   queueService: QueueServiceInterface;
-  conversationService?: ConversationServiceInterface;
   trendService?: TrendServiceInterface;
   contextService?: ContextServiceInterface;
   followUpService?: FollowUpServiceInterface;
@@ -50,7 +47,6 @@ export function ServiceProvider({
   llmService,
   reactionService,
   queueService,
-  conversationService,
   trendService,
   contextService,
   followUpService,
@@ -64,7 +60,6 @@ export function ServiceProvider({
         llmService,
         reactionService,
         queueService,
-        conversationService,
         trendService,
         contextService,
         followUpService,

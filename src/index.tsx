@@ -5,7 +5,6 @@ import { resolveConfig } from './config/index.js';
 import { getReactionConfig } from './infrastructure/config/reaction-config.js';
 import { closeDatabase, getDatabase } from './infrastructure/database/client.js';
 import { createContextService } from './services/context/context-service.js';
-import { createConversationService } from './services/conversation/conversation-service.js';
 import { createEntryService } from './services/entry-service.js';
 import { createFollowUpService } from './services/follow-up/follow-up-service.js';
 import { createLLMServiceFromConfig } from './services/llm/llm-service.js';
@@ -82,9 +81,6 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
   );
   // ollamaService is imported as a singleton object
 
-  // Create conversation service for memory tracking
-  const conversationService = createConversationService(db, llmService);
-
   const instance = render(
     <ServiceProvider
       entryService={entryService}
@@ -92,7 +88,6 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
       llmService={llmService}
       reactionService={reactionService}
       queueService={queueService}
-      conversationService={conversationService}
       trendService={trendService}
       contextService={contextService}
       followUpService={followUpService}

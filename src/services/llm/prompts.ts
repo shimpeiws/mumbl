@@ -193,23 +193,23 @@ export function createReactionPrompt(
   const language = options?.language;
   const wordList = language ? getWordListForLanguage(language) : getWordListForLanguage('en');
 
-  const styleLabel = language === 'ja' ? 'Romanized Japanese slang style' : 'Rapper slang style';
+  const styleLabel = language === 'ja' ? 'Japanese slang style' : 'Rapper slang style';
 
   const examples =
     language === 'ja'
       ? `Examples:
-"work is tough" -> tsura
+"work is tough" -> つら
 "had coffee" -> \u00B7
-"can't sleep" -> yaba
-"today was okay" -> sou
-"kids look happy" -> ii-ne
-"tired" -> wakaru
-"crazy" -> maji
+"can't sleep" -> やば
+"today was okay" -> そう
+"kids look happy" -> いいね
+"tired" -> わかる
+"crazy" -> マジ
 "home" -> \u00B7
 "ate food" -> \u00B7
-"project done" -> saikou
-"same thing again" -> sore-na
-"nice weather" -> yoi`
+"project done" -> 最高
+"same thing again" -> それな
+"nice weather" -> よい`
       : `Examples:
 "work is tough" -> rough
 "had coffee" -> \u00B7

@@ -127,4 +127,43 @@ describe('loadWordgrainDir', () => {
     const result = loadWordgrainDir(filePath);
     expect(result).toEqual([]);
   });
+
+  it('should load barscan format files with meta.artist', () => {
+    const fileContent = JSON.stringify({
+      meta: { artist: 'barscan-artist' },
+      grains: [{ word: 'flow', tags: ['style'] }],
+    });
+    fs.writeFileSync(path.join(tmpDir, 'barscan.wg.json'), fileContent);
+
+    const result = loadWordgrainDir(tmpDir);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.name).toBe('barscan-artist');
+    expect(result[0]?.grains).toHaveLength(1);
+    expect(result[0]?.grains[0]?.word).toBe('flow');
+  });
+
+  it('should skip files with neither name nor meta.artist', () => {
+    fs.writeFileSync(
+      path.join(tmpDir, 'no-name-no-meta.wg.json'),
+      JSON.stringify({ grains: [{ word: 'test' }] }),
+    );
+
+    const result = loadWordgrainDir(tmpDir);
+    expect(result).toEqual([]);
+  });
+
+  it('should prefer top-level name over meta.artist', () => {
+    const fileContent = JSON.stringify({
+      name: 'top-level-name',
+      meta: { artist: 'meta-artist' },
+      grains: [{ word: 'bars' }],
+    });
+    fs.writeFileSync(path.join(tmpDir, 'both.wg.json'), fileContent);
+
+    const result = loadWordgrainDir(tmpDir);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.name).toBe('top-level-name');
+  });
 });

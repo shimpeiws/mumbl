@@ -31,7 +31,14 @@ function parseWordgrainFile(filePath: string): WordgrainFile | null {
     if (typeof parsed !== 'object' || parsed === null) return null;
     const record = parsed as Record<string, unknown>;
 
-    if (typeof record['name'] !== 'string') return null;
+    const meta = record['meta'] as Record<string, unknown> | undefined;
+    const name =
+      typeof record['name'] === 'string'
+        ? record['name']
+        : meta && typeof meta['artist'] === 'string'
+          ? meta['artist']
+          : null;
+    if (!name) return null;
     if (!Array.isArray(record['grains'])) return null;
 
     const grains: Grain[] = [];
@@ -41,7 +48,7 @@ function parseWordgrainFile(filePath: string): WordgrainFile | null {
       }
     }
 
-    return { name: record['name'], grains };
+    return { name, grains };
   } catch {
     return null;
   }

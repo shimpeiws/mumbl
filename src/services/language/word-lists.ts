@@ -20,12 +20,15 @@ export const REACTION_WORDS: Record<DetectedLanguage, WordCategory[]> = {
     { label: 'Neutral', words: ['\u00B7'] },
   ],
   ja: [
-    { label: 'Acknowledgment', words: ['na', 'un', 'sou', 'oke', 'hai', 'ah', 'nn'] },
-    { label: 'Negative/tough', words: ['tsura', 'yaba', 'uwa', 'geh', 'maji', 'ore-mo', 'ita'] },
-    { label: 'Positive vibes', words: ['ii', 'yoi', 'saikou', 'kami', 'yoshi', 'ii-ne', 'naisuu'] },
+    { label: 'Acknowledgment', words: ['な', 'うん', 'そう', 'おけ', 'はい', 'あぁ', 'んん'] },
+    { label: 'Negative/tough', words: ['つら', 'やば', 'うわ', 'げ', 'マジ', '俺も', 'いた'] },
+    {
+      label: 'Positive vibes',
+      words: ['いい', 'よい', '最高', '神', 'よし', 'いいね', 'ないすー'],
+    },
     {
       label: 'Feeling it',
-      words: ['wakaru', 'sore-na', 'dakara', 'honma', 'sore', 'tashika-ni', 'ne'],
+      words: ['わかる', 'それな', 'だから', 'ほんま', 'それ', 'たしかに', 'ね'],
     },
     { label: 'Neutral', words: ['\u00B7'] },
   ],

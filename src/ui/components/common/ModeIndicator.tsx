@@ -20,16 +20,6 @@ export function ModeIndicator({ currentMode }: ModeIndicatorProps) {
         List
       </Text>
       <Text dimColor>{']'}</Text>
-      {currentMode === 'conversation' && (
-        <>
-          <Text dimColor> | </Text>
-          <Text dimColor>{'['}</Text>
-          <Text color="magenta" bold>
-            Chat
-          </Text>
-          <Text dimColor>{']'}</Text>
-        </>
-      )}
     </Box>
   );
 }
