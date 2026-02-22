@@ -80,10 +80,14 @@ export function createTrendService(
   ): TrendAnalysis => {
     const topicCounts = topicRepository.getTopicCountsForPeriod(periodStart, periodEnd);
 
-    // Get full topic data for top topics
+    // Get full topic data for top topics in a single batch query
+    const top10 = topicCounts.slice(0, 10);
+    const topicRows = topicRepository.findByNames(top10.map((tc) => tc.name));
+    const topicMap = new Map(topicRows.map((row) => [row.name, row]));
+
     const topTopics: Array<{ topic: Topic; count: number }> = [];
-    for (const tc of topicCounts.slice(0, 10)) {
-      const topicRow = topicRepository.findByName(tc.name);
+    for (const tc of top10) {
+      const topicRow = topicMap.get(tc.name);
       if (topicRow) {
         topTopics.push({
           topic: topicRowToDomain(topicRow),

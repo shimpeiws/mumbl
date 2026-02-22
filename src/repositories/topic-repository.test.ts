@@ -54,6 +54,32 @@ describe('TopicRepository', () => {
     });
   });
 
+  describe('findByNames', () => {
+    it('should return matching topics', () => {
+      repository.upsert('work');
+      repository.upsert('sleep');
+      repository.upsert('coffee');
+
+      const found = repository.findByNames(['work', 'coffee']);
+      expect(found).toHaveLength(2);
+      const names = found.map((t) => t.name).sort();
+      expect(names).toEqual(['coffee', 'work']);
+    });
+
+    it('should return empty array for empty input', () => {
+      const found = repository.findByNames([]);
+      expect(found).toHaveLength(0);
+    });
+
+    it('should skip non-existent names', () => {
+      repository.upsert('work');
+
+      const found = repository.findByNames(['work', 'nonexistent']);
+      expect(found).toHaveLength(1);
+      expect(found[0]?.name).toBe('work');
+    });
+  });
+
   describe('findAll', () => {
     beforeEach(() => {
       repository.upsert('work');
