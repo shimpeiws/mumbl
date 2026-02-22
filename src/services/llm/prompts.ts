@@ -86,6 +86,21 @@ function buildVocabularySection(vocabulary: VocabularySet): string {
 }
 
 /**
+ * Create a system/user message pair with optional vocabulary injection
+ */
+function createPromptPair(
+  systemContent: string,
+  userContent: string,
+  vocabulary?: VocabularySet,
+): Message[] {
+  const system = vocabulary ? systemContent + buildVocabularySection(vocabulary) : systemContent;
+  return [
+    { role: 'system', content: system },
+    { role: 'user', content: userContent },
+  ];
+}
+
+/**
  * Create a chat message array with the system prompt
  */
 export function createChatMessages(
@@ -124,7 +139,8 @@ export function createChatMessages(
 export function createSummaryPrompt(entries: string[], vocabulary?: VocabularySet): Message[] {
   const entriesText = entries.map((e, i) => `${i + 1}. ${e}`).join('\n');
 
-  const baseContent = `You're summarizing someone's mumbles.
+  return createPromptPair(
+    `You're summarizing someone's mumbles.
 
 Style:
 - Notice patterns, don't judge them
@@ -134,27 +150,18 @@ Style:
 
 Example: "lots of work stress lately. sleep's been rough. weekend was a break."
 
-Not this: "I notice you're experiencing stress! Have you considered..."`;
-
-  const systemContent = vocabulary ? baseContent + buildVocabularySection(vocabulary) : baseContent;
-
-  return [
-    {
-      role: 'system',
-      content: systemContent,
-    },
-    {
-      role: 'user',
-      content: `Summarize these entries:\n\n${entriesText}`,
-    },
-  ];
+Not this: "I notice you're experiencing stress! Have you considered..."`,
+    `Summarize these entries:\n\n${entriesText}`,
+    vocabulary,
+  );
 }
 
 /**
  * Create a reflection prompt for a single entry
  */
 export function createReflectionPrompt(entry: string, vocabulary?: VocabularySet): Message[] {
-  const baseContent = `You're reflecting on someone's mumble.
+  return createPromptPair(
+    `You're reflecting on someone's mumble.
 
 Style:
 - One short observation or question, max
@@ -164,20 +171,10 @@ Style:
 
 Good: "that meeting sounds heavy"
 Good: "sleep thing again?"
-Bad: "It sounds like you're processing a lot. What do you think is driving these feelings?"`;
-
-  const systemContent = vocabulary ? baseContent + buildVocabularySection(vocabulary) : baseContent;
-
-  return [
-    {
-      role: 'system',
-      content: systemContent,
-    },
-    {
-      role: 'user',
-      content: `Reflect briefly:\n\n${entry}`,
-    },
-  ];
+Bad: "It sounds like you're processing a lot. What do you think is driving these feelings?"`,
+    `Reflect briefly:\n\n${entry}`,
+    vocabulary,
+  );
 }
 
 export interface ReactionPromptOptions {
@@ -227,7 +224,8 @@ export function createReactionPrompt(
 "same thing again" -> bruh
 "nice weather" -> valid`;
 
-  const baseContent = `You respond with ONE word only. ${styleLabel}. Curt and distant. Vary your responses.
+  return createPromptPair(
+    `You respond with ONE word only. ${styleLabel}. Curt and distant. Vary your responses.
 
 Word options (pick different ones each time):
 ${wordList}
@@ -238,36 +236,27 @@ NEVER use:
 - Questions
 - Emojis
 
-${examples}`;
-
-  const systemContent = vocabulary ? baseContent + buildVocabularySection(vocabulary) : baseContent;
-
-  return [
-    {
-      role: 'system',
-      content: systemContent,
-    },
-    {
-      role: 'user',
-      content: entry,
-    },
-  ];
+${examples}`,
+    entry,
+    vocabulary,
+  );
 }
 
 /**
  * Create a callout prompt from recent journal entries
  * Used by the generate-callout command for hook-driven messages
  */
-export function createCalloutPrompt(entries: string[]): Message[] {
+export function createCalloutPrompt(
+  entries: string[],
+  vocabulary?: VocabularySet,
+): Message[] {
   const entriesText = entries
     .slice(0, 5)
     .map((e, i) => `${i + 1}. ${e}`)
     .join('\n');
 
-  return [
-    {
-      role: 'system',
-      content: `You generate a brief callout message based on someone's recent journal entries.
+  return createPromptPair(
+    `You generate a brief callout message based on someone's recent journal entries.
 
 Style:
 - One short sentence, casual tone
@@ -281,12 +270,9 @@ Examples:
 - "sleep been rough lately"
 - "that project tho"
 - "vibes been shifting"`,
-    },
-    {
-      role: 'user',
-      content: `Generate a callout from these recent entries:\n\n${entriesText}`,
-    },
-  ];
+    `Generate a callout from these recent entries:\n\n${entriesText}`,
+    vocabulary,
+  );
 }
 
 /**
@@ -313,38 +299,35 @@ export function createTrendSummaryPrompt(topicCounts: Record<string, number>): {
  * Create a follow-up evaluation prompt for a journal entry
  * LLM decides whether the entry warrants a follow-up check-in
  */
-export function createFollowUpEvaluationPrompt(entry: string): Message[] {
-  return [
-    {
-      role: 'system',
-      content: `You evaluate if a journal entry warrants a follow-up check-in.
+export function createFollowUpEvaluationPrompt(
+  entry: string,
+  vocabulary?: VocabularySet,
+): Message[] {
+  return createPromptPair(
+    `You evaluate if a journal entry warrants a follow-up check-in.
 Consider: emotional weight, unresolved situations, health mentions, goals.
 Respond with JSON only: {"shouldFollowUp": true/false, "interval": "1d"|"3d"|"1w", "reason": "brief reason"}
 Do NOT follow up on trivial entries (eating, weather, routine).`,
-    },
-    {
-      role: 'user',
-      content: entry,
-    },
-  ];
+    entry,
+    vocabulary,
+  );
 }
 
 /**
  * Create a follow-up prompt for checking in on a previous entry
  */
-export function createFollowUpPrompt(originalEntry: string, scheduledInterval: string): Message[] {
-  return [
-    {
-      role: 'system',
-      content: `You're checking in about something someone wrote earlier.
+export function createFollowUpPrompt(
+  originalEntry: string,
+  scheduledInterval: string,
+  vocabulary?: VocabularySet,
+): Message[] {
+  return createPromptPair(
+    `You're checking in about something someone wrote earlier.
 Keep it casual and brief. Don't be clinical.
 Example: "how's that project going?" or "sleep any better?"`,
-    },
-    {
-      role: 'user',
-      content: `Original entry (written ${scheduledInterval} ago):\n\n${originalEntry}`,
-    },
-  ];
+    `Original entry (written ${scheduledInterval} ago):\n\n${originalEntry}`,
+    vocabulary,
+  );
 }
 
 /**
