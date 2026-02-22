@@ -8,8 +8,13 @@ export interface Grain {
   tags?: string[];
 }
 
+export interface WordgrainMeta {
+  artist?: string;
+}
+
 export interface WordgrainFile {
   name: string;
+  meta?: WordgrainMeta;
   grains: Grain[];
 }
 

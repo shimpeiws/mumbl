@@ -43,8 +43,8 @@ describe('getWordListForLanguage', () => {
   it('should return a formatted string for Japanese', () => {
     const result = getWordListForLanguage('ja');
     expect(result).toContain('- Acknowledgment:');
-    expect(result).toContain('na');
-    expect(result).toContain('wakaru');
+    expect(result).toContain('な');
+    expect(result).toContain('わかる');
     expect(result).toContain('- Neutral:');
   });
 

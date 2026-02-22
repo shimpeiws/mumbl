@@ -1,21 +1,13 @@
 import { Box, Text, useInput } from 'ink';
-import React, { useState } from 'react';
-import { detectConversationTrigger } from '../../../services/conversation/trigger-detector.js';
+import React from 'react';
 import { useNavigation } from '../../context/NavigationContext.js';
 import { useServices } from '../../context/ServiceContext.js';
-import { ConversationPrompt } from '../conversation/ConversationPrompt.js';
 
 export function WriteView() {
-  const { switchToList, switchToConversation, writeState, setWriteState } = useNavigation();
-  const { entryService, conversationService } = useServices();
-  const [showPrompt, setShowPrompt] = useState(false);
-  const [pendingContent, setPendingContent] = useState('');
+  const { switchToList, writeState, setWriteState } = useNavigation();
+  const { entryService } = useServices();
 
   useInput((input, key) => {
-    if (showPrompt) {
-      return;
-    }
-
     if (key.escape) {
       switchToList();
       return;
@@ -31,13 +23,6 @@ export function WriteView() {
       if (trimmedContent) {
         entryService.create({ content: trimmedContent });
         setWriteState({ content: '' });
-
-        if (conversationService && detectConversationTrigger(trimmedContent)) {
-          setPendingContent(trimmedContent);
-          setShowPrompt(true);
-          return;
-        }
-
         switchToList({ selectLastEntry: true });
       }
       return;
@@ -52,38 +37,6 @@ export function WriteView() {
       setWriteState({ content: writeState.content + input });
     }
   });
-
-  const handleAcceptConversation = () => {
-    if (!conversationService) {
-      setShowPrompt(false);
-      switchToList({ selectLastEntry: true });
-      return;
-    }
-
-    const conversation = conversationService.startConversation();
-    const entry = entryService.create({ content: pendingContent });
-    conversationService.addEntry(conversation.id, entry.id, pendingContent);
-    setShowPrompt(false);
-    setPendingContent('');
-    switchToConversation(conversation.id);
-  };
-
-  const handleDeclineConversation = () => {
-    setShowPrompt(false);
-    setPendingContent('');
-    switchToList({ selectLastEntry: true });
-  };
-
-  if (showPrompt) {
-    return (
-      <Box flexDirection="column" padding={1}>
-        <ConversationPrompt
-          onAccept={handleAcceptConversation}
-          onDecline={handleDeclineConversation}
-        />
-      </Box>
-    );
-  }
 
   return (
     <Box flexDirection="column" padding={1}>
