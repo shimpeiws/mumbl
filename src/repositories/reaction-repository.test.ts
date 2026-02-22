@@ -1,17 +1,20 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { initializeSchema } from '../infrastructure/database/schema.js';
-import { ReactionRepository } from './reaction-repository.js';
+import {
+  type ReactionRepositoryInterface,
+  createReactionRepository,
+} from './reaction-repository.js';
 import type { Reaction } from './types.js';
 
 describe('ReactionRepository', () => {
   let db: Database.Database;
-  let repository: ReactionRepository;
+  let repository: ReactionRepositoryInterface;
 
   beforeEach(() => {
     db = new Database(':memory:');
     initializeSchema(db);
-    repository = new ReactionRepository(db);
+    repository = createReactionRepository(db);
 
     // Insert a test entry for foreign key
     db.prepare(

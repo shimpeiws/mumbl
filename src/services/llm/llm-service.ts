@@ -296,52 +296,6 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
 }
 
 /**
- * Legacy class export for backward compatibility
- * @deprecated Use createLLMService() instead
- */
-export class LLMService implements LLMServiceInterface {
-  private readonly _service: LLMServiceInterface;
-
-  constructor(config: LLMServiceConfig) {
-    this._service = createLLMService(config);
-  }
-
-  chat(userMessage: string, options?: { sessionId?: string; includeHistory?: boolean }) {
-    return this._service.chat(userMessage, options);
-  }
-  chatWithContext(message: string, context: ConversationContext) {
-    return this._service.chatWithContext(message, context);
-  }
-  stream(userMessage: string, options?: { sessionId?: string; includeHistory?: boolean }) {
-    return this._service.stream(userMessage, options);
-  }
-  summarize(entries: string[]) {
-    return this._service.summarize(entries);
-  }
-  reflect(entry: string) {
-    return this._service.reflect(entry);
-  }
-  react(entry: string, options?: ReactionPromptOptions) {
-    return this._service.react(entry, options);
-  }
-  healthCheck() {
-    return this._service.healthCheck();
-  }
-  clearHistory(sessionId?: string) {
-    return this._service.clearHistory(sessionId);
-  }
-  getProviderInfo() {
-    return this._service.getProviderInfo();
-  }
-  setContextService(service: ContextServiceInterface) {
-    return this._service.setContextService(service);
-  }
-  setVocabulary(v: VocabularySet) {
-    return this._service.setVocabulary(v);
-  }
-}
-
-/**
  * Create an LLM service from resolved configuration
  * Use this with resolveConfig() for full configuration priority support
  * Priority: CLI > Environment > Config file > Default

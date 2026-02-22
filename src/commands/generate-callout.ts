@@ -1,11 +1,11 @@
 import fs from 'node:fs';
 import { resolveConfig } from '../config/index.js';
-import { debugLog } from '../utils/log.js';
 import { closeDatabase, getDatabase } from '../infrastructure/database/client.js';
 import { createEntryRepository } from '../repositories/entry-repository.js';
 import { createProvider } from '../services/llm/llm-service.js';
 import { createCalloutPrompt } from '../services/llm/prompts.js';
 import { DEFAULT_ANTHROPIC_MODEL, DEFAULT_OLLAMA_MODEL } from '../services/llm/types.js';
+import { debugLog } from '../utils/log.js';
 
 export const COOLDOWN_FILE = '/tmp/mumbl-callout-timestamp';
 export const MESSAGE_FILE = '/tmp/mumbl-message';

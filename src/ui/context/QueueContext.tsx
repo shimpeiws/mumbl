@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import type { QueueService, QueueStatus } from '../../services/queue/index.js';
+import type { QueueServiceInterface, QueueStatus } from '../../services/queue/index.js';
 
 interface QueueContextValue {
   status: QueueStatus;
@@ -30,7 +30,7 @@ export function useQueue(): QueueContextValue {
 }
 
 interface QueueProviderProps {
-  queueService: QueueService;
+  queueService: QueueServiceInterface;
   children: React.ReactNode;
 }
 

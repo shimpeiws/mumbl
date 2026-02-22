@@ -64,7 +64,10 @@ export function createUserContextRepository(db: Database.Database): UserContextR
     const now = toUnixSeconds(new Date());
 
     if (existing) {
-      const newConfidence = Math.min(1.0, existing.confidence + item.confidence * CONFIDENCE_MERGE_WEIGHT);
+      const newConfidence = Math.min(
+        1.0,
+        existing.confidence + item.confidence * CONFIDENCE_MERGE_WEIGHT,
+      );
       const newSourceCount = existing.source_count + 1;
 
       const stmt = db.prepare(

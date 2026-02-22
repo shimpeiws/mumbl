@@ -1,17 +1,17 @@
 import type { Database as DatabaseType } from 'better-sqlite3';
 import { EntryNotFoundError } from '../infrastructure/errors/domain-errors.js';
 import { createEntryRepository } from '../repositories/entry-repository.js';
-import { debugLog } from '../utils/log.js';
 import type {
   CreateEntryOptions,
   JournalEntry,
   ListEntriesOptions,
   UpdateEntryOptions,
 } from '../repositories/types.js';
+import { debugLog } from '../utils/log.js';
 import type { ContextServiceInterface } from './context/types.js';
 import type { FollowUpServiceInterface } from './follow-up/follow-up-service.js';
 import { generateEntryId } from './id-service.js';
-import type { ReactionService } from './reaction-service.js';
+import type { ReactionServiceInterface } from './reaction-service.js';
 import type { TrendServiceInterface } from './trends/types.js';
 
 /**
@@ -33,7 +33,7 @@ export interface EntryServiceInterface {
  */
 export function createEntryService(
   db: DatabaseType,
-  reactionService?: ReactionService,
+  reactionService?: ReactionServiceInterface,
   trendService?: TrendServiceInterface,
   contextService?: ContextServiceInterface,
   followUpService?: FollowUpServiceInterface,
@@ -122,50 +122,4 @@ export function createEntryService(
     count,
     search,
   };
-}
-
-/**
- * Legacy class export for backward compatibility
- * @deprecated Use createEntryService() instead
- */
-export class EntryService implements EntryServiceInterface {
-  private readonly _service: EntryServiceInterface;
-
-  constructor(
-    db: DatabaseType,
-    reactionService?: ReactionService,
-    trendService?: TrendServiceInterface,
-    contextService?: ContextServiceInterface,
-    followUpService?: FollowUpServiceInterface,
-  ) {
-    this._service = createEntryService(
-      db,
-      reactionService,
-      trendService,
-      contextService,
-      followUpService,
-    );
-  }
-
-  create(options: CreateEntryOptions) {
-    return this._service.create(options);
-  }
-  getById(id: string) {
-    return this._service.getById(id);
-  }
-  list(options?: ListEntriesOptions) {
-    return this._service.list(options);
-  }
-  update(id: string, options: UpdateEntryOptions) {
-    return this._service.update(id, options);
-  }
-  delete(id: string) {
-    return this._service.delete(id);
-  }
-  count() {
-    return this._service.count();
-  }
-  search(query: string) {
-    return this._service.search(query);
-  }
 }

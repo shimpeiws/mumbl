@@ -4,7 +4,7 @@ import path from 'node:path';
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { initializeDatabase } from '../../src/infrastructure/database/client.js';
-import { EntryService } from '../../src/services/entry-service.js';
+import { createEntryService } from '../../src/services/entry-service.js';
 
 describe('Storage Concurrent Access', () => {
   let testDbPath: string;
@@ -37,7 +37,7 @@ describe('Storage Concurrent Access', () => {
     it('should allow multiple readers simultaneously', () => {
       // Create database and add test data
       const db1 = initializeDatabase(testDbPath);
-      const service1 = new EntryService(db1);
+      const service1 = createEntryService(db1);
 
       service1.create({ content: 'Entry 1' });
       service1.create({ content: 'Entry 2' });
@@ -48,9 +48,9 @@ describe('Storage Concurrent Access', () => {
       const db3 = new Database(testDbPath, { readonly: true });
       const db4 = new Database(testDbPath, { readonly: true });
 
-      const service2 = new EntryService(db2);
-      const service3 = new EntryService(db3);
-      const service4 = new EntryService(db4);
+      const service2 = createEntryService(db2);
+      const service3 = createEntryService(db3);
+      const service4 = createEntryService(db4);
 
       // All should read successfully
       const entries2 = service2.list();
@@ -77,9 +77,9 @@ describe('Storage Concurrent Access', () => {
       db3.pragma('journal_mode = WAL');
       db3.pragma('busy_timeout = 5000');
 
-      const service1 = new EntryService(db1);
-      const service2 = new EntryService(db2);
-      const service3 = new EntryService(db3);
+      const service1 = createEntryService(db1);
+      const service2 = createEntryService(db2);
+      const service3 = createEntryService(db3);
 
       // Write from multiple connections
       service1.create({ content: 'Entry from DB1' });
@@ -104,8 +104,8 @@ describe('Storage Concurrent Access', () => {
       const db1 = initializeDatabase(testDbPath);
       const db2 = new Database(testDbPath, { readonly: true });
 
-      const service1 = new EntryService(db1);
-      const service2 = new EntryService(db2);
+      const service1 = createEntryService(db1);
+      const service2 = createEntryService(db2);
 
       // Add initial data
       service1.create({ content: 'Initial entry' });
@@ -129,14 +129,14 @@ describe('Storage Concurrent Access', () => {
   describe('CRUD Operations Across Connections', () => {
     it('should see changes made by other connections', () => {
       const db1 = initializeDatabase(testDbPath);
-      const service1 = new EntryService(db1);
+      const service1 = createEntryService(db1);
 
       const entry = service1.create({ content: 'Test entry' });
       db1.close();
 
       // Open new connection
       const db2 = new Database(testDbPath);
-      const service2 = new EntryService(db2);
+      const service2 = createEntryService(db2);
 
       // Should see the entry created by first connection
       const retrieved = service2.getById(entry.id);
@@ -148,21 +148,21 @@ describe('Storage Concurrent Access', () => {
 
     it('should handle updates from different connections', () => {
       const db1 = initializeDatabase(testDbPath);
-      const service1 = new EntryService(db1);
+      const service1 = createEntryService(db1);
 
       const entry = service1.create({ content: 'Original' });
       db1.close();
 
       // Update from different connection
       const db2 = new Database(testDbPath);
-      const service2 = new EntryService(db2);
+      const service2 = createEntryService(db2);
 
       service2.update(entry.id, { content: 'Updated' });
       db2.close();
 
       // Verify update from third connection
       const db3 = new Database(testDbPath);
-      const service3 = new EntryService(db3);
+      const service3 = createEntryService(db3);
 
       const retrieved = service3.getById(entry.id);
       expect(retrieved?.content).toBe('Updated');
@@ -174,7 +174,7 @@ describe('Storage Concurrent Access', () => {
   describe('Performance Under Concurrent Load', () => {
     it('should handle 10 concurrent writes efficiently', () => {
       const db = initializeDatabase(testDbPath);
-      const service = new EntryService(db);
+      const service = createEntryService(db);
 
       // Create 10 entries concurrently (simulated with synchronous calls)
       const startTime = Date.now();
@@ -193,7 +193,7 @@ describe('Storage Concurrent Access', () => {
 
     it('should handle large dataset reads efficiently', () => {
       const db = initializeDatabase(testDbPath);
-      const service = new EntryService(db);
+      const service = createEntryService(db);
 
       // Create 100 entries
       for (let i = 0; i < 100; i++) {
@@ -215,7 +215,7 @@ describe('Storage Concurrent Access', () => {
   describe('WAL Checkpoint', () => {
     it('should successfully checkpoint WAL file', () => {
       const db = initializeDatabase(testDbPath);
-      const service = new EntryService(db);
+      const service = createEntryService(db);
 
       // Create some entries
       for (let i = 0; i < 10; i++) {
@@ -237,7 +237,7 @@ describe('Storage Concurrent Access', () => {
   describe('Error Recovery', () => {
     it('should recover from connection close during operation', () => {
       const db1 = initializeDatabase(testDbPath);
-      const service1 = new EntryService(db1);
+      const service1 = createEntryService(db1);
 
       service1.create({ content: 'Entry 1' });
 
@@ -246,7 +246,7 @@ describe('Storage Concurrent Access', () => {
 
       // Open new connection and verify data integrity
       const db2 = new Database(testDbPath);
-      const service2 = new EntryService(db2);
+      const service2 = createEntryService(db2);
 
       const entries = service2.list();
       expect(entries).toHaveLength(1);

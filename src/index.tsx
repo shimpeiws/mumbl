@@ -6,12 +6,12 @@ import { getReactionConfig } from './infrastructure/config/reaction-config.js';
 import { closeDatabase, getDatabase } from './infrastructure/database/client.js';
 import { createContextService } from './services/context/context-service.js';
 import { createConversationService } from './services/conversation/conversation-service.js';
-import { EntryService } from './services/entry-service.js';
+import { createEntryService } from './services/entry-service.js';
 import { createFollowUpService } from './services/follow-up/follow-up-service.js';
 import { createLLMServiceFromConfig } from './services/llm/llm-service.js';
 import { ollamaService } from './services/ollama-service.js';
-import { QueueService } from './services/queue/index.js';
-import { ReactionService } from './services/reaction-service.js';
+import { createQueueService } from './services/queue/index.js';
+import { createReactionService } from './services/reaction-service.js';
 import { createTrendService } from './services/trends/trend-service.js';
 import { loadVocabulary } from './services/wordgrain/index.js';
 import { App } from './ui/App.js';
@@ -47,7 +47,7 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
   // Set up reaction service with optional LLM support
   const reactionConfig = getReactionConfig();
   const reactionLLMService = reactionConfig.useLLM ? llmService : undefined;
-  const reactionService = new ReactionService(db, reactionConfig, reactionLLMService);
+  const reactionService = createReactionService(db, reactionConfig, reactionLLMService);
 
   // Load wordgrain vocabulary if configured
   if (config.wordgrainDir) {
@@ -59,7 +59,7 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
   }
 
   // Create queue service for background processing
-  const queueService = new QueueService(llmService, reactionService);
+  const queueService = createQueueService(llmService, reactionService);
   queueService.start();
 
   // Create trend service for topic analysis
@@ -73,7 +73,7 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
   const followUpService = createFollowUpService(db, llmService);
 
   // Create entry service with reaction, trend, context, and follow-up support
-  const entryService = new EntryService(
+  const entryService = createEntryService(
     db,
     reactionService,
     trendService,

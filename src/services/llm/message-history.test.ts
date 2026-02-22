@@ -1,12 +1,17 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { MessageHistory, SessionMessageHistory } from './message-history.js';
+import {
+  type MessageHistoryInterface,
+  type SessionMessageHistoryInterface,
+  createMessageHistory,
+  createSessionMessageHistory,
+} from './message-history.js';
 import type { Message } from './types.js';
 
 describe('MessageHistory', () => {
-  let history: MessageHistory;
+  let history: MessageHistoryInterface;
 
   beforeEach(() => {
-    history = new MessageHistory(5);
+    history = createMessageHistory(5);
   });
 
   describe('add', () => {
@@ -89,10 +94,10 @@ describe('MessageHistory', () => {
 });
 
 describe('SessionMessageHistory', () => {
-  let sessionHistory: SessionMessageHistory;
+  let sessionHistory: SessionMessageHistoryInterface;
 
   beforeEach(() => {
-    sessionHistory = new SessionMessageHistory(10);
+    sessionHistory = createSessionMessageHistory(10);
   });
 
   describe('getSession', () => {

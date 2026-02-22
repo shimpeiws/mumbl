@@ -2,17 +2,17 @@ import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { initializeSchema } from '../infrastructure/database/schema.js';
 import { EntryNotFoundError, InvalidEntryError } from '../infrastructure/errors/domain-errors.js';
-import { EntryRepository } from './entry-repository.js';
+import { type EntryRepositoryInterface, createEntryRepository } from './entry-repository.js';
 import type { JournalEntry } from './types.js';
 
 describe('EntryRepository', () => {
   let db: Database.Database;
-  let repository: EntryRepository;
+  let repository: EntryRepositoryInterface;
 
   beforeEach(() => {
     db = new Database(':memory:');
     initializeSchema(db);
-    repository = new EntryRepository(db);
+    repository = createEntryRepository(db);
   });
 
   afterEach(() => {

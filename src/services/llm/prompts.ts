@@ -246,10 +246,7 @@ ${examples}`,
  * Create a callout prompt from recent journal entries
  * Used by the generate-callout command for hook-driven messages
  */
-export function createCalloutPrompt(
-  entries: string[],
-  vocabulary?: VocabularySet,
-): Message[] {
+export function createCalloutPrompt(entries: string[], vocabulary?: VocabularySet): Message[] {
   const entriesText = entries
     .slice(0, 5)
     .map((e, i) => `${i + 1}. ${e}`)
