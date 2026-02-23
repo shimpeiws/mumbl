@@ -1,4 +1,5 @@
 import type { Database as DatabaseType } from 'better-sqlite3';
+import { createEntryRepository } from '../repositories/entry-repository.js';
 import { createReactionRepository } from '../repositories/reaction-repository.js';
 import type { Reaction, ReactionType } from '../repositories/types.js';
 import { generateEntryId } from './id-service.js';
@@ -75,6 +76,7 @@ export function createReactionService(
   llmService?: LLMServiceInterface,
 ): ReactionServiceInterface {
   const repository = createReactionRepository(db);
+  const entryRepository = createEntryRepository(db);
   let currentConfig: ReactionConfig = { ...DEFAULT_CONFIG, ...config };
   let vocabulary: VocabularySet | undefined;
 
@@ -139,7 +141,12 @@ export function createReactionService(
     if (currentConfig.useLLM && llmService) {
       try {
         const language = resolveLanguage(content);
-        const response = await llmService.react(content, { language });
+        const recentEntries = entryRepository
+          .findAll({ limit: 6, order: 'desc' })
+          .filter((e) => e.id !== entryId)
+          .slice(0, 5)
+          .map((e) => e.content);
+        const response = await llmService.react(content, { language, recentEntries });
         const trimmed = response.content.trim();
         // Use LLM response if non-empty, otherwise fallback
         if (trimmed) {

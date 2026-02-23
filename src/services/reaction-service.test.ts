@@ -150,7 +150,7 @@ describe('ReactionService', () => {
   });
 
   describe('with LLM service', () => {
-    it('should use LLM when configured', async () => {
+    it('should use LLM when configured and pass empty recentEntries when no other entries', async () => {
       const mockLLMService = {
         react: vi.fn().mockResolvedValue({ content: "that's rough" }),
       };
@@ -165,9 +165,76 @@ describe('ReactionService', () => {
 
       expect(mockLLMService.react).toHaveBeenCalledWith('work is killing me', {
         language: 'en',
+        recentEntries: [],
       });
       expect(reaction?.content).toBe("that's rough");
       expect(reaction?.reactionType).toBe('custom');
+    });
+
+    it('should pass recent entries excluding the current entry', async () => {
+      // Insert additional entries
+      const insertEntry = db.prepare(
+        `INSERT INTO entries (id, timestamp, content, metadata, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      );
+      insertEntry.run(
+        'entry-2',
+        Date.now() / 1000 - 100,
+        'had a long day',
+        '{}',
+        Date.now() / 1000 - 100,
+        Date.now() / 1000 - 100,
+      );
+      insertEntry.run(
+        'entry-3',
+        Date.now() / 1000 - 200,
+        'feeling tired',
+        '{}',
+        Date.now() / 1000 - 200,
+        Date.now() / 1000 - 200,
+      );
+
+      const mockLLMService = {
+        react: vi.fn().mockResolvedValue({ content: 'rough' }),
+      };
+
+      const llmService = createReactionService(
+        db,
+        { useLLM: true },
+        mockLLMService as unknown as Parameters<typeof createReactionService>[2],
+      );
+
+      await llmService.generateReaction('entry-1', 'work is killing me');
+
+      const callArgs = mockLLMService.react.mock.calls[0];
+      expect(callArgs[1].recentEntries).toEqual(['had a long day', 'feeling tired']);
+      expect(callArgs[1].recentEntries).not.toContain('Test content');
+    });
+
+    it('should limit recent entries to 5', async () => {
+      const insertEntry = db.prepare(
+        `INSERT INTO entries (id, timestamp, content, metadata, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      );
+      for (let i = 2; i <= 8; i++) {
+        const ts = Date.now() / 1000 - i * 100;
+        insertEntry.run(`entry-${i}`, ts, `entry content ${i}`, '{}', ts, ts);
+      }
+
+      const mockLLMService = {
+        react: vi.fn().mockResolvedValue({ content: 'bruh' }),
+      };
+
+      const llmService = createReactionService(
+        db,
+        { useLLM: true },
+        mockLLMService as unknown as Parameters<typeof createReactionService>[2],
+      );
+
+      await llmService.generateReaction('entry-1', 'work is killing me');
+
+      const callArgs = mockLLMService.react.mock.calls[0];
+      expect(callArgs[1].recentEntries.length).toBe(5);
     });
 
     it('should fallback to default on LLM failure', async () => {
