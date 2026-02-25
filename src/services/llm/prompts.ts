@@ -266,6 +266,34 @@ export interface ReactionPromptOptions {
   language?: DetectedLanguage;
 }
 
+const MAX_VOCAB_WORD_LENGTH = 10;
+const MAX_VOCAB_SAMPLE_COUNT = 10;
+
+/**
+ * Sample short words from vocabulary suitable for one-word reactions.
+ * Filters to words <= maxLength characters and picks evenly-spaced samples.
+ */
+export function sampleVocabularyForReaction(
+  vocabulary: VocabularySet,
+  maxCount: number = MAX_VOCAB_SAMPLE_COUNT,
+): string[] {
+  const shortWords = vocabulary.words.filter((w) => w.length <= MAX_VOCAB_WORD_LENGTH);
+  if (shortWords.length === 0) return [];
+  if (shortWords.length <= maxCount) return shortWords;
+
+  // Evenly-spaced sampling
+  const result: string[] = [];
+  const step = shortWords.length / maxCount;
+  for (let i = 0; i < maxCount; i++) {
+    const index = Math.floor(i * step);
+    const word = shortWords[index];
+    if (word !== undefined) {
+      result.push(word);
+    }
+  }
+  return result;
+}
+
 /**
  * Create a reaction prompt for a journal entry
  * This produces minimal, mumbl-style reactions
@@ -276,7 +304,15 @@ export function createReactionPrompt(
   vocabulary?: VocabularySet,
 ): Message[] {
   const language = options?.language;
-  const wordList = language ? getWordListForLanguage(language) : getWordListForLanguage('en');
+  let wordList = language ? getWordListForLanguage(language) : getWordListForLanguage('en');
+
+  // Merge vocabulary words into the word options list instead of a separate section
+  if (vocabulary) {
+    const sampled = sampleVocabularyForReaction(vocabulary);
+    if (sampled.length > 0) {
+      wordList += `\n- Vocabulary: ${sampled.join(', ')}`;
+    }
+  }
 
   const styleLabel = language === 'ja' ? 'Japanese slang style' : 'Rapper slang style';
 
@@ -309,6 +345,7 @@ export function createReactionPrompt(
 "same thing again" -> bruh
 "nice weather" -> valid`;
 
+  // Pass undefined for vocabulary so no separate vocabulary section is appended
   return createPromptPair(
     `You respond with ONE word only. ${styleLabel}. Curt and distant. Vary your responses - never repeat the same word for different entries.
 
@@ -323,7 +360,7 @@ NEVER use:
 
 ${examples}`,
     entry,
-    vocabulary,
+    undefined,
     language,
   );
 }

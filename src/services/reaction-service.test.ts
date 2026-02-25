@@ -186,5 +186,47 @@ describe('ReactionService', () => {
       expect(reaction?.content).toBe('·');
       expect(reaction?.reactionType).toBe('read');
     });
+
+    it('should fallback when LLM response exceeds max length', async () => {
+      const longResponse = 'This is a very long response that is not a one-word reaction';
+      const mockLLMService = {
+        react: vi.fn().mockResolvedValue({ content: longResponse }),
+      };
+
+      const llmService = createReactionService(
+        db,
+        { useLLM: true },
+        mockLLMService as unknown as Parameters<typeof createReactionService>[2],
+      );
+
+      const reaction = await llmService.generateReaction('entry-1', 'test content');
+
+      expect(reaction?.content).toBe('·');
+      expect(reaction?.reactionType).toBe('read');
+    });
+
+    it('should use vocabulary fallback when LLM response is too long', async () => {
+      const longResponse = 'This is way too long for a reaction word';
+      const mockLLMService = {
+        react: vi.fn().mockResolvedValue({ content: longResponse }),
+      };
+
+      const llmService = createReactionService(
+        db,
+        { useLLM: true },
+        mockLLMService as unknown as Parameters<typeof createReactionService>[2],
+      );
+      llmService.setVocabulary({
+        words: ['vibe'],
+        phrases: [],
+        tags: [],
+        source: 'test',
+      });
+
+      const reaction = await llmService.generateReaction('entry-1', 'test content');
+
+      expect(reaction?.content).toBe('vibe');
+      expect(reaction?.reactionType).toBe('read');
+    });
   });
 });

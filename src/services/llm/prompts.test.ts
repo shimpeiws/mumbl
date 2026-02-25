@@ -11,6 +11,7 @@ import {
   createSummaryPrompt,
   createSystemPrompt,
   createTrendSummaryPrompt,
+  sampleVocabularyForReaction,
 } from './prompts.js';
 import type { Message } from './types.js';
 
@@ -268,11 +269,57 @@ describe('createReactionPrompt', () => {
     expect(systemContent).toContain('spread across all categories');
   });
 
-  it('should include vocabulary when provided', () => {
+  it('should merge vocabulary words into word options instead of separate section', () => {
     const messages = createReactionPrompt('test', undefined, testVocabulary);
+    const systemContent = messages[0]?.content ?? '';
 
-    expect(messages[0]?.content).toContain('Vocabulary Reference');
-    expect(messages[0]?.content).toContain('vibe');
+    expect(systemContent).toContain('- Vocabulary: vibe, drip');
+    expect(systemContent).not.toContain('Vocabulary Reference');
+    expect(systemContent).not.toContain('Draw from these');
+  });
+});
+
+describe('sampleVocabularyForReaction', () => {
+  it('should return all words when count is within limit', () => {
+    const vocab: VocabularySet = {
+      words: ['hey', 'yo', 'sup'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+    };
+    const result = sampleVocabularyForReaction(vocab);
+    expect(result).toEqual(['hey', 'yo', 'sup']);
+  });
+
+  it('should filter out long words', () => {
+    const vocab: VocabularySet = {
+      words: ['short', 'this-is-a-very-long-word-that-exceeds-limit'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+    };
+    const result = sampleVocabularyForReaction(vocab);
+    expect(result).toEqual(['short']);
+  });
+
+  it('should sample evenly when exceeding maxCount', () => {
+    const words = Array.from({ length: 30 }, (_, i) => `w${i}`);
+    const vocab: VocabularySet = { words, phrases: [], tags: [], source: 'test' };
+    const result = sampleVocabularyForReaction(vocab, 10);
+    expect(result).toHaveLength(10);
+    // First and roughly evenly spaced
+    expect(result[0]).toBe('w0');
+  });
+
+  it('should return empty array when no short words exist', () => {
+    const vocab: VocabularySet = {
+      words: ['this-is-way-too-long-for-reaction'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+    };
+    const result = sampleVocabularyForReaction(vocab);
+    expect(result).toEqual([]);
   });
 });
 
