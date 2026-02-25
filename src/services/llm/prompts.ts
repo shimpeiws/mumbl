@@ -264,6 +264,20 @@ Bad: "It sounds like you're processing a lot. What do you think is driving these
 
 export interface ReactionPromptOptions {
   language?: DetectedLanguage;
+  recentEntries?: string[];
+}
+
+/**
+ * Build a context section from recent entries for the reaction prompt
+ */
+function buildRecentEntriesContext(recentEntries: string[], language?: DetectedLanguage): string {
+  if (recentEntries.length === 0) return '';
+  const entriesText = recentEntries.map((e, i) => `${i + 1}. ${e}`).join('\n');
+  const header =
+    language === 'ja'
+      ? '\n\nRecent mumbles (for context, react ONLY to the current entry):'
+      : '\n\nRecent mumbles (for context, react ONLY to the current entry):';
+  return `${header}\n${entriesText}`;
 }
 
 const MAX_VOCAB_WORD_LENGTH = 10;
@@ -357,6 +371,10 @@ export function createReactionPrompt(
 "hmm okay" -> sure
 "pushed through it" -> goated`;
 
+  const recentContext = options?.recentEntries
+    ? buildRecentEntriesContext(options.recentEntries, language)
+    : '';
+
   // Pass undefined for vocabulary so no separate vocabulary section is appended
   return createPromptPair(
     `You respond with ONE word only. ${styleLabel}. Curt and distant. Vary your responses - never repeat the same word for different entries.
@@ -370,7 +388,7 @@ NEVER use:
 - Questions
 - Emojis
 
-${examples}`,
+${examples}${recentContext}`,
     entry,
     undefined,
     language,

@@ -322,6 +322,47 @@ describe('sampleVocabularyForReaction', () => {
     const result = sampleVocabularyForReaction(vocab);
     expect(result).toEqual([]);
   });
+
+  it('should include recent entries context when provided', () => {
+    const messages = createReactionPrompt('feeling tired', {
+      recentEntries: ['had a long day', 'work was stressful'],
+    });
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Recent mumbles');
+    expect(systemContent).toContain('1. had a long day');
+    expect(systemContent).toContain('2. work was stressful');
+    expect(systemContent).toContain('react ONLY to the current entry');
+  });
+
+  it('should not include recent entries section when array is empty', () => {
+    const messages = createReactionPrompt('feeling tired', {
+      recentEntries: [],
+    });
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).not.toContain('Recent mumbles');
+  });
+
+  it('should not include recent entries section when undefined', () => {
+    const messages = createReactionPrompt('feeling tired', {});
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).not.toContain('Recent mumbles');
+  });
+
+  it('should include recent entries with Japanese language', () => {
+    const messages = createReactionPrompt('疲れた', {
+      language: 'ja',
+      recentEntries: ['長い一日だった', '仕事がきつかった'],
+    });
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Recent mumbles');
+    expect(systemContent).toContain('1. 長い一日だった');
+    expect(systemContent).toContain('2. 仕事がきつかった');
+    expect(systemContent).toContain('react ONLY to the current entry');
+  });
 });
 
 describe('createFollowUpEvaluationPrompt', () => {
