@@ -8,6 +8,7 @@ import { ConfigView } from './components/config/ConfigView.js';
 import { EntryList } from './components/entries/EntryList.js';
 import { SplashScreen } from './components/splash/SplashScreen.js';
 import { WriteView } from './components/write/WriteView.js';
+import { useConfig } from './context/ConfigContext.js';
 import { NavigationProvider, useNavigation } from './context/NavigationContext.js';
 import { useQueue } from './context/QueueContext.js';
 
@@ -15,6 +16,7 @@ function AppContent() {
   const { exit } = useApp();
   const { mode, toggleMode, switchToConfig } = useNavigation();
   const { status: queueStatus } = useQueue();
+  const { config } = useConfig();
   const [isViewingDetail, setIsViewingDetail] = useState(false);
   const agentStatus = useAgentStatus();
   useTerminalTitle(agentStatus);
@@ -51,7 +53,12 @@ function AppContent() {
         {mode === 'config' && <ConfigView />}
       </Box>
 
-      <HelpFooter mode={mode} isViewingDetail={isViewingDetail} queueStatus={queueStatus} />
+      <HelpFooter
+        mode={mode}
+        isViewingDetail={isViewingDetail}
+        queueStatus={queueStatus}
+        hasWordgrainDir={!!config.wordgrainDir}
+      />
     </Box>
   );
 }
