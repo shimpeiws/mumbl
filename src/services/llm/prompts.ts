@@ -283,6 +283,7 @@ function buildRecentEntriesContext(recentEntries: string[], language?: DetectedL
 
 const MAX_VOCAB_WORD_LENGTH = 10;
 const MAX_VOCAB_SAMPLE_COUNT = 10;
+const MAX_VOCAB_PHRASE_COUNT = 5;
 
 /**
  * Sample short words from vocabulary suitable for one-word reactions.
@@ -310,6 +311,61 @@ export function sampleVocabularyForReaction(
 }
 
 /**
+ * Sample phrases from vocabulary for richer reactions.
+ * Picks evenly-spaced samples from the phrases array.
+ */
+export function samplePhrasesForReaction(
+  vocabulary: VocabularySet,
+  maxCount: number = MAX_VOCAB_PHRASE_COUNT,
+): string[] {
+  const phrases = vocabulary.phrases;
+  if (phrases.length === 0) return [];
+  if (phrases.length <= maxCount) return phrases;
+
+  const result: string[] = [];
+  const step = phrases.length / maxCount;
+  for (let i = 0; i < maxCount; i++) {
+    const index = Math.floor(i * step);
+    const phrase = phrases[index];
+    if (phrase !== undefined) {
+      result.push(phrase);
+    }
+  }
+  return result;
+}
+
+/**
+ * Build a vocabulary priority section for the reaction prompt.
+ * When vocabulary is available, it's given prominent placement.
+ */
+function buildVocabularyPrioritySection(
+  vocabulary: VocabularySet,
+  language?: DetectedLanguage,
+): string {
+  const words = sampleVocabularyForReaction(vocabulary);
+  const phrases = samplePhrasesForReaction(vocabulary);
+  if (words.length === 0 && phrases.length === 0) return '';
+
+  const header =
+    language === 'ja'
+      ? '## YOUR vocabulary (PREFER these over generic words):'
+      : '## YOUR vocabulary (PREFER these over generic words):';
+  const parts: string[] = [header];
+  if (words.length > 0) {
+    parts.push(`Words: ${words.join(', ')}`);
+  }
+  if (phrases.length > 0) {
+    parts.push(`Phrases: ${phrases.join(', ')}`);
+  }
+  const instruction =
+    language === 'ja'
+      ? 'Use these words/phrases as building blocks. Weave them into your reactions naturally.'
+      : 'Use these words/phrases as building blocks. Weave them into your reactions naturally.';
+  parts.push(instruction);
+  return parts.join('\n');
+}
+
+/**
  * Create a reaction prompt for a journal entry
  * This produces minimal, mumbl-style reactions
  */
@@ -319,23 +375,28 @@ export function createReactionPrompt(
   vocabulary?: VocabularySet,
 ): Message[] {
   const language = options?.language;
-  let wordList = language ? getWordListForLanguage(language) : getWordListForLanguage('en');
+  const wordList = language ? getWordListForLanguage(language) : getWordListForLanguage('en');
 
-  // Merge vocabulary words into the word options list instead of a separate section
-  if (vocabulary) {
-    const sampled = sampleVocabularyForReaction(vocabulary);
-    if (sampled.length > 0) {
-      wordList += `\n- Vocabulary: ${sampled.join(', ')}`;
-    }
-  }
+  const vocabSection = vocabulary ? buildVocabularyPrioritySection(vocabulary, language) : '';
 
   const styleLabel = language === 'ja' ? 'Japanese slang style' : 'Rapper slang style';
+
+  const responseMode =
+    language === 'ja'
+      ? `## Response modes (pick the right level for the entry):
+1. Quick acknowledgment: mundane stuff gets a single word or "·" (帰った -> おけ, コーヒー飲んだ -> ·)
+2. Short reaction: most entries get a brief phrase, 1-5 words (仕事だるい -> だるいよな)
+3. Crafted reaction: emotional or significant entries get a composed short sentence that reflects on the specific content (昇進した！ -> まじか、よくやったな / 3日も眠れてない -> それはきついな、大丈夫か)`
+      : `## Response modes (pick the right level for the entry):
+1. Quick acknowledgment: mundane stuff gets a single word or "·" ("home" -> meh, "had coffee" -> ·)
+2. Short reaction: most entries get a brief phrase, 1-5 words ("work is tough" -> that's rough)
+3. Crafted reaction: emotional or significant entries get a composed short sentence that reflects on the specific content ("got promoted!" -> no way, you earned that / "haven't slept in 3 days" -> that's rough, take care of yourself)`;
 
   const examples =
     language === 'ja'
       ? `Examples:
 "仕事だるい" -> だるいよな
-"コーヒー飲んだ" -> \u00B7
+"コーヒー飲んだ" -> ·
 "眠れない" -> また眠れないのか
 "今日まあまあだった" -> まあまあならよし
 "子供たち楽しそう" -> いいじゃん
@@ -349,9 +410,9 @@ export function createReactionPrompt(
 "テスト全部通った" -> ナイス、よくやった
 "残業つらい" -> つらいな、ほんと
 "あの映画よかった" -> 最高じゃん
-"わかるそれ" -> それな
-"へーそうなんだ" -> へぇ
-"頑張ったな自分" -> えらい、おつ`
+"初めてライブ行った" -> お、どうだった
+"転職考えてる" -> まじか、なんかあった？
+"子供が初めて歩いた" -> すげー、やるじゃん`
       : `Examples:
 "work is tough" -> that's rough
 "had coffee" -> \u00B7
@@ -365,12 +426,12 @@ export function createReactionPrompt(
 "same thing again" -> been there man
 "nice weather" -> valid
 "no way that happened" -> that's wild
-"nailed the interview" -> lets go, clutch
+"nailed the interview" -> lets go, you earned that
 "overtime again" -> pain, for real
 "that movie was great" -> fire honestly
-"i feel that" -> fr fr
-"hmm okay" -> sure
-"pushed through it" -> respect`;
+"first time at a concert" -> oh nice, how was it
+"thinking about quitting" -> for real? what happened
+"baby took first steps" -> no way, that's huge`;
 
   const recentContext = options?.recentEntries
     ? buildRecentEntriesContext(options.recentEntries, language)
@@ -403,17 +464,21 @@ export function createReactionPrompt(
       ? `\nDo NOT repeat these recent reactions: ${recentReactions.join(', ')}\n`
       : '';
 
+  const vocabInstruction = vocabSection ? `\n${vocabSection}\n` : '';
+
   // Pass undefined for vocabulary so no separate vocabulary section is appended
   return createPromptPair(
-    `A short, curt reaction. Usually a brief phrase (1-5 words), sometimes just one word for mundane stuff. ${styleLabel}. Distant but present. Vary your responses.
+    `React to the mumble. ${styleLabel}. Distant but present. Vary your responses.
+${vocabInstruction}
+${responseMode}
 
-Word/phrase reference:
+## Fallback word/phrase reference:
 ${wordList}
 
 ${moodMapping}
 ${dedupBlock}
 NEVER use:
-- Long sentences or paragraphs
+- Long sentences or paragraphs (2 sentences max, keep it tight)
 - Polite or formal language
 - Advice or solutions
 - Emojis
