@@ -166,6 +166,7 @@ describe('ReactionService', () => {
       expect(mockLLMService.react).toHaveBeenCalledWith('work is killing me', {
         language: 'en',
         recentEntries: [],
+        recentReactions: undefined,
       });
       expect(reaction?.content).toBe("that's rough");
       expect(reaction?.reactionType).toBe('custom');
@@ -294,6 +295,38 @@ describe('ReactionService', () => {
 
       expect(reaction?.content).toBe('vibe');
       expect(reaction?.reactionType).toBe('read');
+    });
+
+    it('should pass recent reactions to LLM after generating reactions', async () => {
+      const mockLLMService = {
+        react: vi.fn().mockResolvedValue({ content: 'やば' }),
+      };
+
+      const llmService = createReactionService(
+        db,
+        { useLLM: true },
+        mockLLMService as unknown as Parameters<typeof createReactionService>[2],
+      );
+
+      // Insert additional test entries
+      db.prepare(
+        `INSERT INTO entries (id, timestamp, content, metadata, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      ).run('entry-2', Date.now() / 1000, 'Content 2', '{}', Date.now() / 1000, Date.now() / 1000);
+
+      // First reaction has no recent reaction history
+      await llmService.generateReaction('entry-1', 'test content');
+      expect(mockLLMService.react).toHaveBeenLastCalledWith(
+        'test content',
+        expect.objectContaining({ recentReactions: undefined }),
+      );
+
+      // Second reaction should include the first reaction in recent list
+      await llmService.generateReaction('entry-2', 'more content');
+      expect(mockLLMService.react).toHaveBeenLastCalledWith(
+        'more content',
+        expect.objectContaining({ recentReactions: ['やば'] }),
+      );
     });
   });
 });

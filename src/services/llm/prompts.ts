@@ -265,6 +265,7 @@ Bad: "It sounds like you're processing a lot. What do you think is driving these
 export interface ReactionPromptOptions {
   language?: DetectedLanguage;
   recentEntries?: string[];
+  recentReactions?: string[];
 }
 
 /**
@@ -396,6 +397,12 @@ export function createReactionPrompt(
 - Tough situation / sympathy -> Sympathy (pain, rip, been there)
 - Simple acknowledgment -> Acknowledgment (bet, word, aight, cool)`;
 
+  const recentReactions = options?.recentReactions ?? [];
+  const dedupBlock =
+    recentReactions.length > 0
+      ? `\nDo NOT repeat these recent reactions: ${recentReactions.join(', ')}\n`
+      : '';
+
   // Pass undefined for vocabulary so no separate vocabulary section is appended
   return createPromptPair(
     `You respond with ONE word only. ${styleLabel}. Curt and distant. Vary your responses - never repeat the same word for different entries.
@@ -404,7 +411,7 @@ Word options:
 ${wordList}
 
 ${moodMapping}
-
+${dedupBlock}
 NEVER use:
 - Full sentences
 - Polite language

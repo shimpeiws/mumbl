@@ -290,6 +290,30 @@ describe('createReactionPrompt', () => {
     expect(systemContent).toContain('Surprise (whoa, no way, wild, crazy)');
   });
 
+  it('should include dedup block when recentReactions provided', () => {
+    const messages = createReactionPrompt('test', {
+      recentReactions: ['うん', 'そう', 'な'],
+    });
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Do NOT repeat these recent reactions');
+    expect(systemContent).toContain('うん, そう, な');
+  });
+
+  it('should not include dedup block when no recentReactions', () => {
+    const messages = createReactionPrompt('test');
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).not.toContain('Do NOT repeat');
+  });
+
+  it('should not include dedup block when recentReactions is empty', () => {
+    const messages = createReactionPrompt('test', { recentReactions: [] });
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).not.toContain('Do NOT repeat');
+  });
+
   it('should merge vocabulary words into word options instead of separate section', () => {
     const messages = createReactionPrompt('test', undefined, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
