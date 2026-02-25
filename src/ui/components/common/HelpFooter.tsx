@@ -8,15 +8,24 @@ interface HelpFooterProps {
   mode: AppMode;
   isViewingDetail?: boolean;
   queueStatus?: QueueStatus;
+  hasWordgrainDir?: boolean;
 }
 
-export function HelpFooter({ mode, isViewingDetail = false, queueStatus }: HelpFooterProps) {
+export function HelpFooter({
+  mode,
+  isViewingDetail = false,
+  queueStatus,
+  hasWordgrainDir = false,
+}: HelpFooterProps) {
   const getShortcuts = () => {
     if (mode === 'write') {
       return 'Tab: list | Esc: cancel | q: quit';
     }
     if (mode === 'config') {
-      return 'j/k: navigate | a: add | d: delete | r: reload | Esc: back | q: quit';
+      if (hasWordgrainDir) {
+        return 'j/k: navigate | a: add | d: delete | r: reload | Esc: back | q: quit';
+      }
+      return 'r: reload | Esc: back | q: quit';
     }
     if (isViewingDetail) {
       return 'Esc/q: back | Tab: write';

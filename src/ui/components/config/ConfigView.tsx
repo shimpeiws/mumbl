@@ -45,7 +45,7 @@ export function ConfigView() {
         return;
       }
 
-      if (input === 'd' && files.length > 0) {
+      if (input === 'd' && config.wordgrainDir && files.length > 0) {
         setSubMode('delete-confirm');
         return;
       }
