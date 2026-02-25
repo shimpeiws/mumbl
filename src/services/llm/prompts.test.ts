@@ -262,12 +262,32 @@ describe('createReactionPrompt', () => {
     expect(systemContent).toContain('"work is tough"');
   });
 
-  it('should include variation instruction', () => {
+  it('should include variation instruction and mood mapping', () => {
     const messages = createReactionPrompt('test');
     const systemContent = messages[0]?.content ?? '';
 
     expect(systemContent).toContain('never repeat the same word for different entries');
-    expect(systemContent).toContain('spread across all categories');
+    expect(systemContent).toContain('Mood mapping');
+    expect(systemContent).toContain('classify the entry');
+  });
+
+  it('should include mood mapping rules for ja language', () => {
+    const messages = createReactionPrompt('テスト', { language: 'ja' });
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Achievement (おつ, ナイス, すげ, えらい)');
+    expect(systemContent).toContain('Negative/tough (つら, だる, きつ, やば)');
+    expect(systemContent).toContain('Surprise (まじか, えぐ, やべ, うそ)');
+    expect(systemContent).toContain('Feeling it (それな, わかる, たしかに)');
+  });
+
+  it('should include mood mapping rules for en language', () => {
+    const messages = createReactionPrompt('test', { language: 'en' });
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Achievement (W, goated, clutch, lets go)');
+    expect(systemContent).toContain('Negative/tough (damn, oof, rough, bruh)');
+    expect(systemContent).toContain('Surprise (whoa, no way, wild, crazy)');
   });
 
   it('should merge vocabulary words into word options instead of separate section', () => {
