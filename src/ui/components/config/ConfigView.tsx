@@ -9,15 +9,8 @@ import { WordgrainSection } from './WordgrainSection.js';
 
 export function ConfigView() {
   const { switchToList } = useNavigation();
-  const {
-    config,
-    files,
-    selectedFileIndex,
-    setSelectedFileIndex,
-    subMode,
-    setSubMode,
-    reloadFiles,
-  } = useConfig();
+  const { files, selectedFileIndex, setSelectedFileIndex, subMode, setSubMode, reloadFiles } =
+    useConfig();
 
   useInput(
     (input, key) => {
@@ -40,12 +33,12 @@ export function ConfigView() {
         return;
       }
 
-      if (input === 'a' && config.wordgrainDir) {
+      if (input === 'a') {
         setSubMode('add-file');
         return;
       }
 
-      if (input === 'd' && config.wordgrainDir && files.length > 0) {
+      if (input === 'd' && files.length > 0) {
         setSubMode('delete-confirm');
         return;
       }

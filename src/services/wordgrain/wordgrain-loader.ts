@@ -1,8 +1,7 @@
 /**
- * Load .wg.json files from a directory
+ * Load .wg.json files from individual file paths
  */
 import * as fs from 'node:fs';
-import * as path from 'node:path';
 import type { Grain, WordgrainFile } from './types.js';
 
 /**
@@ -55,29 +54,23 @@ export function parseWordgrainFile(filePath: string): WordgrainFile | null {
 }
 
 /**
- * Load all .wg.json files from a directory
- * @param dirPath - Path to directory containing .wg.json files
+ * Load wordgrain files from individual file paths
+ * @param filePaths - Array of paths to .wg.json files
  * @returns Array of parsed WordgrainFile objects
  */
-export function loadWordgrainDir(dirPath: string): WordgrainFile[] {
-  try {
-    if (!fs.existsSync(dirPath)) return [];
-    if (!fs.statSync(dirPath).isDirectory()) return [];
+export function loadWordgrainFiles(filePaths: string[]): WordgrainFile[] {
+  const results: WordgrainFile[] = [];
 
-    const entries = fs.readdirSync(dirPath);
-    const results: WordgrainFile[] = [];
-
-    for (const entry of entries) {
-      if (!entry.endsWith('.wg.json')) continue;
-      const filePath = path.join(dirPath, entry);
+  for (const filePath of filePaths) {
+    try {
       const parsed = parseWordgrainFile(filePath);
       if (parsed) {
         results.push(parsed);
       }
+    } catch {
+      // Skip files that can't be read
     }
-
-    return results;
-  } catch {
-    return [];
   }
+
+  return results;
 }
