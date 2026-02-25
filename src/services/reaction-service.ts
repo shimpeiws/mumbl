@@ -31,6 +31,8 @@ const DEFAULT_CONFIG: ReactionConfig = {
   useLLM: true,
 };
 
+const RECENT_REACTION_LIMIT = 8;
+
 /**
  * Reaction content templates aligned with mumbl personality
  */
@@ -84,6 +86,7 @@ export function createReactionService(
   const entryRepository = createEntryRepository(db);
   let currentConfig: ReactionConfig = { ...DEFAULT_CONFIG, ...config };
   let vocabulary: VocabularySet | undefined;
+  const recentReactions: string[] = [];
 
   const setVocabulary = (v: VocabularySet): void => {
     vocabulary = v;
@@ -151,7 +154,11 @@ export function createReactionService(
           .filter((e) => e.id !== entryId)
           .slice(0, 5)
           .map((e) => e.content);
-        const response = await llmService.react(content, { language, recentEntries });
+        const response = await llmService.react(content, {
+          language,
+          recentEntries,
+          recentReactions: recentReactions.length > 0 ? [...recentReactions] : undefined,
+        });
         const trimmed = response.content.trim();
         // Use LLM response if non-empty and short enough for a one-word reaction
         if (trimmed && trimmed.length <= MAX_REACTION_LENGTH) {
@@ -175,6 +182,12 @@ export function createReactionService(
       content: reactionContent,
       createdAt: new Date(),
     };
+
+    // Track recent reactions for deduplication
+    recentReactions.push(reactionContent);
+    if (recentReactions.length > RECENT_REACTION_LIMIT) {
+      recentReactions.shift();
+    }
 
     repository.insert(reaction);
     emit('reactionCreated', reaction);
