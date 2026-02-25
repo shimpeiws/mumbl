@@ -375,12 +375,35 @@ export function createReactionPrompt(
     ? buildRecentEntriesContext(options.recentEntries, language)
     : '';
 
+  const moodMapping =
+    language === 'ja'
+      ? `## Mood mapping (classify the entry, then pick from that category):
+- Task done / finished -> Achievement (おつ, ナイス, すげ, えらい)
+- Tired / negative / complaining -> Negative/tough (つら, だる, きつ, やば)
+- Happy / good news -> Positive vibes (最高, 神, いいね, よい)
+- Boring / mundane / daily routine -> Chill (ふーん, あっそ, ·)
+- Shocking / unexpected -> Surprise (まじか, えぐ, やべ, うそ)
+- Relatable / empathy -> Feeling it (それな, わかる, たしかに)
+- Tough situation / sympathy -> Sympathy (つらみ, あるある, しゃない)
+- Simple acknowledgment -> Acknowledgment (な, うん, そう, おけ)`
+      : `## Mood mapping (classify the entry, then pick from that category):
+- Task done / finished -> Achievement (W, goated, clutch, lets go)
+- Tired / negative / complaining -> Negative/tough (damn, oof, rough, bruh)
+- Happy / good news -> Positive vibes (lit, fire, dope, nice)
+- Boring / mundane / daily routine -> Chill (meh, whatever, ·)
+- Shocking / unexpected -> Surprise (whoa, no way, wild, crazy)
+- Relatable / empathy -> Feeling it (fr, real, facts, mood)
+- Tough situation / sympathy -> Sympathy (pain, rip, been there)
+- Simple acknowledgment -> Acknowledgment (bet, word, aight, cool)`;
+
   // Pass undefined for vocabulary so no separate vocabulary section is appended
   return createPromptPair(
     `You respond with ONE word only. ${styleLabel}. Curt and distant. Vary your responses - never repeat the same word for different entries.
 
-Word options (spread across all categories, not just one):
+Word options:
 ${wordList}
+
+${moodMapping}
 
 NEVER use:
 - Full sentences
