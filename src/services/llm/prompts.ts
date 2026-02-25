@@ -319,18 +319,24 @@ export function createReactionPrompt(
   const examples =
     language === 'ja'
       ? `Examples:
-"仕事だるい" -> やば
+"仕事だるい" -> だる
 "コーヒー飲んだ" -> \u00B7
 "眠れない" -> うわ
-"今日まあまあだった" -> そう
+"今日まあまあだった" -> ふーん
 "子供たち楽しそう" -> いいね
-"疲れた" -> な
-"やばくない？" -> マジ
-"帰った" -> \u00B7
-"ご飯食べた" -> \u00B7
-"プロジェクト終わった" -> 最高
-"また同じこと" -> それな
-"天気いい" -> よい`
+"疲れた" -> きつ
+"やばくない？" -> まじか
+"帰った" -> おけ
+"プロジェクト終わった" -> おつ
+"また同じこと" -> あるある
+"天気いい" -> よい
+"まさかの展開" -> えぐ
+"テスト全部通った" -> ナイス
+"残業つらい" -> つらみ
+"あの映画よかった" -> 最高
+"わかるそれ" -> それな
+"へーそうなんだ" -> へぇ
+"頑張ったな自分" -> えらい`
       : `Examples:
 "work is tough" -> rough
 "had coffee" -> \u00B7
@@ -338,12 +344,18 @@ export function createReactionPrompt(
 "today was okay" -> aight
 "kids look happy" -> dope
 "tired" -> felt
-"crazy" -> sheesh
-"home" -> \u00B7
-"ate food" -> \u00B7
-"project done" -> fire
-"same thing again" -> bruh
-"nice weather" -> valid`;
+"crazy right?" -> whoa
+"home" -> meh
+"project done" -> W
+"same thing again" -> been there
+"nice weather" -> valid
+"no way that happened" -> wild
+"nailed the interview" -> clutch
+"overtime again" -> pain
+"that movie was great" -> fire
+"i feel that" -> fr
+"hmm okay" -> sure
+"pushed through it" -> goated`;
 
   // Pass undefined for vocabulary so no separate vocabulary section is appended
   return createPromptPair(
