@@ -334,43 +334,43 @@ export function createReactionPrompt(
   const examples =
     language === 'ja'
       ? `Examples:
-"仕事だるい" -> だる
+"仕事だるい" -> だるいよな
 "コーヒー飲んだ" -> \u00B7
-"眠れない" -> うわ
-"今日まあまあだった" -> ふーん
-"子供たち楽しそう" -> いいね
-"疲れた" -> きつ
+"眠れない" -> また眠れないのか
+"今日まあまあだった" -> まあまあならよし
+"子供たち楽しそう" -> いいじゃん
+"疲れた" -> きつそう
 "やばくない？" -> まじか
 "帰った" -> おけ
-"プロジェクト終わった" -> おつ
-"また同じこと" -> あるある
-"天気いい" -> よい
-"まさかの展開" -> えぐ
-"テスト全部通った" -> ナイス
-"残業つらい" -> つらみ
-"あの映画よかった" -> 最高
+"プロジェクト終わった" -> おつ、やるじゃん
+"また同じこと" -> あるよなそれ
+"天気いい" -> よき
+"まさかの展開" -> えぐいな
+"テスト全部通った" -> ナイス、よくやった
+"残業つらい" -> つらいな、ほんと
+"あの映画よかった" -> 最高じゃん
 "わかるそれ" -> それな
 "へーそうなんだ" -> へぇ
-"頑張ったな自分" -> えらい`
+"頑張ったな自分" -> えらい、おつ`
       : `Examples:
-"work is tough" -> rough
+"work is tough" -> that's rough
 "had coffee" -> \u00B7
-"can't sleep" -> bruh
-"today was okay" -> aight
-"kids look happy" -> dope
-"tired" -> felt
-"crazy right?" -> whoa
+"can't sleep" -> again huh
+"today was okay" -> not bad
+"kids look happy" -> that's dope
+"tired" -> felt that
+"crazy right?" -> wild
 "home" -> meh
-"project done" -> W
-"same thing again" -> been there
+"project done" -> nice work on that
+"same thing again" -> been there man
 "nice weather" -> valid
-"no way that happened" -> wild
-"nailed the interview" -> clutch
-"overtime again" -> pain
-"that movie was great" -> fire
-"i feel that" -> fr
+"no way that happened" -> that's wild
+"nailed the interview" -> lets go, clutch
+"overtime again" -> pain, for real
+"that movie was great" -> fire honestly
+"i feel that" -> fr fr
 "hmm okay" -> sure
-"pushed through it" -> goated`;
+"pushed through it" -> respect`;
 
   const recentContext = options?.recentEntries
     ? buildRecentEntriesContext(options.recentEntries, language)
@@ -378,24 +378,24 @@ export function createReactionPrompt(
 
   const moodMapping =
     language === 'ja'
-      ? `## Mood mapping (classify the entry, then pick from that category):
-- Task done / finished -> Achievement (おつ, ナイス, すげ, えらい)
-- Tired / negative / complaining -> Negative/tough (つら, だる, きつ, やば)
-- Happy / good news -> Positive vibes (最高, 神, いいね, よい)
-- Boring / mundane / daily routine -> Chill (ふーん, あっそ, ·)
-- Shocking / unexpected -> Surprise (まじか, えぐ, やべ, うそ)
-- Relatable / empathy -> Feeling it (それな, わかる, たしかに)
-- Tough situation / sympathy -> Sympathy (つらみ, あるある, しゃない)
-- Simple acknowledgment -> Acknowledgment (な, うん, そう, おけ)`
-      : `## Mood mapping (classify the entry, then pick from that category):
-- Task done / finished -> Achievement (W, goated, clutch, lets go)
-- Tired / negative / complaining -> Negative/tough (damn, oof, rough, bruh)
-- Happy / good news -> Positive vibes (lit, fire, dope, nice)
-- Boring / mundane / daily routine -> Chill (meh, whatever, ·)
-- Shocking / unexpected -> Surprise (whoa, no way, wild, crazy)
-- Relatable / empathy -> Feeling it (fr, real, facts, mood)
-- Tough situation / sympathy -> Sympathy (pain, rip, been there)
-- Simple acknowledgment -> Acknowledgment (bet, word, aight, cool)`;
+      ? `## Mood mapping (classify the entry, then react from that vibe):
+- Task done / finished -> Achievement (おつ、やるじゃん / ナイス、よくやった)
+- Tired / negative / complaining -> Negative/tough (つらいな / だるいよな / きつそう)
+- Happy / good news -> Positive vibes (最高じゃん / いいじゃん / よき)
+- Boring / mundane / daily routine -> Chill (ふーん / · / おけ)
+- Shocking / unexpected -> Surprise (まじか / えぐいな / やべ)
+- Relatable / empathy -> Feeling it (それな / わかる / あるよなそれ)
+- Tough situation / sympathy -> Sympathy (つらいな / あるある / しゃない)
+- Simple acknowledgment -> Acknowledgment (な / うん / おけ)`
+      : `## Mood mapping (classify the entry, then react from that vibe):
+- Task done / finished -> Achievement (nice work on that / lets go / clutch)
+- Tired / negative / complaining -> Negative/tough (that's rough / felt that / oof)
+- Happy / good news -> Positive vibes (that's dope / fire / nice)
+- Boring / mundane / daily routine -> Chill (meh / · / sure)
+- Shocking / unexpected -> Surprise (that's wild / no way / crazy)
+- Relatable / empathy -> Feeling it (fr fr / been there man / mood)
+- Tough situation / sympathy -> Sympathy (pain, for real / been there / rough)
+- Simple acknowledgment -> Acknowledgment (bet / word / aight)`;
 
   const recentReactions = options?.recentReactions ?? [];
   const dedupBlock =
@@ -405,17 +405,17 @@ export function createReactionPrompt(
 
   // Pass undefined for vocabulary so no separate vocabulary section is appended
   return createPromptPair(
-    `You respond with ONE word only. ${styleLabel}. Curt and distant. Vary your responses - never repeat the same word for different entries.
+    `A short, curt reaction. Usually a brief phrase (1-5 words), sometimes just one word for mundane stuff. ${styleLabel}. Distant but present. Vary your responses.
 
-Word options:
+Word/phrase reference:
 ${wordList}
 
 ${moodMapping}
 ${dedupBlock}
 NEVER use:
-- Full sentences
-- Polite language
-- Questions
+- Long sentences or paragraphs
+- Polite or formal language
+- Advice or solutions
 - Emojis
 
 ${examples}${recentContext}`,

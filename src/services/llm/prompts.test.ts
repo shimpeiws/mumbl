@@ -248,9 +248,9 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('テスト', { language: 'ja' });
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('-> おつ');
-    expect(systemContent).toContain('-> えぐ');
-    expect(systemContent).toContain('-> つらみ');
+    expect(systemContent).toContain('おつ、やるじゃん');
+    expect(systemContent).toContain('えぐいな');
+    expect(systemContent).toContain('つらいな、ほんと');
     expect(systemContent).toContain('-> へぇ');
   });
 
@@ -266,7 +266,7 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('test');
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('never repeat the same word for different entries');
+    expect(systemContent).toContain('Vary your responses');
     expect(systemContent).toContain('Mood mapping');
     expect(systemContent).toContain('classify the entry');
   });
@@ -275,19 +275,19 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('テスト', { language: 'ja' });
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('Achievement (おつ, ナイス, すげ, えらい)');
-    expect(systemContent).toContain('Negative/tough (つら, だる, きつ, やば)');
-    expect(systemContent).toContain('Surprise (まじか, えぐ, やべ, うそ)');
-    expect(systemContent).toContain('Feeling it (それな, わかる, たしかに)');
+    expect(systemContent).toContain('Achievement (おつ、やるじゃん');
+    expect(systemContent).toContain('Negative/tough (つらいな');
+    expect(systemContent).toContain('Surprise (まじか');
+    expect(systemContent).toContain('Feeling it (それな');
   });
 
   it('should include mood mapping rules for en language', () => {
     const messages = createReactionPrompt('test', { language: 'en' });
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('Achievement (W, goated, clutch, lets go)');
-    expect(systemContent).toContain('Negative/tough (damn, oof, rough, bruh)');
-    expect(systemContent).toContain('Surprise (whoa, no way, wild, crazy)');
+    expect(systemContent).toContain('Achievement (nice work on that');
+    expect(systemContent).toContain("Negative/tough (that's rough");
+    expect(systemContent).toContain("Surprise (that's wild");
   });
 
   it('should include dedup block when recentReactions provided', () => {
