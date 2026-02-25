@@ -32,12 +32,12 @@ describe('HelpFooter', () => {
     expect(lastFrame()).toContain('Tab: write');
   });
 
-  it('should show config mode shortcuts', () => {
+  it('should show config mode shortcuts with wordgrain actions', () => {
     const { lastFrame } = render(<HelpFooter mode="config" />);
 
     expect(lastFrame()).toContain('j/k: navigate');
     expect(lastFrame()).toContain('a: add');
-    expect(lastFrame()).toContain('d: delete');
+    expect(lastFrame()).toContain('d: unregister');
     expect(lastFrame()).toContain('r: reload');
     expect(lastFrame()).toContain('Esc: back');
     expect(lastFrame()).toContain('q: quit');

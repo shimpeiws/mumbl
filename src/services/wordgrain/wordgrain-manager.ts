@@ -1,5 +1,8 @@
 /**
  * Wordgrain file management operations
+ *
+ * Manages individual file paths instead of a directory.
+ * Files are referenced in-place and not copied.
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -20,74 +23,62 @@ export interface WordgrainStats {
 }
 
 /**
- * List all .wg.json files in the directory with metadata
+ * List registered wordgrain files with metadata
  */
-export function listWordgrainFiles(dirPath: string): WordgrainFileInfo[] {
-  try {
-    if (!fs.existsSync(dirPath)) return [];
-    if (!fs.statSync(dirPath).isDirectory()) return [];
+export function listWordgrainFiles(filePaths: string[]): WordgrainFileInfo[] {
+  const results: WordgrainFileInfo[] = [];
 
-    const entries = fs.readdirSync(dirPath);
-    const results: WordgrainFileInfo[] = [];
-
-    for (const entry of entries) {
-      if (!entry.endsWith('.wg.json')) continue;
-      const filePath = path.join(dirPath, entry);
+  for (const filePath of filePaths) {
+    try {
       const parsed = parseWordgrainFile(filePath);
       if (parsed) {
         results.push({
-          filename: entry,
+          filename: path.basename(filePath),
           name: parsed.name,
           grainCount: parsed.grains.length,
         });
       }
+    } catch {
+      // Skip files that can't be read
     }
-
-    return results.sort((a, b) => a.filename.localeCompare(b.filename));
-  } catch {
-    return [];
   }
+
+  return results.sort((a, b) => a.filename.localeCompare(b.filename));
 }
 
 /**
- * Add a .wg.json file to the wordgrain directory by copying from source path
+ * Validate a file path for registration as a wordgrain file.
+ * Does not copy the file; only checks existence and format.
  */
-export function addWordgrainFile(
-  sourcePath: string,
-  dirPath: string,
+export function registerWordgrainFile(
+  filePath: string,
+  existingPaths: string[],
 ): { success: boolean; error?: string } {
   try {
-    if (!fs.existsSync(sourcePath)) {
-      return { success: false, error: 'Source file does not exist' };
+    if (!fs.existsSync(filePath)) {
+      return { success: false, error: 'File does not exist' };
     }
 
-    if (!fs.statSync(sourcePath).isFile()) {
-      return { success: false, error: 'Source path is not a file' };
+    if (!fs.statSync(filePath).isFile()) {
+      return { success: false, error: 'Path is not a file' };
     }
 
-    if (!sourcePath.endsWith('.wg.json')) {
+    if (!filePath.endsWith('.wg.json')) {
       return { success: false, error: 'File must have .wg.json extension' };
     }
 
     // Validate the file is a valid wordgrain file
-    const parsed = parseWordgrainFile(sourcePath);
+    const parsed = parseWordgrainFile(filePath);
     if (!parsed) {
       return { success: false, error: 'Invalid wordgrain file format' };
     }
 
-    // Ensure target directory exists
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
+    // Check for duplicate registration
+    const resolved = path.resolve(filePath);
+    if (existingPaths.some((p) => path.resolve(p) === resolved)) {
+      return { success: false, error: 'File is already registered' };
     }
 
-    const filename = path.basename(sourcePath);
-    const targetPath = path.join(dirPath, filename);
-
-    if (fs.existsSync(targetPath)) {
-      return { success: false, error: `File "${filename}" already exists in wordgrain directory` };
-    }
-
-    fs.copyFileSync(sourcePath, targetPath);
     return { success: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
@@ -96,31 +87,9 @@ export function addWordgrainFile(
 }
 
 /**
- * Remove a .wg.json file from the wordgrain directory
+ * Compute aggregate statistics for registered wordgrain files
  */
-export function removeWordgrainFile(
-  filename: string,
-  dirPath: string,
-): { success: boolean; error?: string } {
-  try {
-    const filePath = path.join(dirPath, filename);
-
-    if (!fs.existsSync(filePath)) {
-      return { success: false, error: `File "${filename}" not found` };
-    }
-
-    fs.unlinkSync(filePath);
-    return { success: true };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    return { success: false, error: message };
-  }
-}
-
-/**
- * Compute aggregate statistics for all wordgrain files in the directory
- */
-export function getWordgrainStats(dirPath: string): WordgrainStats {
+export function getWordgrainStats(filePaths: string[]): WordgrainStats {
   const empty: WordgrainStats = {
     totalFiles: 0,
     totalGrains: 0,
@@ -130,19 +99,13 @@ export function getWordgrainStats(dirPath: string): WordgrainStats {
   };
 
   try {
-    if (!fs.existsSync(dirPath)) return empty;
-    if (!fs.statSync(dirPath).isDirectory()) return empty;
-
-    const entries = fs.readdirSync(dirPath);
     let totalFiles = 0;
     let totalGrains = 0;
     const wordSet = new Set<string>();
     const phraseSet = new Set<string>();
     const tagSet = new Set<string>();
 
-    for (const entry of entries) {
-      if (!entry.endsWith('.wg.json')) continue;
-      const filePath = path.join(dirPath, entry);
+    for (const filePath of filePaths) {
       const parsed = parseWordgrainFile(filePath);
       if (!parsed) continue;
 

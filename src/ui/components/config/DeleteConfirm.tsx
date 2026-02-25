@@ -27,12 +27,12 @@ export function DeleteConfirm() {
     <Box flexDirection="column">
       <Box marginBottom={1}>
         <Text bold color="red">
-          Delete Wordgrain File
+          Unregister Wordgrain File
         </Text>
       </Box>
 
       <Text>
-        Remove <Text bold>{file.filename}</Text> ({file.name}, {file.grainCount} grains)?
+        Unregister <Text bold>{file.filename}</Text> ({file.name}, {file.grainCount} grains)?
       </Text>
 
       <Box marginTop={1}>

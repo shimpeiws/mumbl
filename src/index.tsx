@@ -50,8 +50,8 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
   const reactionService = createReactionService(db, reactionConfig, reactionLLMService);
 
   // Load wordgrain vocabulary if configured
-  if (config.wordgrainDir) {
-    const vocabulary = loadVocabulary(config.wordgrainDir);
+  if (config.wordgrainFiles && config.wordgrainFiles.length > 0) {
+    const vocabulary = loadVocabulary(config.wordgrainFiles);
     if (vocabulary) {
       llmService.setVocabulary(vocabulary);
       reactionService.setVocabulary(vocabulary);

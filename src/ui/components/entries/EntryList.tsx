@@ -114,10 +114,13 @@ export function EntryList({ onViewingDetailChange }: EntryListProps) {
   }, [flatList, selectedEntryId]);
 
   // Get terminal size for viewport calculation
-  const { rows: terminalRows } = useTerminalSize();
+  const { rows: terminalRows, columns: terminalColumns } = useTerminalSize();
 
   // Calculate viewport height: terminal rows - header (2 lines) - padding (2 lines) - footer reserve (3 lines)
   const viewportHeight = Math.max(5, terminalRows - 7);
+
+  // Calculate max width: terminal columns - padding (1 char each side from Box padding={1})
+  const listMaxWidth = Math.max(30, terminalColumns - 2);
 
   // Calculate item heights: entries = 2 lines (always reserve space for reaction), headers = 3 lines
   const itemHeights = useMemo(() => {
@@ -191,6 +194,7 @@ export function EntryList({ onViewingDetailChange }: EntryListProps) {
                 key={item.key}
                 groupName={item.group}
                 entryCount={item.entryCount}
+                maxWidth={listMaxWidth}
               />
             );
           }
@@ -201,6 +205,7 @@ export function EntryList({ onViewingDetailChange }: EntryListProps) {
               entry={item.entry}
               isSelected={item.entry.id === selectedEntryId}
               reaction={reactions.get(item.entry.id)}
+              maxWidth={listMaxWidth}
             />
           );
         })}

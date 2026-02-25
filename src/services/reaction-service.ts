@@ -61,6 +61,11 @@ export interface ReactionServiceInterface {
 /**
  * Get default reaction content for a type
  */
+const MAX_REACTION_LENGTH = 30;
+
+/**
+ * Get default reaction content for a type
+ */
 function getDefaultContent(reactionType: ReactionType): string {
   const options = REACTION_CONTENT[reactionType];
   return options[0] ?? '·';
@@ -148,12 +153,12 @@ export function createReactionService(
           .map((e) => e.content);
         const response = await llmService.react(content, { language, recentEntries });
         const trimmed = response.content.trim();
-        // Use LLM response if non-empty, otherwise fallback
-        if (trimmed) {
+        // Use LLM response if non-empty and short enough for a one-word reaction
+        if (trimmed && trimmed.length <= MAX_REACTION_LENGTH) {
           reactionContent = trimmed;
           reactionType = 'custom';
         } else {
-          reactionContent = getDefaultContent(reactionType);
+          reactionContent = getVocabularyFallback() ?? getDefaultContent(reactionType);
         }
       } catch {
         // Fallback: vocabulary word if available, otherwise default

@@ -6,7 +6,6 @@ import type { Provider } from '../services/llm/types.js';
  * - MUMBL_MODEL: Model name
  * - MUMBL_PROVIDER: Provider name ('ollama' | 'anthropic')
  * - MUMBL_BASE_URL: Base URL for the provider
- * - MUMBL_WORDGRAIN_DIR: Directory containing .wg.json vocabulary files
  * - ANTHROPIC_API_KEY: API key for Anthropic
  */
 import type { MumblConfig } from './types.js';
@@ -31,11 +30,6 @@ export function loadEnvVars(): Partial<MumblConfig> {
   const baseUrl = process.env['MUMBL_BASE_URL'];
   if (baseUrl) {
     result.baseUrl = baseUrl;
-  }
-
-  const wordgrainDir = process.env['MUMBL_WORDGRAIN_DIR'];
-  if (wordgrainDir) {
-    result.wordgrainDir = wordgrainDir;
   }
 
   return result;
