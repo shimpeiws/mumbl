@@ -63,7 +63,7 @@ export interface ReactionServiceInterface {
 /**
  * Get default reaction content for a type
  */
-const MAX_REACTION_LENGTH = 30;
+const MAX_REACTION_LENGTH = 100;
 
 /**
  * Get default reaction content for a type

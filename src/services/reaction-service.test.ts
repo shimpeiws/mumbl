@@ -256,7 +256,8 @@ describe('ReactionService', () => {
     });
 
     it('should fallback when LLM response exceeds max length', async () => {
-      const longResponse = 'This is a very long response that is not a one-word reaction';
+      const longResponse =
+        'This is a very long response that exceeds the maximum allowed reaction length and should trigger the fallback behavior';
       const mockLLMService = {
         react: vi.fn().mockResolvedValue({ content: longResponse }),
       };
@@ -274,7 +275,8 @@ describe('ReactionService', () => {
     });
 
     it('should use vocabulary fallback when LLM response is too long', async () => {
-      const longResponse = 'This is way too long for a reaction word';
+      const longResponse =
+        'This is way too long for a reaction because it exceeds the maximum character limit that we have set for valid reactions in this service';
       const mockLLMService = {
         react: vi.fn().mockResolvedValue({ content: longResponse }),
       };

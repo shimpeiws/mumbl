@@ -283,6 +283,7 @@ function buildRecentEntriesContext(recentEntries: string[], language?: DetectedL
 
 const MAX_VOCAB_WORD_LENGTH = 10;
 const MAX_VOCAB_SAMPLE_COUNT = 10;
+const MAX_VOCAB_PHRASE_COUNT = 5;
 
 /**
  * Sample short words from vocabulary suitable for one-word reactions.
@@ -310,6 +311,61 @@ export function sampleVocabularyForReaction(
 }
 
 /**
+ * Sample phrases from vocabulary for richer reactions.
+ * Picks evenly-spaced samples from the phrases array.
+ */
+export function samplePhrasesForReaction(
+  vocabulary: VocabularySet,
+  maxCount: number = MAX_VOCAB_PHRASE_COUNT,
+): string[] {
+  const phrases = vocabulary.phrases;
+  if (phrases.length === 0) return [];
+  if (phrases.length <= maxCount) return phrases;
+
+  const result: string[] = [];
+  const step = phrases.length / maxCount;
+  for (let i = 0; i < maxCount; i++) {
+    const index = Math.floor(i * step);
+    const phrase = phrases[index];
+    if (phrase !== undefined) {
+      result.push(phrase);
+    }
+  }
+  return result;
+}
+
+/**
+ * Build a vocabulary priority section for the reaction prompt.
+ * When vocabulary is available, it's given prominent placement.
+ */
+function buildVocabularyPrioritySection(
+  vocabulary: VocabularySet,
+  language?: DetectedLanguage,
+): string {
+  const words = sampleVocabularyForReaction(vocabulary);
+  const phrases = samplePhrasesForReaction(vocabulary);
+  if (words.length === 0 && phrases.length === 0) return '';
+
+  const header =
+    language === 'ja'
+      ? '## YOUR vocabulary (PREFER these over generic words):'
+      : '## YOUR vocabulary (PREFER these over generic words):';
+  const parts: string[] = [header];
+  if (words.length > 0) {
+    parts.push(`Words: ${words.join(', ')}`);
+  }
+  if (phrases.length > 0) {
+    parts.push(`Phrases: ${phrases.join(', ')}`);
+  }
+  const instruction =
+    language === 'ja'
+      ? 'Use these words/phrases as building blocks. Weave them into your reactions naturally.'
+      : 'Use these words/phrases as building blocks. Weave them into your reactions naturally.';
+  parts.push(instruction);
+  return parts.join('\n');
+}
+
+/**
  * Create a reaction prompt for a journal entry
  * This produces minimal, mumbl-style reactions
  */
@@ -319,58 +375,63 @@ export function createReactionPrompt(
   vocabulary?: VocabularySet,
 ): Message[] {
   const language = options?.language;
-  let wordList = language ? getWordListForLanguage(language) : getWordListForLanguage('en');
+  const wordList = language ? getWordListForLanguage(language) : getWordListForLanguage('en');
 
-  // Merge vocabulary words into the word options list instead of a separate section
-  if (vocabulary) {
-    const sampled = sampleVocabularyForReaction(vocabulary);
-    if (sampled.length > 0) {
-      wordList += `\n- Vocabulary: ${sampled.join(', ')}`;
-    }
-  }
+  const vocabSection = vocabulary ? buildVocabularyPrioritySection(vocabulary, language) : '';
 
   const styleLabel = language === 'ja' ? 'Japanese slang style' : 'Rapper slang style';
+
+  const responseMode =
+    language === 'ja'
+      ? `## Response modes (pick the right level for the entry):
+1. Quick acknowledgment: mundane stuff gets a single word or "·" (帰った -> おけ, コーヒー飲んだ -> ·)
+2. Short reaction: most entries get a brief phrase, 1-5 words (仕事だるい -> だるいよな)
+3. Crafted reaction: emotional or significant entries get a composed short sentence that reflects on the specific content (昇進した！ -> まじか、よくやったな / 3日も眠れてない -> それはきついな、大丈夫か)`
+      : `## Response modes (pick the right level for the entry):
+1. Quick acknowledgment: mundane stuff gets a single word or "·" ("home" -> meh, "had coffee" -> ·)
+2. Short reaction: most entries get a brief phrase, 1-5 words ("work is tough" -> that's rough)
+3. Crafted reaction: emotional or significant entries get a composed short sentence that reflects on the specific content ("got promoted!" -> no way, you earned that / "haven't slept in 3 days" -> that's rough, take care of yourself)`;
 
   const examples =
     language === 'ja'
       ? `Examples:
-"仕事だるい" -> だる
-"コーヒー飲んだ" -> \u00B7
-"眠れない" -> うわ
-"今日まあまあだった" -> ふーん
-"子供たち楽しそう" -> いいね
-"疲れた" -> きつ
+"仕事だるい" -> だるいよな
+"コーヒー飲んだ" -> ·
+"眠れない" -> また眠れないのか
+"今日まあまあだった" -> まあまあならよし
+"子供たち楽しそう" -> いいじゃん
+"疲れた" -> きつそう
 "やばくない？" -> まじか
 "帰った" -> おけ
-"プロジェクト終わった" -> おつ
-"また同じこと" -> あるある
-"天気いい" -> よい
-"まさかの展開" -> えぐ
-"テスト全部通った" -> ナイス
-"残業つらい" -> つらみ
-"あの映画よかった" -> 最高
-"わかるそれ" -> それな
-"へーそうなんだ" -> へぇ
-"頑張ったな自分" -> えらい`
+"プロジェクト終わった" -> おつ、やるじゃん
+"また同じこと" -> あるよなそれ
+"天気いい" -> よき
+"まさかの展開" -> えぐいな
+"テスト全部通った" -> ナイス、よくやった
+"残業つらい" -> つらいな、ほんと
+"あの映画よかった" -> 最高じゃん
+"初めてライブ行った" -> お、どうだった
+"転職考えてる" -> まじか、なんかあった？
+"子供が初めて歩いた" -> すげー、やるじゃん`
       : `Examples:
-"work is tough" -> rough
+"work is tough" -> that's rough
 "had coffee" -> \u00B7
-"can't sleep" -> bruh
-"today was okay" -> aight
-"kids look happy" -> dope
-"tired" -> felt
-"crazy right?" -> whoa
+"can't sleep" -> again huh
+"today was okay" -> not bad
+"kids look happy" -> that's dope
+"tired" -> felt that
+"crazy right?" -> wild
 "home" -> meh
-"project done" -> W
-"same thing again" -> been there
+"project done" -> nice work on that
+"same thing again" -> been there man
 "nice weather" -> valid
-"no way that happened" -> wild
-"nailed the interview" -> clutch
-"overtime again" -> pain
-"that movie was great" -> fire
-"i feel that" -> fr
-"hmm okay" -> sure
-"pushed through it" -> goated`;
+"no way that happened" -> that's wild
+"nailed the interview" -> lets go, you earned that
+"overtime again" -> pain, for real
+"that movie was great" -> fire honestly
+"first time at a concert" -> oh nice, how was it
+"thinking about quitting" -> for real? what happened
+"baby took first steps" -> no way, that's huge`;
 
   const recentContext = options?.recentEntries
     ? buildRecentEntriesContext(options.recentEntries, language)
@@ -378,24 +439,24 @@ export function createReactionPrompt(
 
   const moodMapping =
     language === 'ja'
-      ? `## Mood mapping (classify the entry, then pick from that category):
-- Task done / finished -> Achievement (おつ, ナイス, すげ, えらい)
-- Tired / negative / complaining -> Negative/tough (つら, だる, きつ, やば)
-- Happy / good news -> Positive vibes (最高, 神, いいね, よい)
-- Boring / mundane / daily routine -> Chill (ふーん, あっそ, ·)
-- Shocking / unexpected -> Surprise (まじか, えぐ, やべ, うそ)
-- Relatable / empathy -> Feeling it (それな, わかる, たしかに)
-- Tough situation / sympathy -> Sympathy (つらみ, あるある, しゃない)
-- Simple acknowledgment -> Acknowledgment (な, うん, そう, おけ)`
-      : `## Mood mapping (classify the entry, then pick from that category):
-- Task done / finished -> Achievement (W, goated, clutch, lets go)
-- Tired / negative / complaining -> Negative/tough (damn, oof, rough, bruh)
-- Happy / good news -> Positive vibes (lit, fire, dope, nice)
-- Boring / mundane / daily routine -> Chill (meh, whatever, ·)
-- Shocking / unexpected -> Surprise (whoa, no way, wild, crazy)
-- Relatable / empathy -> Feeling it (fr, real, facts, mood)
-- Tough situation / sympathy -> Sympathy (pain, rip, been there)
-- Simple acknowledgment -> Acknowledgment (bet, word, aight, cool)`;
+      ? `## Mood mapping (classify the entry, then react from that vibe):
+- Task done / finished -> Achievement (おつ、やるじゃん / ナイス、よくやった)
+- Tired / negative / complaining -> Negative/tough (つらいな / だるいよな / きつそう)
+- Happy / good news -> Positive vibes (最高じゃん / いいじゃん / よき)
+- Boring / mundane / daily routine -> Chill (ふーん / · / おけ)
+- Shocking / unexpected -> Surprise (まじか / えぐいな / やべ)
+- Relatable / empathy -> Feeling it (それな / わかる / あるよなそれ)
+- Tough situation / sympathy -> Sympathy (つらいな / あるある / しゃない)
+- Simple acknowledgment -> Acknowledgment (な / うん / おけ)`
+      : `## Mood mapping (classify the entry, then react from that vibe):
+- Task done / finished -> Achievement (nice work on that / lets go / clutch)
+- Tired / negative / complaining -> Negative/tough (that's rough / felt that / oof)
+- Happy / good news -> Positive vibes (that's dope / fire / nice)
+- Boring / mundane / daily routine -> Chill (meh / · / sure)
+- Shocking / unexpected -> Surprise (that's wild / no way / crazy)
+- Relatable / empathy -> Feeling it (fr fr / been there man / mood)
+- Tough situation / sympathy -> Sympathy (pain, for real / been there / rough)
+- Simple acknowledgment -> Acknowledgment (bet / word / aight)`;
 
   const recentReactions = options?.recentReactions ?? [];
   const dedupBlock =
@@ -403,19 +464,23 @@ export function createReactionPrompt(
       ? `\nDo NOT repeat these recent reactions: ${recentReactions.join(', ')}\n`
       : '';
 
+  const vocabInstruction = vocabSection ? `\n${vocabSection}\n` : '';
+
   // Pass undefined for vocabulary so no separate vocabulary section is appended
   return createPromptPair(
-    `You respond with ONE word only. ${styleLabel}. Curt and distant. Vary your responses - never repeat the same word for different entries.
+    `React to the mumble. ${styleLabel}. Distant but present. Vary your responses.
+${vocabInstruction}
+${responseMode}
 
-Word options:
+## Fallback word/phrase reference:
 ${wordList}
 
 ${moodMapping}
 ${dedupBlock}
 NEVER use:
-- Full sentences
-- Polite language
-- Questions
+- Long sentences or paragraphs (2 sentences max, keep it tight)
+- Polite or formal language
+- Advice or solutions
 - Emojis
 
 ${examples}${recentContext}`,

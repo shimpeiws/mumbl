@@ -11,6 +11,7 @@ import {
   createSummaryPrompt,
   createSystemPrompt,
   createTrendSummaryPrompt,
+  samplePhrasesForReaction,
   sampleVocabularyForReaction,
 } from './prompts.js';
 import type { Message } from './types.js';
@@ -248,10 +249,10 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('テスト', { language: 'ja' });
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('-> おつ');
-    expect(systemContent).toContain('-> えぐ');
-    expect(systemContent).toContain('-> つらみ');
-    expect(systemContent).toContain('-> へぇ');
+    expect(systemContent).toContain('おつ、やるじゃん');
+    expect(systemContent).toContain('えぐいな');
+    expect(systemContent).toContain('つらいな、ほんと');
+    expect(systemContent).toContain('お、どうだった');
   });
 
   it('should use English examples for en language', () => {
@@ -266,7 +267,7 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('test');
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('never repeat the same word for different entries');
+    expect(systemContent).toContain('Vary your responses');
     expect(systemContent).toContain('Mood mapping');
     expect(systemContent).toContain('classify the entry');
   });
@@ -275,19 +276,19 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('テスト', { language: 'ja' });
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('Achievement (おつ, ナイス, すげ, えらい)');
-    expect(systemContent).toContain('Negative/tough (つら, だる, きつ, やば)');
-    expect(systemContent).toContain('Surprise (まじか, えぐ, やべ, うそ)');
-    expect(systemContent).toContain('Feeling it (それな, わかる, たしかに)');
+    expect(systemContent).toContain('Achievement (おつ、やるじゃん');
+    expect(systemContent).toContain('Negative/tough (つらいな');
+    expect(systemContent).toContain('Surprise (まじか');
+    expect(systemContent).toContain('Feeling it (それな');
   });
 
   it('should include mood mapping rules for en language', () => {
     const messages = createReactionPrompt('test', { language: 'en' });
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('Achievement (W, goated, clutch, lets go)');
-    expect(systemContent).toContain('Negative/tough (damn, oof, rough, bruh)');
-    expect(systemContent).toContain('Surprise (whoa, no way, wild, crazy)');
+    expect(systemContent).toContain('Achievement (nice work on that');
+    expect(systemContent).toContain("Negative/tough (that's rough");
+    expect(systemContent).toContain("Surprise (that's wild");
   });
 
   it('should include dedup block when recentReactions provided', () => {
@@ -314,13 +315,14 @@ describe('createReactionPrompt', () => {
     expect(systemContent).not.toContain('Do NOT repeat');
   });
 
-  it('should merge vocabulary words into word options instead of separate section', () => {
+  it('should include vocabulary in priority section when provided', () => {
     const messages = createReactionPrompt('test', undefined, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('- Vocabulary: vibe, drip');
-    expect(systemContent).not.toContain('Vocabulary Reference');
-    expect(systemContent).not.toContain('Draw from these');
+    expect(systemContent).toContain('YOUR vocabulary');
+    expect(systemContent).toContain('PREFER these');
+    expect(systemContent).toContain('Words: vibe, drip');
+    expect(systemContent).toContain('Phrases: on god');
   });
 });
 
@@ -406,6 +408,38 @@ describe('sampleVocabularyForReaction', () => {
     expect(systemContent).toContain('1. 長い一日だった');
     expect(systemContent).toContain('2. 仕事がきつかった');
     expect(systemContent).toContain('react ONLY to the current entry');
+  });
+});
+
+describe('samplePhrasesForReaction', () => {
+  it('should return all phrases when count is within limit', () => {
+    const vocab: VocabularySet = {
+      words: [],
+      phrases: ['on god', 'no cap'],
+      tags: [],
+      source: 'test',
+    };
+    const result = samplePhrasesForReaction(vocab);
+    expect(result).toEqual(['on god', 'no cap']);
+  });
+
+  it('should return empty array when no phrases exist', () => {
+    const vocab: VocabularySet = {
+      words: ['hey'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+    };
+    const result = samplePhrasesForReaction(vocab);
+    expect(result).toEqual([]);
+  });
+
+  it('should sample evenly when exceeding maxCount', () => {
+    const phrases = Array.from({ length: 20 }, (_, i) => `phrase ${i}`);
+    const vocab: VocabularySet = { words: [], phrases, tags: [], source: 'test' };
+    const result = samplePhrasesForReaction(vocab, 5);
+    expect(result).toHaveLength(5);
+    expect(result[0]).toBe('phrase 0');
   });
 });
 
