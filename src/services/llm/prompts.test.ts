@@ -244,13 +244,14 @@ describe('createReactionPrompt', () => {
     expect(systemContent).not.toContain('"had coffee"');
   });
 
-  it('should not have tsura as first example mapping for ja language', () => {
+  it('should include new category examples for ja language', () => {
     const messages = createReactionPrompt('テスト', { language: 'ja' });
     const systemContent = messages[0]?.content ?? '';
-    const examplesStart = systemContent.indexOf('Examples:');
-    const firstMapping = systemContent.slice(examplesStart, examplesStart + 100);
 
-    expect(firstMapping).not.toContain('-> つら');
+    expect(systemContent).toContain('-> おつ');
+    expect(systemContent).toContain('-> えぐ');
+    expect(systemContent).toContain('-> つらみ');
+    expect(systemContent).toContain('-> へぇ');
   });
 
   it('should use English examples for en language', () => {

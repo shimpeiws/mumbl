@@ -37,6 +37,10 @@ describe('getWordListForLanguage', () => {
     expect(result).toContain('- Negative/tough:');
     expect(result).toContain('- Positive vibes:');
     expect(result).toContain('- Feeling it:');
+    expect(result).toContain('- Surprise:');
+    expect(result).toContain('- Chill:');
+    expect(result).toContain('- Achievement:');
+    expect(result).toContain('- Sympathy:');
     expect(result).toContain('- Neutral:');
   });
 
@@ -45,6 +49,13 @@ describe('getWordListForLanguage', () => {
     expect(result).toContain('- Acknowledgment:');
     expect(result).toContain('な');
     expect(result).toContain('わかる');
+    expect(result).toContain('- Surprise:');
+    expect(result).toContain('まじか');
+    expect(result).toContain('- Chill:');
+    expect(result).toContain('- Achievement:');
+    expect(result).toContain('おつ');
+    expect(result).toContain('- Sympathy:');
+    expect(result).toContain('つらみ');
     expect(result).toContain('- Neutral:');
   });
 
