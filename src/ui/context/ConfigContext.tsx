@@ -1,13 +1,14 @@
+import * as path from 'node:path';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { saveConfigFile } from '../../config/config-file.js';
 import type { ResolvedConfig } from '../../config/types.js';
 import {
   type WordgrainFileInfo,
   type WordgrainStats,
-  addWordgrainFile,
   getWordgrainStats,
   listWordgrainFiles,
   loadVocabulary,
-  removeWordgrainFile,
+  registerWordgrainFile,
 } from '../../services/wordgrain/index.js';
 import type { VocabularySet } from '../../services/wordgrain/types.js';
 import { useServices } from './ServiceContext.js';
@@ -56,6 +57,7 @@ const emptyVocabulary: VocabularySet = { words: [], phrases: [], tags: [], sourc
 
 export function ConfigProvider({ config, children }: ConfigProviderProps) {
   const { llmService, reactionService } = useServices();
+  const [wordgrainFiles, setWordgrainFiles] = useState<string[]>(config.wordgrainFiles ?? []);
   const [files, setFiles] = useState<WordgrainFileInfo[]>([]);
   const [stats, setStats] = useState<WordgrainStats>(emptyStats);
   const [selectedFileIndex, setSelectedFileIndex] = useState(0);
@@ -63,25 +65,30 @@ export function ConfigProvider({ config, children }: ConfigProviderProps) {
   const [error, setError] = useState<string | null>(null);
 
   const refreshFiles = useCallback(() => {
-    if (!config.wordgrainDir) {
+    if (wordgrainFiles.length === 0) {
       setFiles([]);
       setStats(emptyStats);
       return;
     }
-    setFiles(listWordgrainFiles(config.wordgrainDir));
-    setStats(getWordgrainStats(config.wordgrainDir));
-  }, [config.wordgrainDir]);
+    setFiles(listWordgrainFiles(wordgrainFiles));
+    setStats(getWordgrainStats(wordgrainFiles));
+  }, [wordgrainFiles]);
 
   const hotReload = useCallback(() => {
-    if (!config.wordgrainDir) return;
-    const vocabulary = loadVocabulary(config.wordgrainDir);
+    if (wordgrainFiles.length === 0) {
+      llmService.setVocabulary(emptyVocabulary);
+      reactionService.setVocabulary(emptyVocabulary);
+      return;
+    }
+    const vocabulary = loadVocabulary(wordgrainFiles);
     llmService.setVocabulary(vocabulary ?? emptyVocabulary);
     reactionService.setVocabulary(vocabulary ?? emptyVocabulary);
-  }, [config.wordgrainDir, llmService, reactionService]);
+  }, [wordgrainFiles, llmService, reactionService]);
 
   useEffect(() => {
     refreshFiles();
-  }, [refreshFiles]);
+    hotReload();
+  }, [refreshFiles, hotReload]);
 
   const clearError = useCallback(() => {
     setError(null);
@@ -89,41 +96,31 @@ export function ConfigProvider({ config, children }: ConfigProviderProps) {
 
   const addFile = useCallback(
     (sourcePath: string) => {
-      if (!config.wordgrainDir) {
-        setError('Wordgrain directory is not configured');
-        return;
-      }
-      const result = addWordgrainFile(sourcePath, config.wordgrainDir);
+      const resolved = path.resolve(sourcePath);
+      const result = registerWordgrainFile(resolved, wordgrainFiles);
       if (!result.success) {
         setError(result.error ?? 'Failed to add file');
         return;
       }
+      const updated = [...wordgrainFiles, resolved];
+      setWordgrainFiles(updated);
+      saveConfigFile({ wordgrainFiles: updated });
       setError(null);
-      refreshFiles();
-      hotReload();
       setSubMode('normal');
     },
-    [config.wordgrainDir, refreshFiles, hotReload],
+    [wordgrainFiles],
   );
 
   const removeFile = useCallback(
     (filename: string) => {
-      if (!config.wordgrainDir) {
-        setError('Wordgrain directory is not configured');
-        return;
-      }
-      const result = removeWordgrainFile(filename, config.wordgrainDir);
-      if (!result.success) {
-        setError(result.error ?? 'Failed to remove file');
-        return;
-      }
+      const updated = wordgrainFiles.filter((fp) => path.basename(fp) !== filename);
+      setWordgrainFiles(updated);
+      saveConfigFile({ wordgrainFiles: updated });
       setError(null);
       setSelectedFileIndex((prev) => Math.max(0, prev - 1));
-      refreshFiles();
-      hotReload();
       setSubMode('normal');
     },
-    [config.wordgrainDir, refreshFiles, hotReload],
+    [wordgrainFiles],
   );
 
   const reloadFiles = useCallback(() => {

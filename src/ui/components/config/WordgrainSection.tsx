@@ -3,22 +3,7 @@ import React from 'react';
 import { useConfig } from '../../context/ConfigContext.js';
 
 export function WordgrainSection() {
-  const { config, files, stats, selectedFileIndex } = useConfig();
-
-  if (!config.wordgrainDir) {
-    return (
-      <Box flexDirection="column">
-        <Box marginBottom={1}>
-          <Text bold color="yellow">
-            Wordgrain Files
-          </Text>
-        </Box>
-        <Box paddingLeft={2}>
-          <Text dimColor>Set MUMBL_WORDGRAIN_DIR to enable wordgrain vocabulary.</Text>
-        </Box>
-      </Box>
-    );
-  }
+  const { files, stats, selectedFileIndex } = useConfig();
 
   return (
     <Box flexDirection="column">
@@ -26,12 +11,11 @@ export function WordgrainSection() {
         <Text bold color="yellow">
           Wordgrain Files
         </Text>
-        <Text dimColor> ({config.wordgrainDir})</Text>
       </Box>
 
       {files.length === 0 ? (
         <Box paddingLeft={2}>
-          <Text dimColor>No wordgrain files found.</Text>
+          <Text dimColor>No wordgrain files registered. Press &apos;a&apos; to add.</Text>
         </Box>
       ) : (
         <Box flexDirection="column" paddingLeft={2}>

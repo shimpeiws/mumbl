@@ -1,7 +1,7 @@
 /**
- * Config file loading for mumbl
+ * Config file loading and saving for mumbl
  *
- * Loads configuration from ~/.config/mumbl/config.json
+ * Loads/saves configuration from/to ~/.config/mumbl/config.json
  */
 import * as fs from 'node:fs';
 import * as os from 'node:os';
@@ -51,8 +51,11 @@ export function loadConfigFile(): Partial<MumblConfig> {
       result.baseUrl = config['baseUrl'];
     }
 
-    if (typeof config['wordgrainDir'] === 'string') {
-      result.wordgrainDir = config['wordgrainDir'];
+    if (Array.isArray(config['wordgrainFiles'])) {
+      const files = config['wordgrainFiles'].filter((f: unknown) => typeof f === 'string');
+      if (files.length > 0) {
+        result.wordgrainFiles = files;
+      }
     }
 
     return result;
@@ -60,4 +63,42 @@ export function loadConfigFile(): Partial<MumblConfig> {
     // Silently ignore config file errors (missing, malformed JSON)
     return {};
   }
+}
+
+/**
+ * Save configuration to config file
+ * Merges the provided partial config with the existing file contents
+ */
+export function saveConfigFile(update: Partial<MumblConfig>): void {
+  const configPath = getConfigFilePath();
+  const configDir = path.dirname(configPath);
+
+  // Ensure config directory exists
+  if (!fs.existsSync(configDir)) {
+    fs.mkdirSync(configDir, { recursive: true });
+  }
+
+  // Load existing raw config to preserve unknown fields
+  let existing: Record<string, unknown> = {};
+  try {
+    if (fs.existsSync(configPath)) {
+      const content = fs.readFileSync(configPath, 'utf-8');
+      const parsed: unknown = JSON.parse(content);
+      if (typeof parsed === 'object' && parsed !== null) {
+        existing = parsed as Record<string, unknown>;
+      }
+    }
+  } catch {
+    // Start fresh if existing file is malformed
+  }
+
+  // Merge update into existing config
+  if (update.model !== undefined) existing['model'] = update.model;
+  if (update.provider !== undefined) existing['provider'] = update.provider;
+  if (update.baseUrl !== undefined) existing['baseUrl'] = update.baseUrl;
+  if (update.wordgrainFiles !== undefined) {
+    existing['wordgrainFiles'] = update.wordgrainFiles;
+  }
+
+  fs.writeFileSync(configPath, `${JSON.stringify(existing, null, 2)}\n`, 'utf-8');
 }

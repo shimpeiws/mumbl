@@ -32,14 +32,13 @@ export function resolveConfig(cliArgs?: string[]): ResolvedConfig {
 
   const baseUrl = sources.cli.baseUrl ?? sources.env.baseUrl ?? sources.file.baseUrl;
 
-  const wordgrainDir =
-    sources.cli.wordgrainDir ?? sources.env.wordgrainDir ?? sources.file.wordgrainDir;
+  const wordgrainFiles = sources.file.wordgrainFiles;
 
   return {
     provider,
     model,
     baseUrl,
     apiKey: getApiKey(),
-    wordgrainDir,
+    wordgrainFiles,
   };
 }
