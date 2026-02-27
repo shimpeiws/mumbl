@@ -276,18 +276,32 @@ function buildRecentEntriesContext(recentEntries: string[], language?: DetectedL
   const entriesText = recentEntries.map((e, i) => `${i + 1}. ${e}`).join('\n');
   const header =
     language === 'ja'
-      ? '\n\nRecent mumbles (for context, react ONLY to the current entry):'
-      : '\n\nRecent mumbles (for context, react ONLY to the current entry):';
+      ? '\n\n## Previous mumbles (mood reference ONLY - DO NOT mention or reference their content in your reaction):'
+      : '\n\n## Previous mumbles (mood reference ONLY - DO NOT mention or reference their content in your reaction):';
   return `${header}\n${entriesText}`;
 }
 
 const MAX_VOCAB_WORD_LENGTH = 10;
-const MAX_VOCAB_SAMPLE_COUNT = 10;
+const MAX_VOCAB_SAMPLE_COUNT = 20;
 const MAX_VOCAB_PHRASE_COUNT = 5;
 
 /**
- * Sample short words from vocabulary suitable for one-word reactions.
- * Filters to words <= maxLength characters and picks evenly-spaced samples.
+ * Shuffle an array in-place using Fisher-Yates algorithm.
+ * Returns the same array reference.
+ */
+function shuffleArray<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = arr[i] as T;
+    arr[i] = arr[j] as T;
+    arr[j] = tmp;
+  }
+  return arr;
+}
+
+/**
+ * Sample short words from vocabulary suitable for reactions.
+ * Filters to words <= maxLength characters and picks a random sample.
  */
 export function sampleVocabularyForReaction(
   vocabulary: VocabularySet,
@@ -297,22 +311,14 @@ export function sampleVocabularyForReaction(
   if (shortWords.length === 0) return [];
   if (shortWords.length <= maxCount) return shortWords;
 
-  // Evenly-spaced sampling
-  const result: string[] = [];
-  const step = shortWords.length / maxCount;
-  for (let i = 0; i < maxCount; i++) {
-    const index = Math.floor(i * step);
-    const word = shortWords[index];
-    if (word !== undefined) {
-      result.push(word);
-    }
-  }
-  return result;
+  // Random shuffle and take first maxCount
+  const shuffled = shuffleArray([...shortWords]);
+  return shuffled.slice(0, maxCount);
 }
 
 /**
  * Sample phrases from vocabulary for richer reactions.
- * Picks evenly-spaced samples from the phrases array.
+ * Picks a random sample from the phrases array.
  */
 export function samplePhrasesForReaction(
   vocabulary: VocabularySet,
@@ -322,21 +328,14 @@ export function samplePhrasesForReaction(
   if (phrases.length === 0) return [];
   if (phrases.length <= maxCount) return phrases;
 
-  const result: string[] = [];
-  const step = phrases.length / maxCount;
-  for (let i = 0; i < maxCount; i++) {
-    const index = Math.floor(i * step);
-    const phrase = phrases[index];
-    if (phrase !== undefined) {
-      result.push(phrase);
-    }
-  }
-  return result;
+  const shuffled = shuffleArray([...phrases]);
+  return shuffled.slice(0, maxCount);
 }
 
 /**
  * Build a vocabulary priority section for the reaction prompt.
  * When vocabulary is available, it's given prominent placement.
+ * Instructs the LLM to weave vocabulary into short contextual phrases.
  */
 function buildVocabularyPrioritySection(
   vocabulary: VocabularySet,
@@ -346,10 +345,7 @@ function buildVocabularyPrioritySection(
   const phrases = samplePhrasesForReaction(vocabulary);
   if (words.length === 0 && phrases.length === 0) return '';
 
-  const header =
-    language === 'ja'
-      ? '## YOUR vocabulary (PREFER these over generic words):'
-      : '## YOUR vocabulary (PREFER these over generic words):';
+  const header = '## YOUR PERSONAL VOCABULARY (HIGHEST PRIORITY):';
   const parts: string[] = [header];
   if (words.length > 0) {
     parts.push(`Words: ${words.join(', ')}`);
@@ -359,8 +355,22 @@ function buildVocabularyPrioritySection(
   }
   const instruction =
     language === 'ja'
-      ? 'Use these words/phrases as building blocks. Weave them into your reactions naturally.'
-      : 'Use these words/phrases as building blocks. Weave them into your reactions naturally.';
+      ? `Read the entry, understand its mood, then craft a short reaction (1-5 words) that naturally incorporates one or more of these vocabulary words.
+Do NOT just output a vocabulary word by itself. Weave it into a natural short phrase that fits the entry's context.
+
+Examples of how to use vocabulary in context:
+- vocab "wavy" + tired entry -> "wavyじゃないな"
+- vocab "飛ぶ" + good news -> "飛ぶわそれ"
+- vocab "real" + relatable entry -> "realすぎる"
+- vocab "やばい" + surprising entry -> "やばいなそれ"`
+      : `Read the entry, understand its mood, then craft a short reaction (1-5 words) that naturally incorporates one or more of these vocabulary words.
+Do NOT just output a vocabulary word by itself. Weave it into a natural short phrase that fits the entry's context.
+
+Examples of how to use vocabulary in context:
+- vocab "wavy" + tired entry -> "not feeling wavy"
+- vocab "fly" + good news -> "that's fly"
+- vocab "real" + relatable entry -> "too real"
+- vocab "drip" + achievement -> "drip on that"`;
   parts.push(instruction);
   return parts.join('\n');
 }
@@ -383,55 +393,55 @@ export function createReactionPrompt(
 
   const responseMode =
     language === 'ja'
-      ? `## Response modes (pick the right level for the entry):
-1. Quick acknowledgment: mundane stuff gets a single word or "·" (帰った -> おけ, コーヒー飲んだ -> ·)
-2. Short reaction: most entries get a brief phrase, 1-5 words (仕事だるい -> だるいよな)
-3. Crafted reaction: emotional or significant entries get a composed short sentence that reflects on the specific content (昇進した！ -> まじか、よくやったな / 3日も眠れてない -> それはきついな、大丈夫か)`
-      : `## Response modes (pick the right level for the entry):
-1. Quick acknowledgment: mundane stuff gets a single word or "·" ("home" -> meh, "had coffee" -> ·)
-2. Short reaction: most entries get a brief phrase, 1-5 words ("work is tough" -> that's rough)
-3. Crafted reaction: emotional or significant entries get a composed short sentence that reflects on the specific content ("got promoted!" -> no way, you earned that / "haven't slept in 3 days" -> that's rough, take care of yourself)`;
+      ? `## Response modes:
+1. Short phrase, 1-5 words (~55% of the time): Craft a short phrase using your vocabulary. (仕事だるい -> だるいよな, 疲れた -> きつそう, またミーティング -> まじか, 帰った -> おけおけ)
+2. Single word (~30%): USE YOUR PERSONAL VOCABULARY or word list. One word that fits the vibe. (コーヒー飲んだ -> な, 天気いい -> よき, つまんない -> ふーん)
+3. "·" (~10%): ONLY when truly nothing to say. Use sparingly.
+4. Short sentence (~5%, ONLY for highly emotional/significant entries): (昇進した！ -> まじか、やるじゃん / 3日も眠れてない -> それはきつい)`
+      : `## Response modes:
+1. Short phrase, 1-5 words (~55% of the time): Craft a short phrase using your vocabulary. ("work is tough" -> that's rough, "tired" -> felt that, "another meeting" -> wild, "home" -> bet bet)
+2. Single word (~30%): USE YOUR PERSONAL VOCABULARY or word list. One word that fits the vibe. ("had coffee" -> cool, "nice weather" -> valid, "boring" -> meh)
+3. "·" (~10%): ONLY when truly nothing to say. Use sparingly.
+4. Short sentence (~5%, ONLY for highly emotional/significant entries): ("got promoted!" -> no way, you earned that / "haven't slept in 3 days" -> that's rough)`;
 
   const examples =
     language === 'ja'
-      ? `Examples:
+      ? `Examples (most are one word, "·" is rare):
+"コーヒー飲んだ" -> な
+"帰った" -> おけ
+"天気いい" -> よき
+"ご飯食べた" -> うん
+"今日ちょいさむ" -> ·
+"散歩した" -> いいね
+"トッポうま" -> わかる
+"つまんない" -> ふーん
 "仕事だるい" -> だるいよな
-"コーヒー飲んだ" -> ·
-"眠れない" -> また眠れないのか
-"今日まあまあだった" -> まあまあならよし
-"子供たち楽しそう" -> いいじゃん
 "疲れた" -> きつそう
 "やばくない？" -> まじか
-"帰った" -> おけ
-"プロジェクト終わった" -> おつ、やるじゃん
-"また同じこと" -> あるよなそれ
-"天気いい" -> よき
-"まさかの展開" -> えぐいな
-"テスト全部通った" -> ナイス、よくやった
-"残業つらい" -> つらいな、ほんと
-"あの映画よかった" -> 最高じゃん
-"初めてライブ行った" -> お、どうだった
-"転職考えてる" -> まじか、なんかあった？
-"子供が初めて歩いた" -> すげー、やるじゃん`
-      : `Examples:
-"work is tough" -> that's rough
-"had coffee" -> \u00B7
-"can't sleep" -> again huh
-"today was okay" -> not bad
-"kids look happy" -> that's dope
+"今日まあまあだった" -> おけ
+"また同じこと" -> あるある
+"プロジェクト終わった" -> おつ
+"テスト全部通った" -> ナイス
+"転職考えてる" -> まじか
+"子供が初めて歩いた" -> すげー`
+      : `Examples (most are one word, "·" is rare):
+"had coffee" -> cool
+"home" -> bet
+"nice weather" -> valid
+"had lunch" -> word
+"bit cold today" -> \u00B7
+"went for a walk" -> nice
+"snack was good" -> fire
+"boring" -> meh
+"work is tough" -> rough
 "tired" -> felt that
 "crazy right?" -> wild
-"home" -> meh
-"project done" -> nice work on that
-"same thing again" -> been there man
-"nice weather" -> valid
-"no way that happened" -> that's wild
-"nailed the interview" -> lets go, you earned that
-"overtime again" -> pain, for real
-"that movie was great" -> fire honestly
-"first time at a concert" -> oh nice, how was it
-"thinking about quitting" -> for real? what happened
-"baby took first steps" -> no way, that's huge`;
+"today was okay" -> aight
+"same thing again" -> mood
+"project done" -> lets go
+"nailed the interview" -> clutch
+"thinking about quitting" -> for real?
+"baby took first steps" -> no way`;
 
   const recentContext = options?.recentEntries
     ? buildRecentEntriesContext(options.recentEntries, language)
@@ -443,7 +453,7 @@ export function createReactionPrompt(
 - Task done / finished -> Achievement (おつ、やるじゃん / ナイス、よくやった)
 - Tired / negative / complaining -> Negative/tough (つらいな / だるいよな / きつそう)
 - Happy / good news -> Positive vibes (最高じゃん / いいじゃん / よき)
-- Boring / mundane / daily routine -> Chill (ふーん / · / おけ)
+- Boring / mundane / daily routine -> Chill (ふーん / おけ / うん / な)
 - Shocking / unexpected -> Surprise (まじか / えぐいな / やべ)
 - Relatable / empathy -> Feeling it (それな / わかる / あるよなそれ)
 - Tough situation / sympathy -> Sympathy (つらいな / あるある / しゃない)
@@ -452,7 +462,7 @@ export function createReactionPrompt(
 - Task done / finished -> Achievement (nice work on that / lets go / clutch)
 - Tired / negative / complaining -> Negative/tough (that's rough / felt that / oof)
 - Happy / good news -> Positive vibes (that's dope / fire / nice)
-- Boring / mundane / daily routine -> Chill (meh / · / sure)
+- Boring / mundane / daily routine -> Chill (meh / cool / sure / bet)
 - Shocking / unexpected -> Surprise (that's wild / no way / crazy)
 - Relatable / empathy -> Feeling it (fr fr / been there man / mood)
 - Tough situation / sympathy -> Sympathy (pain, for real / been there / rough)
@@ -461,29 +471,46 @@ export function createReactionPrompt(
   const recentReactions = options?.recentReactions ?? [];
   const dedupBlock =
     recentReactions.length > 0
-      ? `\nDo NOT repeat these recent reactions: ${recentReactions.join(', ')}\n`
+      ? `\n## DEDUP (STRICTLY ENFORCED):
+You already used these reactions recently. NEVER repeat them or say anything similar.
+Each reaction below is BANNED - do not reuse ANY part of these phrases:
+${recentReactions.map((r, i) => `${i + 1}. "${r}" <- BANNED`).join('\n')}
+
+Your new reaction MUST be completely different in wording, structure, and meaning from ALL of the above.\n`
       : '';
 
   const vocabInstruction = vocabSection ? `\n${vocabSection}\n` : '';
 
+  // When personal vocabulary is available, don't include generic word list at all
+  // so the LLM is forced to use vocabulary words
+  const wordListSection = vocabSection ? '' : `## Word/phrase reference:\n${wordList}`;
+
+  // When vocabulary is available, skip generic examples (vocabulary section has its own)
+  // but keep mood mapping to guide the LLM on understanding entry context
+  const examplesSection = vocabSection ? '' : examples;
+  const moodSection = moodMapping;
+
   // Pass undefined for vocabulary so no separate vocabulary section is appended
   return createPromptPair(
     `React to the mumble. ${styleLabel}. Distant but present. Vary your responses.
+
+## CRITICAL RULE:
+React ONLY to the current entry text. NEVER bring in topics, words, or content from previous mumbles. Each reaction must stand on its own based solely on what the user just said.
 ${vocabInstruction}
 ${responseMode}
 
-## Fallback word/phrase reference:
-${wordList}
+${wordListSection}
 
-${moodMapping}
+${moodSection}
 ${dedupBlock}
 NEVER use:
 - Long sentences or paragraphs (2 sentences max, keep it tight)
 - Polite or formal language
 - Advice or solutions
 - Emojis
+- Content or topics from previous entries (react ONLY to the current mumble)
 
-${examples}${recentContext}`,
+${examplesSection}${recentContext}`,
     entry,
     undefined,
     language,

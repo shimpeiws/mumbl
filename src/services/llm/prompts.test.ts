@@ -240,7 +240,7 @@ describe('createReactionPrompt', () => {
     expect(systemContent).toContain('Japanese slang style');
     expect(systemContent).toContain('仕事だるい');
     expect(systemContent).toContain('コーヒー飲んだ');
-    expect(systemContent).toContain('眠れない');
+    expect(systemContent).toContain('疲れた');
     expect(systemContent).not.toContain('"work is tough"');
     expect(systemContent).not.toContain('"had coffee"');
   });
@@ -249,10 +249,10 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('テスト', { language: 'ja' });
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('おつ、やるじゃん');
-    expect(systemContent).toContain('えぐいな');
-    expect(systemContent).toContain('つらいな、ほんと');
-    expect(systemContent).toContain('お、どうだった');
+    expect(systemContent).toContain('おつ');
+    expect(systemContent).toContain('まじか');
+    expect(systemContent).toContain('だるいよな');
+    expect(systemContent).toContain('きつそう');
   });
 
   it('should use English examples for en language', () => {
@@ -297,32 +297,54 @@ describe('createReactionPrompt', () => {
     });
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('Do NOT repeat these recent reactions');
-    expect(systemContent).toContain('うん, そう, な');
+    expect(systemContent).toContain('DEDUP (STRICTLY ENFORCED)');
+    expect(systemContent).toContain('"うん" <- BANNED');
+    expect(systemContent).toContain('"そう" <- BANNED');
+    expect(systemContent).toContain('"な" <- BANNED');
   });
 
   it('should not include dedup block when no recentReactions', () => {
     const messages = createReactionPrompt('test');
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).not.toContain('Do NOT repeat');
+    expect(systemContent).not.toContain('DEDUP');
   });
 
   it('should not include dedup block when recentReactions is empty', () => {
     const messages = createReactionPrompt('test', { recentReactions: [] });
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).not.toContain('Do NOT repeat');
+    expect(systemContent).not.toContain('DEDUP');
   });
 
   it('should include vocabulary in priority section when provided', () => {
     const messages = createReactionPrompt('test', undefined, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('YOUR vocabulary');
-    expect(systemContent).toContain('PREFER these');
+    expect(systemContent).toContain('YOUR PERSONAL VOCABULARY');
+    expect(systemContent).toContain('HIGHEST PRIORITY');
     expect(systemContent).toContain('Words: vibe, drip');
     expect(systemContent).toContain('Phrases: on god');
+    expect(systemContent).toContain('Weave it into a natural short phrase');
+  });
+
+  it('should include mood mapping even when vocabulary is provided', () => {
+    const messages = createReactionPrompt('test', { language: 'en' }, testVocabulary);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('YOUR PERSONAL VOCABULARY');
+    expect(systemContent).toContain('Mood mapping');
+    expect(systemContent).toContain('classify the entry');
+  });
+
+  it('should not include generic examples when vocabulary is provided', () => {
+    const messages = createReactionPrompt('test', { language: 'en' }, testVocabulary);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('YOUR PERSONAL VOCABULARY');
+    // Generic examples block (the long list of "entry" -> reaction) should be excluded
+    expect(systemContent).not.toContain('"snack was good" -> fire');
+    expect(systemContent).not.toContain('"baby took first steps"');
   });
 });
 
@@ -349,13 +371,24 @@ describe('sampleVocabularyForReaction', () => {
     expect(result).toEqual(['short']);
   });
 
-  it('should sample evenly when exceeding maxCount', () => {
+  it('should randomly sample when exceeding maxCount', () => {
     const words = Array.from({ length: 30 }, (_, i) => `w${i}`);
     const vocab: VocabularySet = { words, phrases: [], tags: [], source: 'test' };
     const result = sampleVocabularyForReaction(vocab, 10);
     expect(result).toHaveLength(10);
-    // First and roughly evenly spaced
-    expect(result[0]).toBe('w0');
+    // All results should be from the original set
+    for (const w of result) {
+      expect(words).toContain(w);
+    }
+    // No duplicates
+    expect(new Set(result).size).toBe(10);
+  });
+
+  it('should default to sampling 20 words', () => {
+    const words = Array.from({ length: 50 }, (_, i) => `w${i}`);
+    const vocab: VocabularySet = { words, phrases: [], tags: [], source: 'test' };
+    const result = sampleVocabularyForReaction(vocab);
+    expect(result).toHaveLength(20);
   });
 
   it('should return empty array when no short words exist', () => {
@@ -375,10 +408,10 @@ describe('sampleVocabularyForReaction', () => {
     });
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('Recent mumbles');
+    expect(systemContent).toContain('Previous mumbles');
     expect(systemContent).toContain('1. had a long day');
     expect(systemContent).toContain('2. work was stressful');
-    expect(systemContent).toContain('react ONLY to the current entry');
+    expect(systemContent).toContain('DO NOT mention or reference their content');
   });
 
   it('should not include recent entries section when array is empty', () => {
@@ -387,14 +420,14 @@ describe('sampleVocabularyForReaction', () => {
     });
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).not.toContain('Recent mumbles');
+    expect(systemContent).not.toContain('Previous mumbles');
   });
 
   it('should not include recent entries section when undefined', () => {
     const messages = createReactionPrompt('feeling tired', {});
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).not.toContain('Recent mumbles');
+    expect(systemContent).not.toContain('Previous mumbles');
   });
 
   it('should include recent entries with Japanese language', () => {
@@ -404,10 +437,10 @@ describe('sampleVocabularyForReaction', () => {
     });
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('Recent mumbles');
+    expect(systemContent).toContain('Previous mumbles');
     expect(systemContent).toContain('1. 長い一日だった');
     expect(systemContent).toContain('2. 仕事がきつかった');
-    expect(systemContent).toContain('react ONLY to the current entry');
+    expect(systemContent).toContain('DO NOT mention or reference their content');
   });
 });
 
@@ -434,12 +467,17 @@ describe('samplePhrasesForReaction', () => {
     expect(result).toEqual([]);
   });
 
-  it('should sample evenly when exceeding maxCount', () => {
+  it('should randomly sample when exceeding maxCount', () => {
     const phrases = Array.from({ length: 20 }, (_, i) => `phrase ${i}`);
     const vocab: VocabularySet = { words: [], phrases, tags: [], source: 'test' };
     const result = samplePhrasesForReaction(vocab, 5);
     expect(result).toHaveLength(5);
-    expect(result[0]).toBe('phrase 0');
+    // All results should be from the original set
+    for (const p of result) {
+      expect(phrases).toContain(p);
+    }
+    // No duplicates
+    expect(new Set(result).size).toBe(5);
   });
 });
 
