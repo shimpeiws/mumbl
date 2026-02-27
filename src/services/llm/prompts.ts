@@ -345,7 +345,7 @@ function buildVocabularyPrioritySection(
   const phrases = samplePhrasesForReaction(vocabulary);
   if (words.length === 0 && phrases.length === 0) return '';
 
-  const header = '## YOUR PERSONAL VOCABULARY (HIGHEST PRIORITY):';
+  const header = '## YOUR VOCABULARY (ACTIVELY USE THESE):';
   const parts: string[] = [header];
   if (words.length > 0) {
     parts.push(`Words: ${words.join(', ')}`);
@@ -355,22 +355,44 @@ function buildVocabularyPrioritySection(
   }
   const instruction =
     language === 'ja'
-      ? `Read the entry, understand its mood, then craft a short reaction (1-5 words) that naturally incorporates one or more of these vocabulary words.
-Do NOT just output a vocabulary word by itself. Weave it into a natural short phrase that fits the entry's context.
+      ? `You SHOULD use these vocabulary words in most reactions. They are your signature style.
+Use them as building blocks: combine with particles, slang, or short phrases to react.
 
-Examples of how to use vocabulary in context:
-- vocab "wavy" + tired entry -> "wavyじゃないな"
-- vocab "飛ぶ" + good news -> "飛ぶわそれ"
-- vocab "real" + relatable entry -> "realすぎる"
-- vocab "やばい" + surprising entry -> "やばいなそれ"`
-      : `Read the entry, understand its mood, then craft a short reaction (1-5 words) that naturally incorporates one or more of these vocabulary words.
-Do NOT just output a vocabulary word by itself. Weave it into a natural short phrase that fits the entry's context.
+How to use vocabulary:
+- Use a vocab word + particle/suffix: "wavyだな", "realすぎ", "やばいわ"
+- Negate a vocab word: "wavyじゃない", "全然fly"
+- Vocab word as exclamation: "wavy!", "real"
+- Vocab word in short phrase: "それwavy", "まじfly"
 
-Examples of how to use vocabulary in context:
-- vocab "wavy" + tired entry -> "not feeling wavy"
-- vocab "fly" + good news -> "that's fly"
-- vocab "real" + relatable entry -> "too real"
-- vocab "drip" + achievement -> "drip on that"`;
+Keep reactions SHORT (1-3 words). Do NOT write full sentences or explanations.
+The reaction must relate to the entry - but vocabulary words are flexible enough to fit most moods.
+Only skip vocabulary if the entry is so mundane that ANY word feels forced (e.g. "うん" or "·" is enough).
+
+Examples:
+- "疲れた" -> "wavyじゃないな"
+- "昇進した！" -> "飛ぶわそれ"
+- "まじかー" -> "real"
+- "wavy?" -> "ちょうwavy"
+- "ファミチキくいて" -> "わかる" (mundane, vocab not needed)`
+      : `You SHOULD use these vocabulary words in most reactions. They are your signature style.
+Use them as building blocks: combine with particles, slang, or short phrases to react.
+
+How to use vocabulary:
+- Use a vocab word + modifier: "so wavy", "too real", "mad fly"
+- Negate a vocab word: "not wavy", "zero drip"
+- Vocab word as exclamation: "wavy!", "real"
+- Vocab word in short phrase: "that's wavy", "big drip"
+
+Keep reactions SHORT (1-3 words). Do NOT write full sentences or explanations.
+The reaction must relate to the entry - but vocabulary words are flexible enough to fit most moods.
+Only skip vocabulary if the entry is so mundane that ANY word feels forced (e.g. "word" or "·" is enough).
+
+Examples:
+- "tired" -> "not wavy"
+- "got promoted!" -> "that's fly"
+- "for real?" -> "real"
+- "wavy?" -> "so wavy"
+- "want fried chicken" -> "same" (mundane, vocab not needed)`;
   parts.push(instruction);
   return parts.join('\n');
 }
@@ -394,14 +416,14 @@ export function createReactionPrompt(
   const responseMode =
     language === 'ja'
       ? `## Response modes:
-1. Short phrase, 1-5 words (~55% of the time): Craft a short phrase using your vocabulary. (仕事だるい -> だるいよな, 疲れた -> きつそう, またミーティング -> まじか, 帰った -> おけおけ)
-2. Single word (~30%): USE YOUR PERSONAL VOCABULARY or word list. One word that fits the vibe. (コーヒー飲んだ -> な, 天気いい -> よき, つまんない -> ふーん)
-3. "·" (~10%): ONLY when truly nothing to say. Use sparingly.
+1. Short phrase, 1-5 words (~45% of the time): Craft a short phrase using your vocabulary. (仕事だるい -> だるいよな, 疲れた -> きつそう, またミーティング -> まじか, 帰った -> おけおけ)
+2. Single word (~25%): USE YOUR PERSONAL VOCABULARY or word list. One word that fits the vibe. (コーヒー飲んだ -> な, 天気いい -> よき, つまんない -> ふーん)
+3. "·" (~25%): For mundane, low-energy, or routine entries. Just a read receipt. (ご飯食べた -> ·, 散歩した -> ·, うん -> ·)
 4. Short sentence (~5%, ONLY for highly emotional/significant entries): (昇進した！ -> まじか、やるじゃん / 3日も眠れてない -> それはきつい)`
       : `## Response modes:
-1. Short phrase, 1-5 words (~55% of the time): Craft a short phrase using your vocabulary. ("work is tough" -> that's rough, "tired" -> felt that, "another meeting" -> wild, "home" -> bet bet)
-2. Single word (~30%): USE YOUR PERSONAL VOCABULARY or word list. One word that fits the vibe. ("had coffee" -> cool, "nice weather" -> valid, "boring" -> meh)
-3. "·" (~10%): ONLY when truly nothing to say. Use sparingly.
+1. Short phrase, 1-5 words (~45% of the time): Craft a short phrase using your vocabulary. ("work is tough" -> that's rough, "tired" -> felt that, "another meeting" -> wild, "home" -> bet bet)
+2. Single word (~25%): USE YOUR PERSONAL VOCABULARY or word list. One word that fits the vibe. ("had coffee" -> cool, "nice weather" -> valid, "boring" -> meh)
+3. "·" (~25%): For mundane, low-energy, or routine entries. Just a read receipt. ("had lunch" -> ·, "went for a walk" -> ·, "yeah" -> ·)
 4. Short sentence (~5%, ONLY for highly emotional/significant entries): ("got promoted!" -> no way, you earned that / "haven't slept in 3 days" -> that's rough)`;
 
   const examples =

@@ -321,18 +321,18 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('test', undefined, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('YOUR PERSONAL VOCABULARY');
-    expect(systemContent).toContain('HIGHEST PRIORITY');
+    expect(systemContent).toContain('YOUR VOCABULARY (ACTIVELY USE THESE)');
+    expect(systemContent).toContain('YOUR VOCABULARY (ACTIVELY USE THESE)');
     expect(systemContent).toContain('Words: vibe, drip');
     expect(systemContent).toContain('Phrases: on god');
-    expect(systemContent).toContain('Weave it into a natural short phrase');
+    expect(systemContent).toContain('ACTIVELY USE THESE');
   });
 
   it('should include mood mapping even when vocabulary is provided', () => {
     const messages = createReactionPrompt('test', { language: 'en' }, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('YOUR PERSONAL VOCABULARY');
+    expect(systemContent).toContain('YOUR VOCABULARY (ACTIVELY USE THESE)');
     expect(systemContent).toContain('Mood mapping');
     expect(systemContent).toContain('classify the entry');
   });
@@ -341,7 +341,7 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('test', { language: 'en' }, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('YOUR PERSONAL VOCABULARY');
+    expect(systemContent).toContain('YOUR VOCABULARY (ACTIVELY USE THESE)');
     // Generic examples block (the long list of "entry" -> reaction) should be excluded
     expect(systemContent).not.toContain('"snack was good" -> fire');
     expect(systemContent).not.toContain('"baby took first steps"');
