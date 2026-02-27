@@ -276,7 +276,7 @@ function buildRecentEntriesContext(recentEntries: string[], language?: DetectedL
   const entriesText = recentEntries.map((e, i) => `${i + 1}. ${e}`).join('\n');
   const header =
     language === 'ja'
-      ? '\n\n## Previous mumbles (mood reference ONLY - DO NOT mention or reference their content in your reaction):'
+      ? '\n\n## 前のつぶやき (雰囲気の参考のみ - 内容には触れないこと):'
       : '\n\n## Previous mumbles (mood reference ONLY - DO NOT mention or reference their content in your reaction):';
   return `${header}\n${entriesText}`;
 }
@@ -345,7 +345,10 @@ function buildVocabularyPrioritySection(
   const phrases = samplePhrasesForReaction(vocabulary);
   if (words.length === 0 && phrases.length === 0) return '';
 
-  const header = '## YOUR VOCABULARY (ACTIVELY USE THESE):';
+  const header =
+    language === 'ja'
+      ? '## あなたのボキャブラリー (積極的に使って):'
+      : '## YOUR VOCABULARY (ACTIVELY USE THESE):';
   const parts: string[] = [header];
   if (words.length > 0) {
     parts.push(`Words: ${words.join(', ')}`);
@@ -364,7 +367,7 @@ How to use vocabulary:
 - Vocab word as exclamation: "wavy!", "real"
 - Vocab word in short phrase: "それwavy", "まじfly"
 
-Keep reactions SHORT (1-3 words). Do NOT write full sentences or explanations.
+Keep reactions SHORT (1-5 words). Do NOT write full sentences or explanations.
 The reaction must relate to the entry - but vocabulary words are flexible enough to fit most moods.
 Only skip vocabulary if the entry is so mundane that ANY word feels forced (e.g. "うん" or "·" is enough).
 
@@ -383,7 +386,7 @@ How to use vocabulary:
 - Vocab word as exclamation: "wavy!", "real"
 - Vocab word in short phrase: "that's wavy", "big drip"
 
-Keep reactions SHORT (1-3 words). Do NOT write full sentences or explanations.
+Keep reactions SHORT (1-5 words). Do NOT write full sentences or explanations.
 The reaction must relate to the entry - but vocabulary words are flexible enough to fit most moods.
 Only skip vocabulary if the entry is so mundane that ANY word feels forced (e.g. "word" or "·" is enough).
 
@@ -428,7 +431,7 @@ export function createReactionPrompt(
 
   const examples =
     language === 'ja'
-      ? `Examples (most are one word, "·" is rare):
+      ? `Examples (vary between words, short phrases, and "·"):
 "コーヒー飲んだ" -> な
 "帰った" -> おけ
 "天気いい" -> よき
@@ -446,7 +449,7 @@ export function createReactionPrompt(
 "テスト全部通った" -> ナイス
 "転職考えてる" -> まじか
 "子供が初めて歩いた" -> すげー`
-      : `Examples (most are one word, "·" is rare):
+      : `Examples (vary between words, short phrases, and "·"):
 "had coffee" -> cool
 "home" -> bet
 "nice weather" -> valid
@@ -494,11 +497,11 @@ export function createReactionPrompt(
   const dedupBlock =
     recentReactions.length > 0
       ? `\n## DEDUP (STRICTLY ENFORCED):
-You already used these reactions recently. NEVER repeat them or say anything similar.
-Each reaction below is BANNED - do not reuse ANY part of these phrases:
+You already used these reactions recently. NEVER reuse the exact same reaction or a close paraphrase.
+Each reaction below is BANNED:
 ${recentReactions.map((r, i) => `${i + 1}. "${r}" <- BANNED`).join('\n')}
 
-Your new reaction MUST be completely different in wording, structure, and meaning from ALL of the above.\n`
+Your new reaction MUST be completely different in wording from ALL of the above.\n`
       : '';
 
   const vocabInstruction = vocabSection ? `\n${vocabSection}\n` : '';
