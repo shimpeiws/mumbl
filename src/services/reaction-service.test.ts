@@ -235,7 +235,7 @@ describe('ReactionService', () => {
       await llmService.generateReaction('entry-1', 'work is killing me');
 
       const callArgs = mockLLMService.react.mock.calls[0];
-      expect(callArgs[1].recentEntries.length).toBe(5);
+      expect(callArgs[1].recentEntries.length).toBe(3);
     });
 
     it('should fallback to default on LLM failure', async () => {

@@ -22,6 +22,7 @@ export interface ReactionRepositoryInterface {
   insert(reaction: Reaction): void;
   findByEntryId(entryId: string): Reaction | null;
   findByEntryIds(entryIds: string[]): Map<string, Reaction>;
+  findRecent(limit: number): Reaction[];
   deleteByEntryId(entryId: string): boolean;
   delete(id: string): boolean;
   count(): number;
@@ -80,6 +81,17 @@ export function createReactionRepository(db: Database.Database): ReactionReposit
     return reactionMap;
   };
 
+  const findRecent = (limit: number): Reaction[] => {
+    const stmt = db.prepare(`
+      SELECT id, entry_id, reaction_type, content, created_at
+      FROM reactions
+      ORDER BY created_at DESC
+      LIMIT ?
+    `);
+    const rows = stmt.all(limit) as ReactionRow[];
+    return rows.map(rowToReaction);
+  };
+
   const deleteByEntryId = (entryId: string): boolean => {
     const stmt = db.prepare('DELETE FROM reactions WHERE entry_id = ?');
     const result = stmt.run(entryId);
@@ -102,6 +114,7 @@ export function createReactionRepository(db: Database.Database): ReactionReposit
     insert,
     findByEntryId,
     findByEntryIds,
+    findRecent,
     deleteByEntryId,
     delete: deleteReaction,
     count,

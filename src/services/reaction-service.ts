@@ -87,6 +87,7 @@ export function createReactionService(
   let currentConfig: ReactionConfig = { ...DEFAULT_CONFIG, ...config };
   let vocabulary: VocabularySet | undefined;
   const recentReactions: string[] = [];
+  let seededFromDb = false;
 
   const setVocabulary = (v: VocabularySet): void => {
     vocabulary = v;
@@ -138,10 +139,28 @@ export function createReactionService(
     return mode;
   };
 
+  const seedRecentReactions = (): void => {
+    if (seededFromDb) return;
+    seededFromDb = true;
+    try {
+      const recent = repository.findRecent(RECENT_REACTION_LIMIT);
+      // findRecent returns newest first, reverse to chronological order
+      for (const r of recent.reverse()) {
+        if (r.content && !recentReactions.includes(r.content)) {
+          recentReactions.push(r.content);
+        }
+      }
+    } catch {
+      // Non-critical, continue without seeding
+    }
+  };
+
   const generateReaction = async (entryId: string, content: string): Promise<Reaction | null> => {
     if (!currentConfig.enabled) {
       return null;
     }
+
+    seedRecentReactions();
 
     let reactionContent: string;
     let reactionType: ReactionType = currentConfig.defaultReactionType;
@@ -150,9 +169,9 @@ export function createReactionService(
       try {
         const language = resolveLanguage(content);
         const recentEntries = entryRepository
-          .findAll({ limit: 6, order: 'desc' })
+          .findAll({ limit: 4, order: 'desc' })
           .filter((e) => e.id !== entryId)
-          .slice(0, 5)
+          .slice(0, 3)
           .map((e) => e.content);
         const response = await llmService.react(content, {
           language,
@@ -160,7 +179,7 @@ export function createReactionService(
           recentReactions: recentReactions.length > 0 ? [...recentReactions] : undefined,
         });
         const trimmed = response.content.trim();
-        // Use LLM response if non-empty and short enough for a one-word reaction
+        // Use LLM response if non-empty and short enough
         if (trimmed && trimmed.length <= MAX_REACTION_LENGTH) {
           reactionContent = trimmed;
           reactionType = 'custom';
