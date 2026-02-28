@@ -41,9 +41,9 @@ describe('ProviderUnavailableError', () => {
 
   it('should create an error with cause', () => {
     const cause = new Error('Connection refused');
-    const error = new ProviderUnavailableError('anthropic', cause);
+    const error = new ProviderUnavailableError('ollama', cause);
 
-    expect(error.message).toBe('LLM provider unavailable: anthropic');
+    expect(error.message).toBe('LLM provider unavailable: ollama');
     expect(error.cause).toBe(cause);
   });
 
@@ -69,9 +69,9 @@ describe('ModelNotFoundError', () => {
 
 describe('AuthenticationError', () => {
   it('should create an error with provider name', () => {
-    const error = new AuthenticationError('anthropic');
+    const error = new AuthenticationError('ollama');
 
-    expect(error.message).toBe('Authentication failed for provider: anthropic');
+    expect(error.message).toBe('Authentication failed for provider: ollama');
     expect(error.name).toBe('AuthenticationError');
   });
 
@@ -83,16 +83,16 @@ describe('AuthenticationError', () => {
 
 describe('RateLimitError', () => {
   it('should create an error with provider name', () => {
-    const error = new RateLimitError('anthropic');
+    const error = new RateLimitError('ollama');
 
-    expect(error.message).toBe('Rate limit exceeded for anthropic');
+    expect(error.message).toBe('Rate limit exceeded for ollama');
     expect(error.name).toBe('RateLimitError');
   });
 
   it('should create an error with retry after', () => {
-    const error = new RateLimitError('anthropic', 60);
+    const error = new RateLimitError('ollama', 60);
 
-    expect(error.message).toBe('Rate limit exceeded for anthropic. Retry after 60 seconds.');
+    expect(error.message).toBe('Rate limit exceeded for ollama. Retry after 60 seconds.');
   });
 
   it('should be an instance of LLMError', () => {

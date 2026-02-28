@@ -20,7 +20,6 @@ export interface ResolvedConfig {
   model: string;
   provider: Provider;
   baseUrl?: string;
-  apiKey?: string;
   wordgrainFiles?: string[];
 }
 

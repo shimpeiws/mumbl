@@ -2,13 +2,12 @@
  * LLM Provider types and interfaces
  */
 
-export type Provider = 'ollama' | 'anthropic';
+export type Provider = 'ollama';
 
 export interface ModelConfig {
   provider: Provider;
   model: string;
   baseUrl?: string;
-  apiKey?: string;
   temperature?: number;
   maxTokens?: number;
 }
@@ -63,7 +62,6 @@ export interface LLMProvider {
  * Default configurations
  */
 export const DEFAULT_OLLAMA_MODEL = 'qwen2.5-coder:7b';
-export const DEFAULT_ANTHROPIC_MODEL = 'claude-sonnet-4-20250514';
 export const DEFAULT_OLLAMA_BASE_URL = 'http://127.0.0.1:11434';
 export const DEFAULT_TEMPERATURE = 0.7;
 export const DEFAULT_MAX_TOKENS = 2048;

@@ -40,9 +40,9 @@ describe('config-file', () => {
 
     it('should parse valid config file with provider', () => {
       vi.mocked(fs.existsSync).mockReturnValue(true);
-      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ provider: 'anthropic' }));
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ provider: 'ollama' }));
       const result = loadConfigFile();
-      expect(result.provider).toBe('anthropic');
+      expect(result.provider).toBe('ollama');
     });
 
     it('should parse valid config file with baseUrl', () => {
@@ -90,15 +90,15 @@ describe('config-file', () => {
       vi.mocked(fs.existsSync).mockReturnValue(true);
       vi.mocked(fs.readFileSync).mockReturnValue(
         JSON.stringify({
-          model: 'gpt-4',
-          provider: 'anthropic',
+          model: 'qwen2.5-coder:7b',
+          provider: 'ollama',
           baseUrl: 'http://localhost:8080',
           wordgrainFiles: ['/path/to/vocab.wg.json'],
         }),
       );
       const result = loadConfigFile();
-      expect(result.model).toBe('gpt-4');
-      expect(result.provider).toBe('anthropic');
+      expect(result.model).toBe('qwen2.5-coder:7b');
+      expect(result.provider).toBe('ollama');
       expect(result.baseUrl).toBe('http://localhost:8080');
       expect(result.wordgrainFiles).toEqual(['/path/to/vocab.wg.json']);
     });
@@ -182,7 +182,7 @@ describe('config-file', () => {
     it('should merge with existing config file', () => {
       vi.mocked(fs.existsSync).mockReturnValue(true);
       vi.mocked(fs.readFileSync).mockReturnValue(
-        JSON.stringify({ model: 'gpt-4', provider: 'anthropic' }),
+        JSON.stringify({ model: 'llama2', provider: 'ollama' }),
       );
       vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
 
@@ -190,8 +190,8 @@ describe('config-file', () => {
 
       const writeCall = vi.mocked(fs.writeFileSync).mock.calls[0];
       const written = JSON.parse((writeCall?.[1] as string).trim());
-      expect(written.model).toBe('gpt-4');
-      expect(written.provider).toBe('anthropic');
+      expect(written.model).toBe('llama2');
+      expect(written.provider).toBe('ollama');
       expect(written.wordgrainFiles).toEqual(['/path/to/file.wg.json']);
     });
 

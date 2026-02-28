@@ -1,6 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createAnthropicProvider } from './anthropic-provider.js';
-import { ProviderUnavailableError } from './errors.js';
 import { type LLMServiceInterface, createLLMService, createProvider } from './llm-service.js';
 import { createOllamaProvider } from './ollama-provider.js';
 import type { ChatResponse, ModelConfig, StreamChunk } from './types.js';
@@ -13,16 +11,6 @@ vi.mock('./ollama-provider.js', () => ({
     healthCheck: vi.fn(),
     getProviderName: vi.fn().mockReturnValue('ollama'),
     getModelName: vi.fn().mockReturnValue('qwen2.5-coder:7b'),
-  })),
-}));
-
-vi.mock('./anthropic-provider.js', () => ({
-  createAnthropicProvider: vi.fn().mockImplementation(() => ({
-    chat: vi.fn(),
-    stream: vi.fn(),
-    healthCheck: vi.fn(),
-    getProviderName: vi.fn().mockReturnValue('anthropic'),
-    getModelName: vi.fn().mockReturnValue('claude-sonnet-4-20250514'),
   })),
 }));
 
@@ -41,19 +29,6 @@ describe('createProvider', () => {
 
     expect(createOllamaProvider).toHaveBeenCalledWith(config);
     expect(provider.getProviderName()).toBe('ollama');
-  });
-
-  it('should create an AnthropicProvider for anthropic config', () => {
-    const config: ModelConfig = {
-      provider: 'anthropic',
-      model: 'claude-sonnet-4-20250514',
-      apiKey: 'test-key',
-    };
-
-    const provider = createProvider(config);
-
-    expect(createAnthropicProvider).toHaveBeenCalledWith(config);
-    expect(provider.getProviderName()).toBe('anthropic');
   });
 });
 
@@ -169,30 +144,6 @@ describe('LLMService', () => {
       const health = await service.healthCheck();
 
       expect(health.primary).toBe(true);
-      expect(health.fallback).toBeUndefined();
-    });
-
-    it('should return health status for both providers when fallback is configured', async () => {
-      const mockAnthropicHealthCheck = vi.fn().mockResolvedValue(true);
-
-      vi.mocked(createAnthropicProvider).mockImplementation(() => ({
-        chat: vi.fn(),
-        stream: vi.fn(),
-        healthCheck: mockAnthropicHealthCheck,
-        getProviderName: vi.fn().mockReturnValue('anthropic'),
-        getModelName: vi.fn().mockReturnValue('claude-sonnet-4-20250514'),
-      }));
-
-      const serviceWithFallback = createLLMService({
-        provider: 'ollama',
-        fallbackProvider: 'anthropic',
-        apiKey: 'test-key',
-      });
-
-      const health = await serviceWithFallback.healthCheck();
-
-      expect(health.primary).toBe(true);
-      expect(health.fallback).toBe(true);
     });
   });
 
@@ -232,37 +183,9 @@ describe('LLMService', () => {
     });
   });
 
-  describe('fallback behavior', () => {
-    it('should use fallback provider when primary fails', async () => {
-      const mockAnthropicChat = vi.fn().mockResolvedValue({
-        content: 'Hello from Anthropic',
-        model: 'claude-sonnet-4-20250514',
-        finishReason: 'end_turn',
-      } satisfies ChatResponse);
-
-      vi.mocked(createAnthropicProvider).mockImplementation(() => ({
-        chat: mockAnthropicChat,
-        stream: vi.fn(),
-        healthCheck: vi.fn().mockResolvedValue(true),
-        getProviderName: vi.fn().mockReturnValue('anthropic'),
-        getModelName: vi.fn().mockReturnValue('claude-sonnet-4-20250514'),
-      }));
-
-      mockOllamaChat.mockRejectedValue(new ProviderUnavailableError('ollama'));
-
-      const serviceWithFallback = createLLMService({
-        provider: 'ollama',
-        fallbackProvider: 'anthropic',
-        apiKey: 'test-key',
-      });
-
-      const response = await serviceWithFallback.chat('Hello');
-
-      expect(response.content).toBe('Hello from Anthropic');
-      expect(mockAnthropicChat).toHaveBeenCalled();
-    });
-
-    it('should throw error when primary fails and no fallback', async () => {
+  describe('error handling', () => {
+    it('should throw error when provider is unavailable', async () => {
+      const { ProviderUnavailableError } = await import('./errors.js');
       mockOllamaChat.mockRejectedValue(new ProviderUnavailableError('ollama'));
 
       await expect(service.chat('Hello')).rejects.toThrow(ProviderUnavailableError);

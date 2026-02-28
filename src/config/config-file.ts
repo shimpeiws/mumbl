@@ -43,7 +43,7 @@ export function loadConfigFile(): Partial<MumblConfig> {
       result.model = config['model'];
     }
 
-    if (config['provider'] === 'ollama' || config['provider'] === 'anthropic') {
+    if (config['provider'] === 'ollama') {
       result.provider = config['provider'];
     }
 
