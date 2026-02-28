@@ -47,7 +47,3 @@ nodemon.json.backup
 
 # Project documentation (Claude Code instructions)
 CLAUDE.md
-
-# Internal development documents
-PROMPT_IMPROVEMENT_PROPOSALS.md
-docs/prompt-improvement-report.md
