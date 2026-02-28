@@ -3,12 +3,6 @@ import React from 'react';
 import { useConfig } from '../../context/ConfigContext.js';
 import { useServices } from '../../context/ServiceContext.js';
 
-function maskApiKey(key?: string): string {
-  if (!key) return '(not set)';
-  if (key.length <= 8) return '****';
-  return `****...${key.slice(-4)}`;
-}
-
 export function LLMSettingsSection() {
   const { config } = useConfig();
   const { llmService } = useServices();
@@ -33,10 +27,6 @@ export function LLMSettingsSection() {
         <Text>
           <Text dimColor>Base URL: </Text>
           <Text>{config.baseUrl ?? '(default)'}</Text>
-        </Text>
-        <Text>
-          <Text dimColor>API Key: </Text>
-          <Text>{maskApiKey(config.apiKey)}</Text>
         </Text>
       </Box>
     </Box>

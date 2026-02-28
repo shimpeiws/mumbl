@@ -15,7 +15,6 @@ export type {
 
 export {
   DEFAULT_OLLAMA_MODEL,
-  DEFAULT_ANTHROPIC_MODEL,
   DEFAULT_OLLAMA_BASE_URL,
   DEFAULT_TEMPERATURE,
   DEFAULT_MAX_TOKENS,
@@ -33,7 +32,6 @@ export {
 
 // Providers
 export { OllamaProvider } from './ollama-provider.js';
-export { AnthropicProvider } from './anthropic-provider.js';
 
 // Message History
 export { createMessageHistory, createSessionMessageHistory } from './message-history.js';

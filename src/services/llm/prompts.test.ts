@@ -437,10 +437,10 @@ describe('sampleVocabularyForReaction', () => {
     });
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('Previous mumbles');
+    expect(systemContent).toContain('前のつぶやき');
     expect(systemContent).toContain('1. 長い一日だった');
     expect(systemContent).toContain('2. 仕事がきつかった');
-    expect(systemContent).toContain('DO NOT mention or reference their content');
+    expect(systemContent).toContain('内容には触れないこと');
   });
 });
 

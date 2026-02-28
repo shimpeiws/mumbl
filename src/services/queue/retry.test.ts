@@ -70,7 +70,7 @@ describe('shouldRetryError', () => {
   });
 
   it('should return true for RateLimitError', () => {
-    const error = new RateLimitError('anthropic');
+    const error = new RateLimitError('ollama');
     expect(shouldRetryError(error)).toBe(true);
   });
 
@@ -150,7 +150,7 @@ describe('withRetry', () => {
     const fn = vi
       .fn()
       .mockRejectedValueOnce(new ProviderUnavailableError('ollama'))
-      .mockRejectedValueOnce(new RateLimitError('anthropic'))
+      .mockRejectedValueOnce(new RateLimitError('ollama'))
       .mockResolvedValueOnce('success');
 
     const promise = withRetry(fn);

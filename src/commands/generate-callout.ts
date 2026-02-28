@@ -4,7 +4,7 @@ import { closeDatabase, getDatabase } from '../infrastructure/database/client.js
 import { createEntryRepository } from '../repositories/entry-repository.js';
 import { createProvider } from '../services/llm/llm-service.js';
 import { createCalloutPrompt } from '../services/llm/prompts.js';
-import { DEFAULT_ANTHROPIC_MODEL, DEFAULT_OLLAMA_MODEL } from '../services/llm/types.js';
+import { DEFAULT_OLLAMA_MODEL } from '../services/llm/types.js';
 import { debugLog } from '../utils/log.js';
 
 export const COOLDOWN_FILE = '/tmp/mumbl-callout-timestamp';
@@ -61,11 +61,8 @@ export async function generateCallout(): Promise<void> {
     const config = resolveConfig();
     const provider = createProvider({
       provider: config.provider,
-      model:
-        config.model ??
-        (config.provider === 'ollama' ? DEFAULT_OLLAMA_MODEL : DEFAULT_ANTHROPIC_MODEL),
+      model: config.model ?? DEFAULT_OLLAMA_MODEL,
       baseUrl: config.baseUrl,
-      apiKey: config.apiKey,
     });
 
     const messages = createCalloutPrompt(entryTexts);
