@@ -3,8 +3,6 @@ import type { ContextServiceInterface } from '../context/types.js';
 import type { ConversationContext } from '../conversation/types.js';
 import type { DetectedLanguage } from '../language/types.js';
 import type { VocabularySet } from '../wordgrain/types.js';
-import { createAnthropicProvider } from './anthropic-provider.js';
-import { ProviderUnavailableError } from './errors.js';
 import {
   type MessageHistoryInterface,
   type SessionMessageHistoryInterface,
@@ -24,28 +22,21 @@ import {
  * High-level LLM service for mumbl
  */
 import type { ChatResponse, LLMProvider, ModelConfig, Provider, StreamChunk } from './types.js';
-import { DEFAULT_ANTHROPIC_MODEL, DEFAULT_OLLAMA_MODEL } from './types.js';
+import { DEFAULT_OLLAMA_MODEL } from './types.js';
 
 export interface LLMServiceConfig {
   provider: Provider;
   model?: string;
   baseUrl?: string;
-  apiKey?: string;
   temperature?: number;
   maxTokens?: number;
-  fallbackProvider?: Provider;
 }
 
 /**
  * Create an LLM provider based on configuration
  */
 export function createProvider(config: ModelConfig): LLMProvider {
-  switch (config.provider) {
-    case 'ollama':
-      return createOllamaProvider(config);
-    case 'anthropic':
-      return createAnthropicProvider(config);
-  }
+  return createOllamaProvider(config);
 }
 
 /**
@@ -68,7 +59,7 @@ export interface LLMServiceInterface {
   summarize(entries: string[], language?: DetectedLanguage): Promise<ChatResponse>;
   reflect(entry: string, language?: DetectedLanguage): Promise<ChatResponse>;
   react(entry: string, options?: ReactionPromptOptions): Promise<ChatResponse>;
-  healthCheck(): Promise<{ primary: boolean; fallback?: boolean }>;
+  healthCheck(): Promise<{ primary: boolean }>;
   clearHistory(sessionId?: string): void;
   getProviderInfo(): { provider: Provider; model: string };
   setContextService(service: ContextServiceInterface): void;
@@ -76,34 +67,18 @@ export interface LLMServiceInterface {
 }
 
 /**
- * Create a high-level LLM service with fallback support and conversation management
+ * Create a high-level LLM service with conversation management
  */
 export function createLLMService(config: LLMServiceConfig): LLMServiceInterface {
   const primaryConfig: ModelConfig = {
     provider: config.provider,
-    model:
-      config.model ??
-      (config.provider === 'ollama' ? DEFAULT_OLLAMA_MODEL : DEFAULT_ANTHROPIC_MODEL),
+    model: config.model ?? DEFAULT_OLLAMA_MODEL,
     baseUrl: config.baseUrl,
-    apiKey: config.apiKey,
     temperature: config.temperature,
     maxTokens: config.maxTokens,
   };
 
   const primaryProvider = createProvider(primaryConfig);
-
-  let fallbackProvider: LLMProvider | undefined;
-  if (config.fallbackProvider) {
-    const fallbackConfig: ModelConfig = {
-      provider: config.fallbackProvider,
-      model: config.fallbackProvider === 'ollama' ? DEFAULT_OLLAMA_MODEL : DEFAULT_ANTHROPIC_MODEL,
-      baseUrl: config.baseUrl,
-      apiKey: config.apiKey,
-      temperature: config.temperature,
-      maxTokens: config.maxTokens,
-    };
-    fallbackProvider = createProvider(fallbackConfig);
-  }
 
   const sessionHistory: SessionMessageHistoryInterface = createSessionMessageHistory();
   let contextService: ContextServiceInterface | undefined;
@@ -139,25 +114,13 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
       options?.language,
     );
 
-    try {
-      const response = await primaryProvider.chat(messages);
+    const response = await primaryProvider.chat(messages);
 
-      // Add the user message and response to history
-      history.add({ role: 'user', content: userMessage });
-      history.add({ role: 'assistant', content: response.content });
+    // Add the user message and response to history
+    history.add({ role: 'user', content: userMessage });
+    history.add({ role: 'assistant', content: response.content });
 
-      return response;
-    } catch (error) {
-      if (error instanceof ProviderUnavailableError && fallbackProvider) {
-        const response = await fallbackProvider.chat(messages);
-
-        history.add({ role: 'user', content: userMessage });
-        history.add({ role: 'assistant', content: response.content });
-
-        return response;
-      }
-      throw error;
-    }
+    return response;
   };
 
   const chatWithContext = async (
@@ -173,14 +136,7 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
       language,
     );
 
-    try {
-      return await primaryProvider.chat(messages);
-    } catch (error) {
-      if (error instanceof ProviderUnavailableError && fallbackProvider) {
-        return await fallbackProvider.chat(messages);
-      }
-      throw error;
-    }
+    return await primaryProvider.chat(messages);
   };
 
   async function* stream(
@@ -204,21 +160,9 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
 
     let fullResponse = '';
 
-    try {
-      for await (const chunk of primaryProvider.stream(messages)) {
-        fullResponse += chunk.content;
-        yield chunk;
-      }
-    } catch (error) {
-      if (error instanceof ProviderUnavailableError && fallbackProvider) {
-        fullResponse = '';
-        for await (const chunk of fallbackProvider.stream(messages)) {
-          fullResponse += chunk.content;
-          yield chunk;
-        }
-      } else {
-        throw error;
-      }
+    for await (const chunk of primaryProvider.stream(messages)) {
+      fullResponse += chunk.content;
+      yield chunk;
     }
 
     // Add the user message and response to history after streaming completes
@@ -231,51 +175,22 @@ export function createLLMService(config: LLMServiceConfig): LLMServiceInterface 
     language?: DetectedLanguage,
   ): Promise<ChatResponse> => {
     const messages = createSummaryPrompt(entries, vocabulary, language);
-
-    try {
-      return await primaryProvider.chat(messages);
-    } catch (error) {
-      if (error instanceof ProviderUnavailableError && fallbackProvider) {
-        return await fallbackProvider.chat(messages);
-      }
-      throw error;
-    }
+    return await primaryProvider.chat(messages);
   };
 
   const reflect = async (entry: string, language?: DetectedLanguage): Promise<ChatResponse> => {
     const messages = createReflectionPrompt(entry, vocabulary, language);
-
-    try {
-      return await primaryProvider.chat(messages);
-    } catch (error) {
-      if (error instanceof ProviderUnavailableError && fallbackProvider) {
-        return await fallbackProvider.chat(messages);
-      }
-      throw error;
-    }
+    return await primaryProvider.chat(messages);
   };
 
   const react = async (entry: string, options?: ReactionPromptOptions): Promise<ChatResponse> => {
     const messages = createReactionPrompt(entry, options, vocabulary);
-
-    try {
-      return await primaryProvider.chat(messages);
-    } catch (error) {
-      if (error instanceof ProviderUnavailableError && fallbackProvider) {
-        return await fallbackProvider.chat(messages);
-      }
-      throw error;
-    }
+    return await primaryProvider.chat(messages);
   };
 
-  const healthCheck = async (): Promise<{ primary: boolean; fallback?: boolean }> => {
+  const healthCheck = async (): Promise<{ primary: boolean }> => {
     const primaryHealth = await primaryProvider.healthCheck();
-    const fallbackHealth = fallbackProvider ? await fallbackProvider.healthCheck() : undefined;
-
-    return {
-      primary: primaryHealth,
-      fallback: fallbackHealth,
-    };
+    return { primary: primaryHealth };
   };
 
   const clearHistory = (sessionId?: string): void => {
@@ -322,7 +237,5 @@ export function createLLMServiceFromConfig(config: ResolvedConfig): LLMServiceIn
     provider: config.provider,
     model: config.model,
     baseUrl: config.baseUrl,
-    apiKey: config.apiKey,
-    fallbackProvider: config.provider === 'ollama' && config.apiKey ? 'anthropic' : undefined,
   });
 }

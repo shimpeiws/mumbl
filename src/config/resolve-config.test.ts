@@ -14,7 +14,6 @@ describe('resolveConfig', () => {
     vi.mocked(cliArgs.parseCliArgs).mockReturnValue({});
     vi.mocked(configFile.loadConfigFile).mockReturnValue({});
     vi.mocked(envVars.loadEnvVars).mockReturnValue({});
-    vi.mocked(envVars.getApiKey).mockReturnValue(undefined);
   });
 
   afterEach(() => {
@@ -26,13 +25,6 @@ describe('resolveConfig', () => {
       const result = resolveConfig();
       expect(result.provider).toBe('ollama');
       expect(result.model).toBe('qwen2.5-coder:7b');
-    });
-
-    it('should use anthropic default model for anthropic provider', () => {
-      vi.mocked(cliArgs.parseCliArgs).mockReturnValue({ provider: 'anthropic' });
-      const result = resolveConfig();
-      expect(result.provider).toBe('anthropic');
-      expect(result.model).toBe('claude-sonnet-4-20250514');
     });
   });
 
@@ -61,29 +53,6 @@ describe('resolveConfig', () => {
       expect(result.model).toBe('file-model');
     });
 
-    it('should prioritize CLI provider over env provider', () => {
-      vi.mocked(cliArgs.parseCliArgs).mockReturnValue({ provider: 'anthropic' });
-      vi.mocked(envVars.loadEnvVars).mockReturnValue({ provider: 'ollama' });
-
-      const result = resolveConfig();
-      expect(result.provider).toBe('anthropic');
-    });
-
-    it('should prioritize env provider over file provider', () => {
-      vi.mocked(envVars.loadEnvVars).mockReturnValue({ provider: 'anthropic' });
-      vi.mocked(configFile.loadConfigFile).mockReturnValue({ provider: 'ollama' });
-
-      const result = resolveConfig();
-      expect(result.provider).toBe('anthropic');
-    });
-
-    it('should use file provider when no CLI or env', () => {
-      vi.mocked(configFile.loadConfigFile).mockReturnValue({ provider: 'anthropic' });
-
-      const result = resolveConfig();
-      expect(result.provider).toBe('anthropic');
-    });
-
     it('should prioritize CLI baseUrl over env baseUrl', () => {
       vi.mocked(cliArgs.parseCliArgs).mockReturnValue({ baseUrl: 'http://cli:8080' });
       vi.mocked(envVars.loadEnvVars).mockReturnValue({ baseUrl: 'http://env:8080' });
@@ -93,17 +62,10 @@ describe('resolveConfig', () => {
     });
   });
 
-  describe('API key handling', () => {
-    it('should include API key from getApiKey', () => {
-      vi.mocked(envVars.getApiKey).mockReturnValue('sk-test-key');
-
+  describe('provider', () => {
+    it('should always use ollama as provider', () => {
       const result = resolveConfig();
-      expect(result.apiKey).toBe('sk-test-key');
-    });
-
-    it('should have undefined apiKey when not set', () => {
-      const result = resolveConfig();
-      expect(result.apiKey).toBeUndefined();
+      expect(result.provider).toBe('ollama');
     });
   });
 
@@ -123,15 +85,12 @@ describe('resolveConfig', () => {
   describe('combined scenarios', () => {
     it('should handle mixed config from all sources', () => {
       vi.mocked(cliArgs.parseCliArgs).mockReturnValue({ model: 'cli-model' });
-      vi.mocked(envVars.loadEnvVars).mockReturnValue({ provider: 'anthropic' });
       vi.mocked(configFile.loadConfigFile).mockReturnValue({ baseUrl: 'http://file:8080' });
-      vi.mocked(envVars.getApiKey).mockReturnValue('sk-test');
 
       const result = resolveConfig();
       expect(result.model).toBe('cli-model');
-      expect(result.provider).toBe('anthropic');
+      expect(result.provider).toBe('ollama');
       expect(result.baseUrl).toBe('http://file:8080');
-      expect(result.apiKey).toBe('sk-test');
     });
   });
 });
