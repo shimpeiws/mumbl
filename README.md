@@ -105,6 +105,17 @@ Register files in Config mode (`c` → `a`) or in the config file:
 
 When loaded, the AI weaves your vocabulary into reactions: `"not wavy"`, `"that's fly"`, `"real"`.
 
+### Creating wordgrain files with barscan
+
+[barscan](https://github.com/shimpeiws/barscan) can generate `.wg.json` files from song lyrics. Analyze an artist's vocabulary and export it directly:
+
+```bash
+pip install barscan
+barscan analyze "Kendrick Lamar" --format wordgrain --output kendrick.wg.json
+```
+
+Then register the file in mumbl's Config mode or config file.
+
 ## Configuration
 
 Config file: `~/.config/mumbl/config.json`
