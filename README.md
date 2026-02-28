@@ -130,15 +130,11 @@ CLI flags (override everything):
 mumbl --model llama3.1:8b
 ```
 
-## Callout (Agent Integration)
+## Claude Code Integration
 
-mumbl can send brief check-in messages when integrated with AI coding agents like Claude Code.
+mumbl integrates with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) via hooks to show agent activity and generate contextual callout messages.
 
-```bash
-mumbl generate-callout
-```
-
-This reads your recent entries and generates a short contextual message (written to `/tmp/mumbl-message`). Add it to Claude Code hooks:
+Add the following to `~/.claude/settings.json`:
 
 ```json
 {
@@ -149,31 +145,18 @@ This reads your recent entries and generates a short contextual message (written
         "hooks": [
           {
             "type": "command",
-            "command": "mumbl generate-callout && test -f /tmp/mumbl-message && echo && cat /tmp/mumbl-message && rm /tmp/mumbl-message"
+            "command": "printf 'thinking:claude-code' > /tmp/mumbl-agent-status"
           }
         ]
       }
-    ]
-  }
-}
-```
-
-## Agent Status Display
-
-mumbl can show real-time AI agent activity in the terminal title.
-
-Add to Claude Code settings (`~/.claude/settings.json`):
-
-```json
-{
-  "hooks": {
-    "PreToolUse": [
+    ],
+    "PermissionRequest": [
       {
         "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "echo -n 'thinking:claude-code' > /tmp/mumbl-agent-status"
+            "command": "printf 'idle:claude-code' > /tmp/mumbl-agent-status"
           }
         ]
       }
@@ -184,13 +167,42 @@ Add to Claude Code settings (`~/.claude/settings.json`):
         "hooks": [
           {
             "type": "command",
-            "command": "echo -n 'idle:claude-code' > /tmp/mumbl-agent-status"
+            "command": "printf 'idle:claude-code' > /tmp/mumbl-agent-status"
+          },
+          {
+            "type": "command",
+            "command": "mumbl generate-callout"
           }
         ]
       }
     ]
   }
 }
+```
+
+### What each hook does
+
+| Hook | Action |
+|------|--------|
+| **PreToolUse** | Sets agent status to `thinking` — mumbl shows the activity indicator |
+| **PermissionRequest** | Sets agent status to `idle` — agent is waiting for user input |
+| **Stop** | Sets agent status to `idle` and runs `generate-callout` to create a check-in message from recent journal entries |
+
+### Agent Status Display
+
+mumbl watches `/tmp/mumbl-agent-status` and shows real-time agent activity in the terminal title. The file format is `status:agent-name` (e.g., `thinking:claude-code`).
+
+Supported agents: `claude-code`, `gemini-cli`, `cursor`, `windsurf`.
+
+### Callout Messages
+
+`mumbl generate-callout` reads your recent journal entries and generates a short contextual message, written to `/tmp/mumbl-message`. It has a 5-minute cooldown to avoid repeated calls.
+
+You can also run it standalone:
+
+```bash
+mumbl generate-callout
+cat /tmp/mumbl-message
 ```
 
 ## Development
