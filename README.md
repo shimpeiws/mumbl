@@ -7,7 +7,7 @@ Powered by [Ollama](https://ollama.ai/) for fully local, private LLM processing.
 ## Install
 
 ```bash
-npm install -g mumbl
+npm install -g @shimpeiws/mumbl
 ```
 
 ### Prerequisites
