@@ -120,14 +120,11 @@ describe('SetupWizard', () => {
     });
     const onComplete = vi.fn();
 
-    const { stdin } = render(<SetupWizard onComplete={onComplete} />);
+    const { stdin, lastFrame } = render(<SetupWizard onComplete={onComplete} />);
 
     await vi.waitFor(() => {
-      expect(onComplete).not.toHaveBeenCalled();
+      expect(lastFrame()).toContain('Could not connect to Ollama');
     });
-
-    // Wait for not-connected state
-    await new Promise((r) => setTimeout(r, 50));
 
     stdin.write('s');
 
