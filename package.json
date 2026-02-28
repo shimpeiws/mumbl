@@ -1,7 +1,7 @@
 {
   "name": "mumbl",
   "version": "0.1.0",
-  "description": "Git worktree management utilities for parallel issue development",
+  "description": "A TUI journaling app with AI-powered reactions via local LLM (Ollama)",
   "type": "module",
   "packageManager": "pnpm@9.15.4",
   "engines": {
@@ -29,12 +29,27 @@
     "ci:all": "pnpm type-check && pnpm ci:check && pnpm ci:test"
   },
   "keywords": [
-    "git",
-    "worktree",
-    "workflow",
-    "cli"
+    "journal",
+    "tui",
+    "ollama",
+    "llm",
+    "cli",
+    "ink",
+    "react"
   ],
-  "author": "",
+  "author": "shimpeiws",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shimpeiws/mumbl.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shimpeiws/mumbl/issues"
+  },
+  "homepage": "https://github.com/shimpeiws/mumbl#readme",
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
   "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
