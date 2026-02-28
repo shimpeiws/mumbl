@@ -1,7 +1,7 @@
 {
   "name": "mumbl",
-  "version": "0.1.0",
-  "description": "Git worktree management utilities for parallel issue development",
+  "version": "1.0.0",
+  "description": "A terminal journaling app where AI just listens - powered by Ollama for fully local, private LLM processing",
   "type": "module",
   "packageManager": "pnpm@9.15.4",
   "engines": {
@@ -10,6 +10,11 @@
   "bin": {
     "mumbl": "./dist/index.js"
   },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
     "prepare": "husky",
     "dev": "tsx src/index.tsx",
@@ -29,13 +34,27 @@
     "ci:all": "pnpm type-check && pnpm ci:check && pnpm ci:test"
   },
   "keywords": [
-    "git",
-    "worktree",
-    "workflow",
-    "cli"
+    "journal",
+    "journaling",
+    "tui",
+    "terminal",
+    "ollama",
+    "llm",
+    "ai",
+    "cli",
+    "ink",
+    "react"
   ],
-  "author": "",
+  "author": "shimpeiws",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shimpeiws/mumbl.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shimpeiws/mumbl/issues"
+  },
+  "homepage": "https://github.com/shimpeiws/mumbl#readme",
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@types/better-sqlite3": "^7.6.13",
