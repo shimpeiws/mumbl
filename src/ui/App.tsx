@@ -6,6 +6,7 @@ import { HelpFooter } from './components/common/HelpFooter.js';
 import { ModeIndicator } from './components/common/ModeIndicator.js';
 import { ConfigView } from './components/config/ConfigView.js';
 import { EntryList } from './components/entries/EntryList.js';
+import { SetupWizard } from './components/setup/SetupWizard.js';
 import { SplashScreen } from './components/splash/SplashScreen.js';
 import { WriteView } from './components/write/WriteView.js';
 import { NavigationProvider, useNavigation } from './context/NavigationContext.js';
@@ -56,8 +57,17 @@ function AppContent() {
   );
 }
 
-export function App() {
+interface AppProps {
+  needsSetup?: boolean;
+}
+
+export function App({ needsSetup = false }: AppProps) {
+  const [showSetup, setShowSetup] = useState(needsSetup);
   const [showSplash, setShowSplash] = useState(true);
+
+  if (showSetup) {
+    return <SetupWizard onComplete={() => setShowSetup(false)} />;
+  }
 
   if (showSplash) {
     return <SplashScreen onComplete={() => setShowSplash(false)} />;

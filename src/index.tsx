@@ -1,6 +1,8 @@
 #!/usr/bin/env node
+import * as fs from 'node:fs';
 import { render } from 'ink';
 import React from 'react';
+import { getConfigFilePath } from './config/config-file.js';
 import { resolveConfig } from './config/index.js';
 import { getReactionConfig } from './infrastructure/config/reaction-config.js';
 import { closeDatabase, getDatabase } from './infrastructure/database/client.js';
@@ -35,6 +37,9 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
     console.log('Note: Interactive mode requires a TTY. Run in a terminal for full experience.');
     process.exit(0);
   }
+
+  // Check if this is the first run (no config file exists)
+  const needsSetup = !fs.existsSync(getConfigFilePath());
 
   // Resolve configuration with priority: CLI > Environment > Config file > Default
   const config = resolveConfig();
@@ -95,7 +100,7 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
     >
       <QueueProvider queueService={queueService}>
         <ConfigProvider config={config}>
-          <App />
+          <App needsSetup={needsSetup} />
         </ConfigProvider>
       </QueueProvider>
     </ServiceProvider>,
