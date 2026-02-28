@@ -1,5 +1,5 @@
 {
-  "name": "mumbl",
+  "name": "@shimpeiws/mumbl",
   "version": "1.0.0",
   "description": "A terminal journaling app where AI just listens - powered by Ollama for fully local, private LLM processing",
   "type": "module",
