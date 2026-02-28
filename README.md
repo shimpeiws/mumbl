@@ -1,58 +1,168 @@
 # mumbl
 
-An AI-powered communication tool.
+A terminal journaling app where AI just listens. Write what you feel — the AI acknowledges without advice, judgment, or therapy.
 
-## Status
+Powered by [Ollama](https://ollama.ai/) for fully local, private LLM processing.
 
-This project is in early development.
+## Install
 
-## Development
+```bash
+npm install -g mumbl
+```
 
 ### Prerequisites
 
-- Node.js >= 20.0.0
-- pnpm >= 9.0.0
-- [Ollama](https://ollama.ai/) (for LLM features)
+- [Node.js](https://nodejs.org/) >= 20.0.0
+- [Ollama](https://ollama.ai/)
 
-### Ollama Installation
+### Ollama Setup
 
-This application uses Ollama for local LLM communication.
+**Install Ollama:**
 
-**macOS:**
 ```bash
+# macOS
 brew install ollama
-```
 
-**Linux:**
-```bash
+# Linux
 curl -fsSL https://ollama.ai/install.sh | sh
 ```
 
-**Start the Ollama server:**
+**Start the server and pull the recommended model:**
+
 ```bash
 ollama serve
+ollama pull llama3.1:8b
 ```
 
-**Pull the default model:**
+## Usage
+
 ```bash
-ollama pull qwen2.5-coder:7b
+mumbl
 ```
 
-### Environment Variables
+mumbl has three modes:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MUMBL_OLLAMA_URL` | `http://localhost:11434` | Ollama server base URL |
-| `MUMBL_OLLAMA_MODEL` | `qwen2.5-coder:7b` | Default model to use |
-| `MUMBL_OLLAMA_TIMEOUT` | `30000` | Connection timeout (ms) |
+### List Mode (default)
 
-### Agent Status Integration
+Browse your journal entries organized by date. Each entry shows a preview and the AI's reaction below it.
 
-mumbl can display real-time AI agent activity in the terminal title. When a coding agent (Claude Code, Gemini CLI) is processing, the terminal title updates to show its status.
+| Key | Action |
+|-----|--------|
+| `j` / `↓` | Next entry |
+| `k` / `↑` | Previous entry |
+| `Enter` | View full entry |
+| `Tab` | Write new entry |
+| `c` | Config |
+| `q` | Quit |
 
-#### Claude Code
+### Write Mode
 
-Add the following to your Claude Code settings file (`~/.claude/settings.json`):
+Press `Tab` to write a new entry. Type freely — press `Enter` to save, `Escape` to cancel.
+
+### Config Mode
+
+Press `c` to view LLM settings and manage wordgrain vocabulary files.
+
+| Key | Action |
+|-----|--------|
+| `a` | Add wordgrain file |
+| `d` | Remove selected file |
+| `r` | Reload files |
+| `Escape` | Back to list |
+
+## How It Reacts
+
+mumbl's AI follows a "pluto mode" philosophy — distant but listening. Reactions are intentionally minimal:
+
+- **Read receipt** (~25%): `·` — just acknowledgment
+- **Single word** (~25%): `cool`, `mood`, `real`
+- **Short phrase** (~45%): `that's rough`, `felt that`, `hearing you`
+- **Short sentence** (~5%): only for major emotional moments
+
+The AI never gives advice, never asks "are you okay?", and never reframes your feelings. Silence is okay.
+
+## Wordgrain (Vocabulary Customization)
+
+Wordgrain files (`.wg.json`) let you infuse the AI's reactions with your own vocabulary and style.
+
+```json
+{
+  "name": "my-vocab",
+  "grains": [
+    { "word": "wavy", "context": "cool, good vibes", "tags": ["style"] },
+    { "word": "real", "context": "authentic, legit", "tags": ["affirmation"] }
+  ]
+}
+```
+
+Register files in Config mode (`c` → `a`) or in the config file:
+
+```json
+{
+  "wordgrainFiles": ["/path/to/vocab.wg.json"]
+}
+```
+
+When loaded, the AI weaves your vocabulary into reactions: `"not wavy"`, `"that's fly"`, `"real"`.
+
+## Configuration
+
+Config file: `~/.config/mumbl/config.json`
+
+```json
+{
+  "model": "llama3.1:8b",
+  "baseUrl": "http://localhost:11434",
+  "wordgrainFiles": []
+}
+```
+
+Environment variables (override config file):
+
+| Variable | Description |
+|----------|-------------|
+| `MUMBL_MODEL` | Model name |
+| `MUMBL_BASE_URL` | Ollama server URL |
+
+CLI flags (override everything):
+
+```bash
+mumbl --model llama3.1:8b
+```
+
+## Callout (Agent Integration)
+
+mumbl can send brief check-in messages when integrated with AI coding agents like Claude Code.
+
+```bash
+mumbl generate-callout
+```
+
+This reads your recent entries and generates a short contextual message (written to `/tmp/mumbl-message`). Add it to Claude Code hooks:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mumbl generate-callout && test -f /tmp/mumbl-message && echo && cat /tmp/mumbl-message && rm /tmp/mumbl-message"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Agent Status Display
+
+mumbl can show real-time AI agent activity in the terminal title.
+
+Add to Claude Code settings (`~/.claude/settings.json`):
 
 ```json
 {
@@ -83,132 +193,34 @@ Add the following to your Claude Code settings file (`~/.claude/settings.json`):
 }
 ```
 
-#### Gemini CLI
-
-Add the following to your Gemini CLI settings file (`~/.gemini/settings.json`):
-
-```json
-{
-  "hooks": {
-    "BeforeTool": [
-      {
-        "command": "echo -n 'thinking:gemini-cli' > /tmp/mumbl-agent-status"
-      }
-    ],
-    "AfterAgent": [
-      {
-        "command": "echo -n 'idle:gemini-cli' > /tmp/mumbl-agent-status"
-      }
-    ]
-  }
-}
-```
-
-#### How It Works
-
-1. **An agent triggers a hook** before each tool use, writing status to `/tmp/mumbl-agent-status`
-2. **mumbl watches the status file** for changes using `fs.watch` and polling
-3. **The terminal title updates** to show the agent's current activity (e.g., "Claude thinking...", "Gemini thinking...")
-4. **When the agent stops**, the hook writes `idle` and the title resets to "mumbl"
-
-The status file format supports an extended format (`thinking:agent-name`) for agent identification, and plain `thinking`/`idle` for backward compatibility.
-
-#### Verification
-
-You can manually test the integration:
+## Development
 
 ```bash
-# Start mumbl in one terminal
-pnpm dev
-
-# In another terminal, simulate agent activity:
-echo -n 'thinking:claude-code' > /tmp/mumbl-agent-status   # "Claude thinking..."
-echo -n 'thinking:gemini-cli' > /tmp/mumbl-agent-status    # "Gemini thinking..."
-echo -n 'idle:claude-code' > /tmp/mumbl-agent-status       # Title resets to "mumbl"
-```
-
-### Setup
-
-```bash
+git clone https://github.com/shimpeiws/mumbl.git
+cd mumbl
 pnpm install
-```
-
-### Available Scripts
-
-```bash
-# Development mode with watch
 pnpm dev
-
-# Type checking
-pnpm type-check
-
-# Lint code
-pnpm lint
-
-# Format code
-pnpm format
-
-# Build
-pnpm build
 ```
 
-## Testing
+### Scripts
 
-mumbl uses [Vitest](https://vitest.dev/) for testing with comprehensive coverage requirements.
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Run in development mode |
+| `pnpm build` | Build for production |
+| `pnpm test` | Run tests (watch mode) |
+| `pnpm type-check` | TypeScript type checking |
+| `pnpm lint` | Run Biome linter |
+| `pnpm ci:all` | Full CI check (types + lint + tests) |
 
-### Running Tests
+### Tech Stack
 
-```bash
-# Run tests in watch mode (development)
-pnpm test
-
-# Run specific test types
-pnpm test:unit         # Unit tests only
-pnpm test:integration  # Integration tests only
-pnpm test:e2e          # E2E tests only
-
-# Generate coverage report
-pnpm test:coverage
-
-# Run all CI checks (type-check + lint + test with coverage)
-pnpm ci:all
-```
-
-### Test Structure
-
-```
-mumbl/
-├── src/
-│   ├── index.ts           # Source file
-│   └── index.test.ts      # Co-located unit test
-├── test/
-│   ├── integration/       # Integration tests
-│   ├── e2e/              # End-to-end tests
-│   ├── fixtures/         # Test fixtures
-│   └── helpers/          # Test utilities
-└── coverage/             # Generated coverage reports (gitignored)
-```
-
-### Coverage Requirements
-
-The project maintains strict coverage thresholds:
-- Lines: 70%
-- Functions: 70%
-- Branches: 70%
-- Statements: 70%
-
-Tests will fail if coverage drops below these thresholds.
-
-### CI/CD
-
-All tests run automatically on push and pull request via GitHub Actions:
-- Type checking (Node 20)
-- Linting and formatting (Node 20)
-- Tests with coverage (Node 20, 22)
-- Build verification (Node 20)
-
-Coverage reports are uploaded to Codecov and archived as artifacts.
+- TypeScript, React, [Ink](https://github.com/vadimdemedes/ink) (terminal UI)
+- [Ollama](https://ollama.ai/) via LangChain.js
+- SQLite (better-sqlite3) for local storage
+- Vitest for testing (70%+ coverage required)
+- Biome for linting and formatting
 
 ## License
 
-MIT
+[MIT](LICENSE)
