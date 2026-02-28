@@ -3,7 +3,10 @@
  * Provides comprehensive stopword lists for English and Japanese
  */
 
-import stopwordsIso from 'stopwords-iso';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const stopwordsIso: Record<string, string[]> = require('stopwords-iso');
 
 const enWords = stopwordsIso['en'] ?? [];
 const jaWords = stopwordsIso['ja'] ?? [];
