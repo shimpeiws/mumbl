@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1] - 2026-02-28
+
+### Changed
+
+- Add explicit `--tag latest` to npm publish command for reliable dist-tag assignment
+- Update README install command to scoped package name
+- Add barscan reference to Wordgrain section in README
+
 ## [1.0.0] - 2026-02-28
 
 Initial public release.
