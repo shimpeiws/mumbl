@@ -38,5 +38,5 @@
     "types": ["vitest/globals"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "scripts", "coverage", "**/*.test.ts"]
+  "exclude": ["node_modules", "dist", "scripts", "coverage", "**/*.test.ts", "**/*.test.tsx"]
 }

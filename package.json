@@ -1,7 +1,7 @@
 {
   "name": "mumbl",
-  "version": "0.1.0",
-  "description": "A TUI journaling app with AI-powered reactions via local LLM (Ollama)",
+  "version": "1.0.0",
+  "description": "A terminal journaling app where AI just listens - powered by Ollama for fully local, private LLM processing",
   "type": "module",
   "packageManager": "pnpm@9.15.4",
   "engines": {
@@ -10,6 +10,11 @@
   "bin": {
     "mumbl": "./dist/index.js"
   },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
     "prepare": "husky",
     "dev": "tsx src/index.tsx",
@@ -30,14 +35,18 @@
   },
   "keywords": [
     "journal",
+    "journaling",
     "tui",
+    "terminal",
     "ollama",
     "llm",
+    "ai",
     "cli",
     "ink",
     "react"
   ],
   "author": "shimpeiws",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/shimpeiws/mumbl.git"
@@ -46,11 +55,6 @@
     "url": "https://github.com/shimpeiws/mumbl/issues"
   },
   "homepage": "https://github.com/shimpeiws/mumbl#readme",
-  "files": [
-    "dist",
-    "LICENSE"
-  ],
-  "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@types/better-sqlite3": "^7.6.13",
