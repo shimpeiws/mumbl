@@ -322,10 +322,31 @@ describe('createReactionPrompt', () => {
     const systemContent = messages[0]?.content ?? '';
 
     expect(systemContent).toContain('YOUR VOCABULARY (ACTIVELY USE THESE)');
-    expect(systemContent).toContain('YOUR VOCABULARY (ACTIVELY USE THESE)');
     expect(systemContent).toContain('Words: vibe, drip');
     expect(systemContent).toContain('Phrases: on god');
     expect(systemContent).toContain('ACTIVELY USE THESE');
+  });
+
+  it('should use actual vocabulary words in examples, not hardcoded words', () => {
+    const messages = createReactionPrompt('test', { language: 'en' }, testVocabulary);
+    const systemContent = messages[0]?.content ?? '';
+
+    // Dynamic examples should use actual vocab words
+    expect(systemContent).toContain('so vibe');
+    expect(systemContent).toContain('not vibe');
+    expect(systemContent).not.toContain('so wavy');
+    expect(systemContent).not.toContain('not wavy');
+  });
+
+  it('should use actual vocabulary words in Japanese examples', () => {
+    const messages = createReactionPrompt('テスト', { language: 'ja' }, testVocabulary);
+    const systemContent = messages[0]?.content ?? '';
+
+    // Dynamic examples should use actual vocab words
+    expect(systemContent).toContain('vibeだな');
+    expect(systemContent).toContain('vibeじゃないな');
+    expect(systemContent).not.toContain('wavyだな');
+    expect(systemContent).not.toContain('wavyじゃない');
   });
 
   it('should include mood mapping even when vocabulary is provided', () => {
