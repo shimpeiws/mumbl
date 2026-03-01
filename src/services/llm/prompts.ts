@@ -376,10 +376,12 @@ function buildVocabularyPrioritySection(
 Use them as building blocks: combine with particles, slang, or short phrases to react.
 
 How to use vocabulary:
-- Use a vocab word + particle/suffix: "${w1}だな", "${w2}すぎ", "やばいわ"
+- Vocab word + particle: "${w1}だな", "${w2}じゃん", "${w3}よな"
 - Negate a vocab word: "${w1}じゃない", "全然${w2}"
 - Vocab word as exclamation: "${w1}!", "${w3}"
 - Vocab word in short phrase: "それ${w1}", "まじ${w2}"
+
+IMPORTANT: Vary your grammatical patterns. Do NOT repeat the same suffix (e.g. すぎだろ, すぎるわ) across reactions. Use diverse endings: だな, じゃん, よな, わ, な, かよ, etc.
 
 Keep reactions SHORT (1-5 words). Do NOT write full sentences or explanations.
 The reaction must relate to the entry - but vocabulary words are flexible enough to fit most moods.
@@ -390,6 +392,7 @@ Examples:
 - "昇進した！" -> "飛ぶわそれ"
 - "まじかー" -> "${w2}"
 - "${w1}?" -> "ちょう${w1}"
+- "コーヒー飲みすぎた" -> "まあ${w3}だな"
 - "ファミチキくいて" -> "わかる" (mundane, vocab not needed)`
       : `You SHOULD use these vocabulary words in most reactions. They are your signature style.
 Use them as building blocks: combine with particles, slang, or short phrases to react.

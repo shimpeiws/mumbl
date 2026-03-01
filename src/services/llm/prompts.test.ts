@@ -349,6 +349,14 @@ describe('createReactionPrompt', () => {
     expect(systemContent).not.toContain('wavyじゃない');
   });
 
+  it('should instruct to vary grammatical patterns in Japanese vocabulary section', () => {
+    const messages = createReactionPrompt('テスト', { language: 'ja' }, testVocabulary);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Vary your grammatical patterns');
+    expect(systemContent).not.toContain('すぎ"');
+  });
+
   it('should include mood mapping even when vocabulary is provided', () => {
     const messages = createReactionPrompt('test', { language: 'en' }, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
