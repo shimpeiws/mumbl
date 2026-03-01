@@ -1,4 +1,7 @@
-# mumbl
+<div align="center">
+  <img src="assets/logo.svg" alt="mumbl" width="600">
+  <br><br>
+</div>
 
 A terminal journaling app where AI just listens. Write what you feel — the AI acknowledges without advice, judgment, or therapy.
 

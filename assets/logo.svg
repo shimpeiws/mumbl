@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 264" fill="none">
+  <rect width="600" height="264" rx="12" fill="#1a1a2e"/>
+
+  <text x="300" y="32" text-anchor="middle" fill="#FF00FF"
+        font-family="'Courier New', Courier, monospace" font-size="14">·  ✦  ˚  ⋆  ·  ✧  ˚  ·  ✦  ·  ˚  ⋆  ✧  ·</text>
+
+  <g font-family="'Courier New', Courier, monospace" font-size="14" font-weight="bold" xml:space="preserve">
+    <text x="102" y="64" fill="#00FFFF">███╗   ███╗██╗   ██╗███╗   ███╗██████╗ ██╗</text>
+    <text x="102" y="82" fill="#00FFFF">████╗ ████║██║   ██║████╗ ████║██╔══██╗██║</text>
+    <text x="102" y="100" fill="#FF00FF">██╔████╔██║██║   ██║██╔████╔██║██████╔╝██║</text>
+    <text x="102" y="118" fill="#FF00FF">██║╚██╔╝██║██║   ██║██║╚██╔╝██║██╔══██╗██║</text>
+    <text x="102" y="136" fill="#5555FF">██║ ╚═╝ ██║╚██████╔╝██║ ╚═╝ ██║██████╔╝███████╗</text>
+    <text x="102" y="154" fill="#5555FF">╚═╝     ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚═════╝ ╚══════╝</text>
+  </g>
+
+  <text x="300" y="182" text-anchor="middle" fill="#FF00FF"
+        font-family="'Courier New', Courier, monospace" font-size="14">·  ✦  ˚  ⋆  ·  ✧  ˚  ·  ✦  ·  ˚  ⋆  ✧  ·</text>
+
+  <text x="300" y="212" text-anchor="middle" fill="#888888"
+        font-family="'Courier New', Courier, monospace" font-size="13">ᶠʳᵉᵉᵇᵃⁿᵈᶻ ᶠᵒʳ ʸᵒᵘʳ ᶠᵉᵉˡⁱⁿᵍˢ</text>
+
+  <text x="300" y="234" text-anchor="middle" fill="#FFD700"
+        font-family="'Courier New', Courier, monospace" font-size="13">la di da di da...</text>
+</svg>
