@@ -1,6 +1,6 @@
 {
   "name": "@shimpeiws/mumbl",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A terminal journaling app where AI just listens - powered by Ollama for fully local, private LLM processing",
   "type": "module",
   "packageManager": "pnpm@9.15.4",
