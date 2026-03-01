@@ -337,6 +337,17 @@ export function samplePhrasesForReaction(
  * When vocabulary is available, it's given prominent placement.
  * Instructs the LLM to weave vocabulary into short contextual phrases.
  */
+/**
+ * Pick example words from the sampled vocabulary for prompt examples.
+ * Returns up to 3 distinct words, reusing the first if fewer are available.
+ */
+function pickExampleWords(words: string[]): [string, string, string] {
+  const w1 = words[0] ?? 'vibe';
+  const w2 = words[1] ?? w1;
+  const w3 = words[2] ?? w2;
+  return [w1, w2, w3];
+}
+
 function buildVocabularyPrioritySection(
   vocabulary: VocabularySet,
   language?: DetectedLanguage,
@@ -356,45 +367,48 @@ function buildVocabularyPrioritySection(
   if (phrases.length > 0) {
     parts.push(`Phrases: ${phrases.join(', ')}`);
   }
+
+  const [w1, w2, w3] = pickExampleWords(words);
+
   const instruction =
     language === 'ja'
       ? `You SHOULD use these vocabulary words in most reactions. They are your signature style.
 Use them as building blocks: combine with particles, slang, or short phrases to react.
 
 How to use vocabulary:
-- Use a vocab word + particle/suffix: "wavyだな", "realすぎ", "やばいわ"
-- Negate a vocab word: "wavyじゃない", "全然fly"
-- Vocab word as exclamation: "wavy!", "real"
-- Vocab word in short phrase: "それwavy", "まじfly"
+- Use a vocab word + particle/suffix: "${w1}だな", "${w2}すぎ", "やばいわ"
+- Negate a vocab word: "${w1}じゃない", "全然${w2}"
+- Vocab word as exclamation: "${w1}!", "${w3}"
+- Vocab word in short phrase: "それ${w1}", "まじ${w2}"
 
 Keep reactions SHORT (1-5 words). Do NOT write full sentences or explanations.
 The reaction must relate to the entry - but vocabulary words are flexible enough to fit most moods.
 Only skip vocabulary if the entry is so mundane that ANY word feels forced (e.g. "うん" or "·" is enough).
 
 Examples:
-- "疲れた" -> "wavyじゃないな"
+- "疲れた" -> "${w1}じゃないな"
 - "昇進した！" -> "飛ぶわそれ"
-- "まじかー" -> "real"
-- "wavy?" -> "ちょうwavy"
+- "まじかー" -> "${w2}"
+- "${w1}?" -> "ちょう${w1}"
 - "ファミチキくいて" -> "わかる" (mundane, vocab not needed)`
       : `You SHOULD use these vocabulary words in most reactions. They are your signature style.
 Use them as building blocks: combine with particles, slang, or short phrases to react.
 
 How to use vocabulary:
-- Use a vocab word + modifier: "so wavy", "too real", "mad fly"
-- Negate a vocab word: "not wavy", "zero drip"
-- Vocab word as exclamation: "wavy!", "real"
-- Vocab word in short phrase: "that's wavy", "big drip"
+- Use a vocab word + modifier: "so ${w1}", "too ${w2}", "mad ${w3}"
+- Negate a vocab word: "not ${w1}", "zero ${w2}"
+- Vocab word as exclamation: "${w1}!", "${w2}"
+- Vocab word in short phrase: "that's ${w1}", "big ${w2}"
 
 Keep reactions SHORT (1-5 words). Do NOT write full sentences or explanations.
 The reaction must relate to the entry - but vocabulary words are flexible enough to fit most moods.
 Only skip vocabulary if the entry is so mundane that ANY word feels forced (e.g. "word" or "·" is enough).
 
 Examples:
-- "tired" -> "not wavy"
-- "got promoted!" -> "that's fly"
-- "for real?" -> "real"
-- "wavy?" -> "so wavy"
+- "tired" -> "not ${w1}"
+- "got promoted!" -> "that's ${w2}"
+- "for real?" -> "${w3}"
+- "${w1}?" -> "so ${w1}"
 - "want fried chicken" -> "same" (mundane, vocab not needed)`;
   parts.push(instruction);
   return parts.join('\n');
