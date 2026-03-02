@@ -1,7 +1,7 @@
 /**
  * Wordgrain vocabulary module
  */
-export type { Grain, VocabularySet, WordgrainFile } from './types.js';
+export type { Grain, GrainPos, VocabularySet, VocabularyWord, WordgrainFile } from './types.js';
 export { extractVocabulary } from './vocabulary-extractor.js';
 export { loadWordgrainFiles, parseWordgrainFile } from './wordgrain-loader.js';
 export type { WordgrainFileInfo, WordgrainStats } from './wordgrain-manager.js';

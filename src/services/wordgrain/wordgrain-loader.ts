@@ -2,7 +2,21 @@
  * Load .wg.json files from individual file paths
  */
 import * as fs from 'node:fs';
-import type { Grain, WordgrainFile } from './types.js';
+import type { Grain, GrainPos, WordgrainFile } from './types.js';
+
+const VALID_POS_VALUES: ReadonlySet<string> = new Set<GrainPos>([
+  'noun',
+  'verb',
+  'adjective',
+  'adverb',
+  'pronoun',
+  'preposition',
+  'conjunction',
+  'interjection',
+  'determiner',
+  'particle',
+  'other',
+]);
 
 /**
  * Validate that a parsed object is a valid Grain
@@ -15,6 +29,12 @@ function isValidGrain(obj: unknown): obj is Grain {
   if (record['tags'] !== undefined) {
     if (!Array.isArray(record['tags'])) return false;
     if (!record['tags'].every((t: unknown) => typeof t === 'string')) return false;
+  }
+  if (record['pos'] !== undefined) {
+    if (typeof record['pos'] !== 'string' || !VALID_POS_VALUES.has(record['pos'])) return false;
+  }
+  if (record['frequency'] !== undefined) {
+    if (typeof record['frequency'] !== 'number' || record['frequency'] < 0) return false;
   }
   return true;
 }

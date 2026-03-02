@@ -110,4 +110,112 @@ describe('extractVocabulary', () => {
 
     expect(result.tags).toEqual(['style']);
   });
+
+  it('should generate richWords with pos and frequency metadata', () => {
+    const files: WordgrainFile[] = [
+      {
+        name: 'test',
+        grains: [
+          { word: 'drip', pos: 'noun', frequency: 42 },
+          { word: 'flex', pos: 'verb', frequency: 10 },
+        ],
+      },
+    ];
+
+    const result = extractVocabulary(files);
+
+    expect(result.richWords).toHaveLength(2);
+    expect(result.richWords[0]).toEqual({ word: 'drip', pos: 'noun', frequency: 42 });
+    expect(result.richWords[1]).toEqual({ word: 'flex', pos: 'verb', frequency: 10 });
+  });
+
+  it('should generate richWords without metadata when pos/frequency absent', () => {
+    const files: WordgrainFile[] = [
+      { name: 'test', grains: [{ word: 'chill' }, { word: 'vibe' }] },
+    ];
+
+    const result = extractVocabulary(files);
+
+    expect(result.richWords).toHaveLength(2);
+    expect(result.richWords[0]).toEqual({ word: 'chill' });
+    expect(result.richWords[1]).toEqual({ word: 'vibe' });
+  });
+
+  it('should merge duplicate words keeping max frequency and first pos', () => {
+    const files: WordgrainFile[] = [
+      {
+        name: 'a',
+        grains: [{ word: 'drip', pos: 'noun', frequency: 10 }],
+      },
+      {
+        name: 'b',
+        grains: [{ word: 'drip', pos: 'verb', frequency: 50 }],
+      },
+    ];
+
+    const result = extractVocabulary(files);
+
+    expect(result.richWords).toHaveLength(1);
+    expect(result.richWords[0]).toEqual({ word: 'drip', pos: 'noun', frequency: 50 });
+  });
+
+  it('should handle mixed grains with and without metadata', () => {
+    const files: WordgrainFile[] = [
+      {
+        name: 'test',
+        grains: [
+          { word: 'drip', pos: 'noun', frequency: 42 },
+          { word: 'chill' },
+          { word: 'flex', frequency: 5 },
+        ],
+      },
+    ];
+
+    const result = extractVocabulary(files);
+
+    expect(result.richWords).toHaveLength(3);
+    expect(result.richWords[0]).toEqual({ word: 'chill' });
+    expect(result.richWords[1]).toEqual({ word: 'drip', pos: 'noun', frequency: 42 });
+    expect(result.richWords[2]).toEqual({ word: 'flex', frequency: 5 });
+  });
+
+  it('should return empty richWords for empty input', () => {
+    const result = extractVocabulary([]);
+
+    expect(result.richWords).toEqual([]);
+  });
+
+  it('should not include phrases in richWords', () => {
+    const files: WordgrainFile[] = [
+      {
+        name: 'test',
+        grains: [
+          { word: 'drip', pos: 'noun' },
+          { word: 'go hard', pos: 'verb' },
+        ],
+      },
+    ];
+
+    const result = extractVocabulary(files);
+
+    expect(result.richWords).toHaveLength(1);
+    expect(result.richWords[0]?.word).toBe('drip');
+  });
+
+  it('should keep richWords in same sorted order as words', () => {
+    const files: WordgrainFile[] = [
+      {
+        name: 'test',
+        grains: [
+          { word: 'zap', frequency: 1 },
+          { word: 'ace', frequency: 99 },
+        ],
+      },
+    ];
+
+    const result = extractVocabulary(files);
+
+    expect(result.words).toEqual(['ace', 'zap']);
+    expect(result.richWords.map((rw) => rw.word)).toEqual(['ace', 'zap']);
+  });
 });

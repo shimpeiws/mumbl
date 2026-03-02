@@ -1,7 +1,12 @@
 /**
  * Extract vocabulary from wordgrain files
  */
-import type { VocabularySet, WordgrainFile } from './types.js';
+import type { GrainPos, VocabularySet, VocabularyWord, WordgrainFile } from './types.js';
+
+interface WordMeta {
+  pos?: GrainPos;
+  frequency?: number;
+}
 
 /**
  * Extract a deduplicated, sorted VocabularySet from wordgrain files
@@ -13,6 +18,7 @@ export function extractVocabulary(files: WordgrainFile[]): VocabularySet {
   const phraseSet = new Set<string>();
   const tagSet = new Set<string>();
   const sources: string[] = [];
+  const wordMetaMap = new Map<string, WordMeta>();
 
   for (const file of files) {
     sources.push(file.name);
@@ -24,6 +30,21 @@ export function extractVocabulary(files: WordgrainFile[]): VocabularySet {
         phraseSet.add(trimmed);
       } else {
         wordSet.add(trimmed);
+
+        const existing = wordMetaMap.get(trimmed);
+        if (existing) {
+          if (grain.pos && !existing.pos) {
+            existing.pos = grain.pos;
+          }
+          if (grain.frequency !== undefined) {
+            existing.frequency = Math.max(existing.frequency ?? 0, grain.frequency);
+          }
+        } else {
+          wordMetaMap.set(trimmed, {
+            pos: grain.pos,
+            frequency: grain.frequency,
+          });
+        }
       }
 
       if (grain.tags) {
@@ -37,10 +58,21 @@ export function extractVocabulary(files: WordgrainFile[]): VocabularySet {
     }
   }
 
+  const sortedWords = [...wordSet].sort();
+
+  const richWords: VocabularyWord[] = sortedWords.map((word) => {
+    const meta = wordMetaMap.get(word);
+    const entry: VocabularyWord = { word };
+    if (meta?.pos) entry.pos = meta.pos;
+    if (meta?.frequency !== undefined) entry.frequency = meta.frequency;
+    return entry;
+  });
+
   return {
-    words: [...wordSet].sort(),
+    words: sortedWords,
     phrases: [...phraseSet].sort(),
     tags: [...tagSet].sort(),
     source: sources.join(', '),
+    richWords,
   };
 }

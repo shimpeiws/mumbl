@@ -124,6 +124,135 @@ describe('parseWordgrainFile', () => {
     expect(result).not.toBeNull();
     expect(result?.name).toBe('top-level-name');
   });
+
+  it('should parse grains with valid pos and frequency', () => {
+    const filePath = path.join(tmpDir, 'pos-freq.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        name: 'test',
+        grains: [
+          { word: 'drip', pos: 'noun', frequency: 42 },
+          { word: 'flex', pos: 'verb', frequency: 10 },
+        ],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.grains).toHaveLength(2);
+    expect(result?.grains[0]?.pos).toBe('noun');
+    expect(result?.grains[0]?.frequency).toBe(42);
+    expect(result?.grains[1]?.pos).toBe('verb');
+    expect(result?.grains[1]?.frequency).toBe(10);
+  });
+
+  it('should accept grains without pos and frequency', () => {
+    const filePath = path.join(tmpDir, 'no-pos.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        name: 'test',
+        grains: [{ word: 'chill' }],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.grains).toHaveLength(1);
+    expect(result?.grains[0]?.pos).toBeUndefined();
+    expect(result?.grains[0]?.frequency).toBeUndefined();
+  });
+
+  it('should reject grains with invalid pos value', () => {
+    const filePath = path.join(tmpDir, 'bad-pos.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        name: 'test',
+        grains: [
+          { word: 'valid', pos: 'noun' },
+          { word: 'invalid', pos: 'bogus' },
+          { word: 'also-invalid', pos: 123 },
+        ],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.grains).toHaveLength(1);
+    expect(result?.grains[0]?.word).toBe('valid');
+  });
+
+  it('should reject grains with negative frequency', () => {
+    const filePath = path.join(tmpDir, 'bad-freq.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        name: 'test',
+        grains: [
+          { word: 'valid', frequency: 5 },
+          { word: 'negative', frequency: -1 },
+          { word: 'not-number', frequency: 'high' },
+        ],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.grains).toHaveLength(1);
+    expect(result?.grains[0]?.word).toBe('valid');
+  });
+
+  it('should accept all valid POS values', () => {
+    const posValues = [
+      'noun',
+      'verb',
+      'adjective',
+      'adverb',
+      'pronoun',
+      'preposition',
+      'conjunction',
+      'interjection',
+      'determiner',
+      'particle',
+      'other',
+    ];
+    const filePath = path.join(tmpDir, 'all-pos.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        name: 'test',
+        grains: posValues.map((pos, i) => ({ word: `word${i}`, pos })),
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.grains).toHaveLength(posValues.length);
+  });
+
+  it('should accept frequency of zero', () => {
+    const filePath = path.join(tmpDir, 'zero-freq.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        name: 'test',
+        grains: [{ word: 'rare', frequency: 0 }],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.grains).toHaveLength(1);
+    expect(result?.grains[0]?.frequency).toBe(0);
+  });
 });
 
 describe('loadWordgrainFiles', () => {

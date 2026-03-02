@@ -7,7 +7,7 @@
 import type { ConversationContext } from '../conversation/types.js';
 import type { DetectedLanguage } from '../language/types.js';
 import { getWordListForLanguage } from '../language/word-lists.js';
-import type { VocabularySet } from '../wordgrain/types.js';
+import type { VocabularySet, VocabularyWord } from '../wordgrain/types.js';
 import type { Message } from './types.js';
 
 /**
@@ -300,20 +300,58 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 /**
+ * Weighted sampling without replacement using sqrt-decay.
+ * Higher frequency words are more likely to be picked, but low-frequency words still appear.
+ */
+export function weightedSample(items: VocabularyWord[], count: number): VocabularyWord[] {
+  if (items.length <= count) return [...items];
+
+  const result: VocabularyWord[] = [];
+  const remaining = [...items];
+
+  for (let picked = 0; picked < count && remaining.length > 0; picked++) {
+    const weights = remaining.map((item) => Math.sqrt((item.frequency ?? 0) + 1));
+    const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+
+    let random = Math.random() * totalWeight;
+    let selectedIdx = 0;
+    for (let j = 0; j < weights.length; j++) {
+      random -= weights[j] as number;
+      if (random <= 0) {
+        selectedIdx = j;
+        break;
+      }
+    }
+
+    result.push(remaining[selectedIdx] as VocabularyWord);
+    remaining.splice(selectedIdx, 1);
+  }
+
+  return result;
+}
+
+/**
  * Sample short words from vocabulary suitable for reactions.
- * Filters to words <= maxLength characters and picks a random sample.
+ * Uses weighted sampling when richWords with frequency data are available.
+ * Falls back to uniform random sampling otherwise.
  */
 export function sampleVocabularyForReaction(
   vocabulary: VocabularySet,
   maxCount: number = MAX_VOCAB_SAMPLE_COUNT,
-): string[] {
+): VocabularyWord[] {
+  if (vocabulary.richWords && vocabulary.richWords.length > 0) {
+    const shortWords = vocabulary.richWords.filter((w) => w.word.length <= MAX_VOCAB_WORD_LENGTH);
+    if (shortWords.length === 0) return [];
+    if (shortWords.length <= maxCount) return shortWords;
+    return weightedSample(shortWords, maxCount);
+  }
+
   const shortWords = vocabulary.words.filter((w) => w.length <= MAX_VOCAB_WORD_LENGTH);
   if (shortWords.length === 0) return [];
-  if (shortWords.length <= maxCount) return shortWords;
+  if (shortWords.length <= maxCount) return shortWords.map((w) => ({ word: w }));
 
-  // Random shuffle and take first maxCount
   const shuffled = shuffleArray([...shortWords]);
-  return shuffled.slice(0, maxCount);
+  return shuffled.slice(0, maxCount).map((w) => ({ word: w }));
 }
 
 /**
@@ -333,10 +371,45 @@ export function samplePhrasesForReaction(
 }
 
 /**
- * Build a vocabulary priority section for the reaction prompt.
- * When vocabulary is available, it's given prominent placement.
- * Instructs the LLM to weave vocabulary into short contextual phrases.
+ * POS usage hints for prompt display
  */
+const POS_USAGE_HINTS: Record<string, string> = {
+  noun: 'use as subjects/objects',
+  verb: 'use for actions',
+  adjective: 'use for descriptions',
+  adverb: 'use as modifiers',
+  pronoun: 'use as subjects/objects',
+  preposition: 'use for connections',
+  conjunction: 'use for linking',
+  interjection: 'use as exclamations',
+  determiner: 'use before nouns',
+  particle: 'use for emphasis',
+  other: 'general use',
+  mixed: 'general use',
+};
+
+/**
+ * Group VocabularyWords by their POS tag.
+ * Words without POS are grouped under 'mixed'.
+ */
+export function groupByPos(words: VocabularyWord[]): Map<string, string[]> {
+  const groups = new Map<string, string[]>();
+  for (const w of words) {
+    const pos = w.pos ?? 'mixed';
+    const group = groups.get(pos);
+    if (group) {
+      group.push(w.word);
+    } else {
+      groups.set(pos, [w.word]);
+    }
+  }
+  return groups;
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 /**
  * Pick example words from the sampled vocabulary for prompt examples.
  * Returns up to 3 distinct words, reusing the first if fewer are available.
@@ -352,23 +425,34 @@ function buildVocabularyPrioritySection(
   vocabulary: VocabularySet,
   language?: DetectedLanguage,
 ): string {
-  const words = sampleVocabularyForReaction(vocabulary);
+  const sampledWords = sampleVocabularyForReaction(vocabulary);
   const phrases = samplePhrasesForReaction(vocabulary);
-  if (words.length === 0 && phrases.length === 0) return '';
+  if (sampledWords.length === 0 && phrases.length === 0) return '';
 
   const header =
     language === 'ja'
       ? '## あなたのボキャブラリー (積極的に使って):'
       : '## YOUR VOCABULARY (ACTIVELY USE THESE):';
   const parts: string[] = [header];
-  if (words.length > 0) {
-    parts.push(`Words: ${words.join(', ')}`);
+
+  const hasPosData = sampledWords.some((w) => w.pos !== undefined);
+
+  if (hasPosData) {
+    const posGroups = groupByPos(sampledWords);
+    for (const [pos, wordList] of posGroups) {
+      const hint = POS_USAGE_HINTS[pos] ?? 'general use';
+      parts.push(`${capitalize(pos)} (${hint}): ${wordList.join(', ')}`);
+    }
+  } else if (sampledWords.length > 0) {
+    parts.push(`Words: ${sampledWords.map((w) => w.word).join(', ')}`);
   }
+
   if (phrases.length > 0) {
     parts.push(`Phrases: ${phrases.join(', ')}`);
   }
 
-  const [w1, w2, w3] = pickExampleWords(words);
+  const wordStrings = sampledWords.map((w) => w.word);
+  const [w1, w2, w3] = pickExampleWords(wordStrings);
 
   const instruction =
     language === 'ja'

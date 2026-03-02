@@ -53,7 +53,13 @@ const emptyStats: WordgrainStats = {
   tagCount: 0,
 };
 
-const emptyVocabulary: VocabularySet = { words: [], phrases: [], tags: [], source: '' };
+const emptyVocabulary: VocabularySet = {
+  words: [],
+  phrases: [],
+  tags: [],
+  source: '',
+  richWords: [],
+};
 
 export function ConfigProvider({ config, children }: ConfigProviderProps) {
   const { llmService, reactionService } = useServices();
