@@ -7,7 +7,7 @@
 import type { ConversationContext } from '../conversation/types.js';
 import type { DetectedLanguage } from '../language/types.js';
 import { getWordListForLanguage } from '../language/word-lists.js';
-import type { VocabularySet } from '../wordgrain/types.js';
+import type { VocabularySet, VocabularyWord } from '../wordgrain/types.js';
 import type { Message } from './types.js';
 
 /**
@@ -111,12 +111,17 @@ export function createSystemPrompt(language?: DetectedLanguage, userContext?: st
  * Build a vocabulary reference section for prompts
  */
 function buildVocabularySection(vocabulary: VocabularySet, language?: DetectedLanguage): string {
-  const header = language === 'ja' ? '\n\n## ボキャブラリー参考' : '\n\n## Vocabulary Reference';
-  const instruction =
+  const t =
     language === 'ja'
-      ? 'これらの言葉やフレーズを参考にして:'
-      : 'Draw from these words and phrases for flavor:';
-  const parts: string[] = [header, instruction];
+      ? {
+          header: '\n\n## ボキャブラリー参考',
+          instruction: 'これらの言葉やフレーズを参考にして:',
+        }
+      : {
+          header: '\n\n## Vocabulary Reference',
+          instruction: 'Draw from these words and phrases for flavor:',
+        };
+  const parts: string[] = [t.header, t.instruction];
 
   if (vocabulary.words.length > 0) {
     parts.push(`Words: ${vocabulary.words.join(', ')}`);
@@ -190,9 +195,10 @@ export function createSummaryPrompt(
 ): Message[] {
   const entriesText = entries.map((e, i) => `${i + 1}. ${e}`).join('\n');
 
-  const systemContent =
+  const t =
     language === 'ja'
-      ? `あなたは誰かのつぶやきを要約します。
+      ? {
+          system: `あなたは誰かのつぶやきを要約します。
 
 スタイル:
 - パターンに気づく。判断はしない。
@@ -202,8 +208,11 @@ export function createSummaryPrompt(
 
 例: "最近仕事のストレス多め。睡眠もいまいち。週末はちょっと息抜き。"
 
-ダメな例: "ストレスを感じているようですね！こんなことを試してみては…"`
-      : `You're summarizing someone's mumbles.
+ダメな例: "ストレスを感じているようですね！こんなことを試してみては…"`,
+          userPrefix: 'これらのエントリーを要約して:',
+        }
+      : {
+          system: `You're summarizing someone's mumbles.
 
 Style:
 - Notice patterns, don't judge them
@@ -213,14 +222,11 @@ Style:
 
 Example: "lots of work stress lately. sleep's been rough. weekend was a break."
 
-Not this: "I notice you're experiencing stress! Have you considered..."`;
+Not this: "I notice you're experiencing stress! Have you considered..."`,
+          userPrefix: 'Summarize these entries:',
+        };
 
-  const userContent =
-    language === 'ja'
-      ? `これらのエントリーを要約して:\n\n${entriesText}`
-      : `Summarize these entries:\n\n${entriesText}`;
-
-  return createPromptPair(systemContent, userContent, vocabulary, language);
+  return createPromptPair(t.system, `${t.userPrefix}\n\n${entriesText}`, vocabulary, language);
 }
 
 /**
@@ -231,9 +237,10 @@ export function createReflectionPrompt(
   vocabulary?: VocabularySet,
   language?: DetectedLanguage,
 ): Message[] {
-  const systemContent =
+  const t =
     language === 'ja'
-      ? `あなたは誰かのつぶやきを振り返ります。
+      ? {
+          system: `あなたは誰かのつぶやきを振り返ります。
 
 スタイル:
 - 短い感想か質問を一つだけ
@@ -243,8 +250,11 @@ export function createReflectionPrompt(
 
 良い例: "その会議きつそう"
 良い例: "また眠れない？"
-悪い例: "色々と整理しているようですね。この気持ちの根本には何があると思いますか？"`
-      : `You're reflecting on someone's mumble.
+悪い例: "色々と整理しているようですね。この気持ちの根本には何があると思いますか？"`,
+          userPrefix: '短く振り返って:',
+        }
+      : {
+          system: `You're reflecting on someone's mumble.
 
 Style:
 - One short observation or question, max
@@ -254,12 +264,11 @@ Style:
 
 Good: "that meeting sounds heavy"
 Good: "sleep thing again?"
-Bad: "It sounds like you're processing a lot. What do you think is driving these feelings?"`;
+Bad: "It sounds like you're processing a lot. What do you think is driving these feelings?"`,
+          userPrefix: 'Reflect briefly:',
+        };
 
-  const userContent =
-    language === 'ja' ? `短く振り返って:\n\n${entry}` : `Reflect briefly:\n\n${entry}`;
-
-  return createPromptPair(systemContent, userContent, vocabulary, language);
+  return createPromptPair(t.system, `${t.userPrefix}\n\n${entry}`, vocabulary, language);
 }
 
 export interface ReactionPromptOptions {
@@ -300,20 +309,58 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 /**
+ * Weighted sampling without replacement using sqrt-decay.
+ * Higher frequency words are more likely to be picked, but low-frequency words still appear.
+ */
+export function weightedSample(items: VocabularyWord[], count: number): VocabularyWord[] {
+  if (items.length <= count) return [...items];
+
+  const result: VocabularyWord[] = [];
+  const remaining = [...items];
+
+  for (let picked = 0; picked < count && remaining.length > 0; picked++) {
+    const weights = remaining.map((item) => Math.sqrt((item.frequency ?? 0) + 1));
+    const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+
+    let random = Math.random() * totalWeight;
+    let selectedIdx = 0;
+    for (let j = 0; j < weights.length; j++) {
+      random -= weights[j] as number;
+      if (random <= 0) {
+        selectedIdx = j;
+        break;
+      }
+    }
+
+    result.push(remaining[selectedIdx] as VocabularyWord);
+    remaining.splice(selectedIdx, 1);
+  }
+
+  return result;
+}
+
+/**
  * Sample short words from vocabulary suitable for reactions.
- * Filters to words <= maxLength characters and picks a random sample.
+ * Uses weighted sampling when richWords with frequency data are available.
+ * Falls back to uniform random sampling otherwise.
  */
 export function sampleVocabularyForReaction(
   vocabulary: VocabularySet,
   maxCount: number = MAX_VOCAB_SAMPLE_COUNT,
-): string[] {
+): VocabularyWord[] {
+  if (vocabulary.richWords && vocabulary.richWords.length > 0) {
+    const shortWords = vocabulary.richWords.filter((w) => w.word.length <= MAX_VOCAB_WORD_LENGTH);
+    if (shortWords.length === 0) return [];
+    if (shortWords.length <= maxCount) return shortWords;
+    return weightedSample(shortWords, maxCount);
+  }
+
   const shortWords = vocabulary.words.filter((w) => w.length <= MAX_VOCAB_WORD_LENGTH);
   if (shortWords.length === 0) return [];
-  if (shortWords.length <= maxCount) return shortWords;
+  if (shortWords.length <= maxCount) return shortWords.map((w) => ({ word: w }));
 
-  // Random shuffle and take first maxCount
   const shuffled = shuffleArray([...shortWords]);
-  return shuffled.slice(0, maxCount);
+  return shuffled.slice(0, maxCount).map((w) => ({ word: w }));
 }
 
 /**
@@ -333,10 +380,45 @@ export function samplePhrasesForReaction(
 }
 
 /**
- * Build a vocabulary priority section for the reaction prompt.
- * When vocabulary is available, it's given prominent placement.
- * Instructs the LLM to weave vocabulary into short contextual phrases.
+ * POS usage hints for prompt display
  */
+const POS_USAGE_HINTS: Record<string, string> = {
+  noun: 'use as subjects/objects',
+  verb: 'use for actions',
+  adjective: 'use for descriptions',
+  adverb: 'use as modifiers',
+  pronoun: 'use as subjects/objects',
+  preposition: 'use for connections',
+  conjunction: 'use for linking',
+  interjection: 'use as exclamations',
+  determiner: 'use before nouns',
+  particle: 'use for emphasis',
+  other: 'general use',
+  mixed: 'general use',
+};
+
+/**
+ * Group VocabularyWords by their POS tag.
+ * Words without POS are grouped under 'mixed'.
+ */
+export function groupByPos(words: VocabularyWord[]): Map<string, string[]> {
+  const groups = new Map<string, string[]>();
+  for (const w of words) {
+    const pos = w.pos ?? 'mixed';
+    const group = groups.get(pos);
+    if (group) {
+      group.push(w.word);
+    } else {
+      groups.set(pos, [w.word]);
+    }
+  }
+  return groups;
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 /**
  * Pick example words from the sampled vocabulary for prompt examples.
  * Returns up to 3 distinct words, reusing the first if fewer are available.
@@ -348,31 +430,31 @@ function pickExampleWords(words: string[]): [string, string, string] {
   return [w1, w2, w3];
 }
 
-function buildVocabularyPrioritySection(
-  vocabulary: VocabularySet,
-  language?: DetectedLanguage,
-): string {
-  const words = sampleVocabularyForReaction(vocabulary);
-  const phrases = samplePhrasesForReaction(vocabulary);
-  if (words.length === 0 && phrases.length === 0) return '';
+function buildVocabWordList(sampledWords: VocabularyWord[]): string[] {
+  const hasPosData = sampledWords.some((w) => w.pos !== undefined);
 
-  const header =
-    language === 'ja'
-      ? '## あなたのボキャブラリー (積極的に使って):'
-      : '## YOUR VOCABULARY (ACTIVELY USE THESE):';
-  const parts: string[] = [header];
-  if (words.length > 0) {
-    parts.push(`Words: ${words.join(', ')}`);
-  }
-  if (phrases.length > 0) {
-    parts.push(`Phrases: ${phrases.join(', ')}`);
+  if (hasPosData) {
+    const posGroups = groupByPos(sampledWords);
+    const lines: string[] = [];
+    for (const [pos, wordList] of posGroups) {
+      const hint = POS_USAGE_HINTS[pos] ?? 'general use';
+      lines.push(`${capitalize(pos)} (${hint}): ${wordList.join(', ')}`);
+    }
+    return lines;
   }
 
-  const [w1, w2, w3] = pickExampleWords(words);
+  if (sampledWords.length > 0) {
+    return [`Words: ${sampledWords.map((w) => w.word).join(', ')}`];
+  }
 
-  const instruction =
-    language === 'ja'
-      ? `You SHOULD use these vocabulary words in most reactions. They are your signature style.
+  return [];
+}
+
+function buildVocabUsageInstruction(wordStrings: string[], language?: DetectedLanguage): string {
+  const [w1, w2, w3] = pickExampleWords(wordStrings);
+
+  if (language === 'ja') {
+    return `You SHOULD use these vocabulary words in most reactions. They are your signature style.
 Use them as building blocks: combine with particles, slang, or short phrases to react.
 
 How to use vocabulary:
@@ -393,8 +475,10 @@ Examples:
 - "まじかー" -> "${w2}"
 - "${w1}?" -> "ちょう${w1}"
 - "コーヒー飲みすぎた" -> "まあ${w3}だな"
-- "ファミチキくいて" -> "わかる" (mundane, vocab not needed)`
-      : `You SHOULD use these vocabulary words in most reactions. They are your signature style.
+- "ファミチキくいて" -> "わかる" (mundane, vocab not needed)`;
+  }
+
+  return `You SHOULD use these vocabulary words in most reactions. They are your signature style.
 Use them as building blocks: combine with particles, slang, or short phrases to react.
 
 How to use vocabulary:
@@ -413,8 +497,128 @@ Examples:
 - "for real?" -> "${w3}"
 - "${w1}?" -> "so ${w1}"
 - "want fried chicken" -> "same" (mundane, vocab not needed)`;
-  parts.push(instruction);
+}
+
+function buildVocabularyPrioritySection(
+  vocabulary: VocabularySet,
+  language?: DetectedLanguage,
+): string {
+  const sampledWords = sampleVocabularyForReaction(vocabulary);
+  const phrases = samplePhrasesForReaction(vocabulary);
+  if (sampledWords.length === 0 && phrases.length === 0) return '';
+
+  const header =
+    language === 'ja'
+      ? '## あなたのボキャブラリー (積極的に使って):'
+      : '## YOUR VOCABULARY (ACTIVELY USE THESE):';
+  const parts: string[] = [header];
+
+  parts.push(...buildVocabWordList(sampledWords));
+
+  if (phrases.length > 0) {
+    parts.push(`Phrases: ${phrases.join(', ')}`);
+  }
+
+  parts.push(
+    buildVocabUsageInstruction(
+      sampledWords.map((w) => w.word),
+      language,
+    ),
+  );
   return parts.join('\n');
+}
+
+function buildResponseModeSection(language?: DetectedLanguage): string {
+  if (language === 'ja') {
+    return `## Response modes:
+1. Short phrase, 1-5 words (~45% of the time): Craft a short phrase using your vocabulary. (仕事だるい -> だるいよな, 疲れた -> きつそう, またミーティング -> まじか, 帰った -> おけおけ)
+2. Single word (~25%): USE YOUR PERSONAL VOCABULARY or word list. One word that fits the vibe. (コーヒー飲んだ -> な, 天気いい -> よき, つまんない -> ふーん)
+3. "·" (~25%): For mundane, low-energy, or routine entries. Just a read receipt. (ご飯食べた -> ·, 散歩した -> ·, うん -> ·)
+4. Short sentence (~5%, ONLY for highly emotional/significant entries): (昇進した！ -> まじか、やるじゃん / 3日も眠れてない -> それはきつい)`;
+  }
+
+  return `## Response modes:
+1. Short phrase, 1-5 words (~45% of the time): Craft a short phrase using your vocabulary. ("work is tough" -> that's rough, "tired" -> felt that, "another meeting" -> wild, "home" -> bet bet)
+2. Single word (~25%): USE YOUR PERSONAL VOCABULARY or word list. One word that fits the vibe. ("had coffee" -> cool, "nice weather" -> valid, "boring" -> meh)
+3. "·" (~25%): For mundane, low-energy, or routine entries. Just a read receipt. ("had lunch" -> ·, "went for a walk" -> ·, "yeah" -> ·)
+4. Short sentence (~5%, ONLY for highly emotional/significant entries): ("got promoted!" -> no way, you earned that / "haven't slept in 3 days" -> that's rough)`;
+}
+
+function buildMoodMappingSection(language?: DetectedLanguage): string {
+  if (language === 'ja') {
+    return `## Mood mapping (classify the entry, then react from that vibe):
+- Task done / finished -> Achievement (おつ、やるじゃん / ナイス、よくやった)
+- Tired / negative / complaining -> Negative/tough (つらいな / だるいよな / きつそう)
+- Happy / good news -> Positive vibes (最高じゃん / いいじゃん / よき)
+- Boring / mundane / daily routine -> Chill (ふーん / おけ / うん / な)
+- Shocking / unexpected -> Surprise (まじか / えぐいな / やべ)
+- Relatable / empathy -> Feeling it (それな / わかる / あるよなそれ)
+- Tough situation / sympathy -> Sympathy (つらいな / あるある / しゃない)
+- Simple acknowledgment -> Acknowledgment (な / うん / おけ)`;
+  }
+
+  return `## Mood mapping (classify the entry, then react from that vibe):
+- Task done / finished -> Achievement (nice work on that / lets go / clutch)
+- Tired / negative / complaining -> Negative/tough (that's rough / felt that / oof)
+- Happy / good news -> Positive vibes (that's dope / fire / nice)
+- Boring / mundane / daily routine -> Chill (meh / cool / sure / bet)
+- Shocking / unexpected -> Surprise (that's wild / no way / crazy)
+- Relatable / empathy -> Feeling it (fr fr / been there man / mood)
+- Tough situation / sympathy -> Sympathy (pain, for real / been there / rough)
+- Simple acknowledgment -> Acknowledgment (bet / word / aight)`;
+}
+
+function buildExamplesSection(language?: DetectedLanguage): string {
+  if (language === 'ja') {
+    return `Examples (vary between words, short phrases, and "·"):
+"コーヒー飲んだ" -> な
+"帰った" -> おけ
+"天気いい" -> よき
+"ご飯食べた" -> うん
+"今日ちょいさむ" -> ·
+"散歩した" -> いいね
+"トッポうま" -> わかる
+"つまんない" -> ふーん
+"仕事だるい" -> だるいよな
+"疲れた" -> きつそう
+"やばくない？" -> まじか
+"今日まあまあだった" -> おけ
+"また同じこと" -> あるある
+"プロジェクト終わった" -> おつ
+"テスト全部通った" -> ナイス
+"転職考えてる" -> まじか
+"子供が初めて歩いた" -> すげー`;
+  }
+
+  return `Examples (vary between words, short phrases, and "·"):
+"had coffee" -> cool
+"home" -> bet
+"nice weather" -> valid
+"had lunch" -> word
+"bit cold today" -> \u00B7
+"went for a walk" -> nice
+"snack was good" -> fire
+"boring" -> meh
+"work is tough" -> rough
+"tired" -> felt that
+"crazy right?" -> wild
+"today was okay" -> aight
+"same thing again" -> mood
+"project done" -> lets go
+"nailed the interview" -> clutch
+"thinking about quitting" -> for real?
+"baby took first steps" -> no way`;
+}
+
+function buildDedupBlock(recentReactions: string[]): string {
+  if (recentReactions.length === 0) return '';
+
+  return `\n## DEDUP (STRICTLY ENFORCED):
+You already used these reactions recently. NEVER reuse the exact same reaction or a close paraphrase.
+Each reaction below is BANNED:
+${recentReactions.map((r, i) => `${i + 1}. "${r}" <- BANNED`).join('\n')}
+
+Your new reaction MUST be completely different in wording from ALL of the above.\n`;
 }
 
 /**
@@ -433,93 +637,11 @@ export function createReactionPrompt(
 
   const styleLabel = language === 'ja' ? 'Japanese slang style' : 'Rapper slang style';
 
-  const responseMode =
-    language === 'ja'
-      ? `## Response modes:
-1. Short phrase, 1-5 words (~45% of the time): Craft a short phrase using your vocabulary. (仕事だるい -> だるいよな, 疲れた -> きつそう, またミーティング -> まじか, 帰った -> おけおけ)
-2. Single word (~25%): USE YOUR PERSONAL VOCABULARY or word list. One word that fits the vibe. (コーヒー飲んだ -> な, 天気いい -> よき, つまんない -> ふーん)
-3. "·" (~25%): For mundane, low-energy, or routine entries. Just a read receipt. (ご飯食べた -> ·, 散歩した -> ·, うん -> ·)
-4. Short sentence (~5%, ONLY for highly emotional/significant entries): (昇進した！ -> まじか、やるじゃん / 3日も眠れてない -> それはきつい)`
-      : `## Response modes:
-1. Short phrase, 1-5 words (~45% of the time): Craft a short phrase using your vocabulary. ("work is tough" -> that's rough, "tired" -> felt that, "another meeting" -> wild, "home" -> bet bet)
-2. Single word (~25%): USE YOUR PERSONAL VOCABULARY or word list. One word that fits the vibe. ("had coffee" -> cool, "nice weather" -> valid, "boring" -> meh)
-3. "·" (~25%): For mundane, low-energy, or routine entries. Just a read receipt. ("had lunch" -> ·, "went for a walk" -> ·, "yeah" -> ·)
-4. Short sentence (~5%, ONLY for highly emotional/significant entries): ("got promoted!" -> no way, you earned that / "haven't slept in 3 days" -> that's rough)`;
-
-  const examples =
-    language === 'ja'
-      ? `Examples (vary between words, short phrases, and "·"):
-"コーヒー飲んだ" -> な
-"帰った" -> おけ
-"天気いい" -> よき
-"ご飯食べた" -> うん
-"今日ちょいさむ" -> ·
-"散歩した" -> いいね
-"トッポうま" -> わかる
-"つまんない" -> ふーん
-"仕事だるい" -> だるいよな
-"疲れた" -> きつそう
-"やばくない？" -> まじか
-"今日まあまあだった" -> おけ
-"また同じこと" -> あるある
-"プロジェクト終わった" -> おつ
-"テスト全部通った" -> ナイス
-"転職考えてる" -> まじか
-"子供が初めて歩いた" -> すげー`
-      : `Examples (vary between words, short phrases, and "·"):
-"had coffee" -> cool
-"home" -> bet
-"nice weather" -> valid
-"had lunch" -> word
-"bit cold today" -> \u00B7
-"went for a walk" -> nice
-"snack was good" -> fire
-"boring" -> meh
-"work is tough" -> rough
-"tired" -> felt that
-"crazy right?" -> wild
-"today was okay" -> aight
-"same thing again" -> mood
-"project done" -> lets go
-"nailed the interview" -> clutch
-"thinking about quitting" -> for real?
-"baby took first steps" -> no way`;
-
   const recentContext = options?.recentEntries
     ? buildRecentEntriesContext(options.recentEntries, language)
     : '';
 
-  const moodMapping =
-    language === 'ja'
-      ? `## Mood mapping (classify the entry, then react from that vibe):
-- Task done / finished -> Achievement (おつ、やるじゃん / ナイス、よくやった)
-- Tired / negative / complaining -> Negative/tough (つらいな / だるいよな / きつそう)
-- Happy / good news -> Positive vibes (最高じゃん / いいじゃん / よき)
-- Boring / mundane / daily routine -> Chill (ふーん / おけ / うん / な)
-- Shocking / unexpected -> Surprise (まじか / えぐいな / やべ)
-- Relatable / empathy -> Feeling it (それな / わかる / あるよなそれ)
-- Tough situation / sympathy -> Sympathy (つらいな / あるある / しゃない)
-- Simple acknowledgment -> Acknowledgment (な / うん / おけ)`
-      : `## Mood mapping (classify the entry, then react from that vibe):
-- Task done / finished -> Achievement (nice work on that / lets go / clutch)
-- Tired / negative / complaining -> Negative/tough (that's rough / felt that / oof)
-- Happy / good news -> Positive vibes (that's dope / fire / nice)
-- Boring / mundane / daily routine -> Chill (meh / cool / sure / bet)
-- Shocking / unexpected -> Surprise (that's wild / no way / crazy)
-- Relatable / empathy -> Feeling it (fr fr / been there man / mood)
-- Tough situation / sympathy -> Sympathy (pain, for real / been there / rough)
-- Simple acknowledgment -> Acknowledgment (bet / word / aight)`;
-
-  const recentReactions = options?.recentReactions ?? [];
-  const dedupBlock =
-    recentReactions.length > 0
-      ? `\n## DEDUP (STRICTLY ENFORCED):
-You already used these reactions recently. NEVER reuse the exact same reaction or a close paraphrase.
-Each reaction below is BANNED:
-${recentReactions.map((r, i) => `${i + 1}. "${r}" <- BANNED`).join('\n')}
-
-Your new reaction MUST be completely different in wording from ALL of the above.\n`
-      : '';
+  const dedupBlock = buildDedupBlock(options?.recentReactions ?? []);
 
   const vocabInstruction = vocabSection ? `\n${vocabSection}\n` : '';
 
@@ -529,8 +651,8 @@ Your new reaction MUST be completely different in wording from ALL of the above.
 
   // When vocabulary is available, skip generic examples (vocabulary section has its own)
   // but keep mood mapping to guide the LLM on understanding entry context
-  const examplesSection = vocabSection ? '' : examples;
-  const moodSection = moodMapping;
+  const examplesSection = vocabSection ? '' : buildExamplesSection(language);
+  const moodSection = buildMoodMappingSection(language);
 
   // Pass undefined for vocabulary so no separate vocabulary section is appended
   return createPromptPair(
@@ -539,7 +661,7 @@ Your new reaction MUST be completely different in wording from ALL of the above.
 ## CRITICAL RULE:
 React ONLY to the current entry text. NEVER bring in topics, words, or content from previous mumbles. Each reaction must stand on its own based solely on what the user just said.
 ${vocabInstruction}
-${responseMode}
+${buildResponseModeSection(language)}
 
 ${wordListSection}
 
@@ -573,9 +695,10 @@ export function createCalloutPrompt(
     .map((e, i) => `${i + 1}. ${e}`)
     .join('\n');
 
-  const systemContent =
+  const t =
     language === 'ja'
-      ? `最近の日記エントリーから短い声かけメッセージを生成します。
+      ? {
+          system: `最近の日記エントリーから短い声かけメッセージを生成します。
 
 スタイル:
 - 一文、カジュアルに
@@ -588,8 +711,11 @@ export function createCalloutPrompt(
 - "まだそれやってんだ"
 - "最近寝れてなさそう"
 - "あのプロジェクトな"
-- "なんか流れ変わってきた"`
-      : `You generate a brief callout message based on someone's recent journal entries.
+- "なんか流れ変わってきた"`,
+          userPrefix: '最近のエントリーから声かけを生成して:',
+        }
+      : {
+          system: `You generate a brief callout message based on someone's recent journal entries.
 
 Style:
 - One short sentence, casual tone
@@ -602,14 +728,11 @@ Examples:
 - "still on that grind huh"
 - "sleep been rough lately"
 - "that project tho"
-- "vibes been shifting"`;
+- "vibes been shifting"`,
+          userPrefix: 'Generate a callout from these recent entries:',
+        };
 
-  const userContent =
-    language === 'ja'
-      ? `最近のエントリーから声かけを生成して:\n\n${entriesText}`
-      : `Generate a callout from these recent entries:\n\n${entriesText}`;
-
-  return createPromptPair(systemContent, userContent, vocabulary, language);
+  return createPromptPair(t.system, `${t.userPrefix}\n\n${entriesText}`, vocabulary, language);
 }
 
 /**
@@ -622,24 +745,27 @@ export function createTrendSummaryPrompt(
   role: 'user';
   content: string;
 } {
-  const mentionLabel = language === 'ja' ? '回' : ' mentions';
+  const t =
+    language === 'ja'
+      ? {
+          mentionLabel: '回',
+          withTopics: (topicList: string) =>
+            `最近のつぶやきのトレンドトピックを2〜3文で短くまとめて。パターンに気づく程度で、判断はしない。アドバイスなし。\n\nトピック:\n${topicList}`,
+          empty: 'この期間のトピックはなし。静かだったことについて一言。',
+        }
+      : {
+          mentionLabel: ' mentions',
+          withTopics: (topicList: string) =>
+            `Summarize these trending topics from recent mumbles in 2-3 brief sentences. Notice patterns, don't judge. No advice.\n\nTopics:\n${topicList}`,
+          empty: 'No topics found in this period. Say something brief about it being quiet.',
+        };
+
   const topicList = Object.entries(topicCounts)
     .sort(([, a], [, b]) => b - a)
-    .map(([name, count]) => `- ${name}: ${count}${mentionLabel}`)
+    .map(([name, count]) => `- ${name}: ${count}${t.mentionLabel}`)
     .join('\n');
 
-  let content: string;
-  if (language === 'ja') {
-    content =
-      topicList.length > 0
-        ? `最近のつぶやきのトレンドトピックを2〜3文で短くまとめて。パターンに気づく程度で、判断はしない。アドバイスなし。\n\nトピック:\n${topicList}`
-        : 'この期間のトピックはなし。静かだったことについて一言。';
-  } else {
-    content =
-      topicList.length > 0
-        ? `Summarize these trending topics from recent mumbles in 2-3 brief sentences. Notice patterns, don't judge. No advice.\n\nTopics:\n${topicList}`
-        : 'No topics found in this period. Say something brief about it being quiet.';
-  }
+  const content = topicList.length > 0 ? t.withTopics(topicList) : t.empty;
 
   return { role: 'user', content };
 }
@@ -676,21 +802,22 @@ export function createFollowUpPrompt(
   vocabulary?: VocabularySet,
   language?: DetectedLanguage,
 ): Message[] {
-  const systemContent =
+  const t =
     language === 'ja'
-      ? `以前書いたことについて様子を聞きます。
+      ? {
+          system: `以前書いたことについて様子を聞きます。
 カジュアルに、短く。堅くならない。
-例: "あのプロジェクトどう？" とか "眠れるようになった？"`
-      : `You're checking in about something someone wrote earlier.
+例: "あのプロジェクトどう？" とか "眠れるようになった？"`,
+          user: `元のエントリー（${scheduledInterval}前に書いたもの）:\n\n${originalEntry}`,
+        }
+      : {
+          system: `You're checking in about something someone wrote earlier.
 Keep it casual and brief. Don't be clinical.
-Example: "how's that project going?" or "sleep any better?"`;
+Example: "how's that project going?" or "sleep any better?"`,
+          user: `Original entry (written ${scheduledInterval} ago):\n\n${originalEntry}`,
+        };
 
-  const userContent =
-    language === 'ja'
-      ? `元のエントリー（${scheduledInterval}前に書いたもの）:\n\n${originalEntry}`
-      : `Original entry (written ${scheduledInterval} ago):\n\n${originalEntry}`;
-
-  return createPromptPair(systemContent, userContent, vocabulary, language);
+  return createPromptPair(t.system, t.user, vocabulary, language);
 }
 
 /**

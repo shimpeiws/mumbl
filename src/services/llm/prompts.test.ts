@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { VocabularySet } from '../wordgrain/types.js';
+import type { VocabularySet, VocabularyWord } from '../wordgrain/types.js';
 import {
   MUMBL_SYSTEM_PROMPT,
   createCalloutPrompt,
@@ -11,14 +11,19 @@ import {
   createSummaryPrompt,
   createSystemPrompt,
   createTrendSummaryPrompt,
+  groupByPos,
   samplePhrasesForReaction,
   sampleVocabularyForReaction,
+  weightedSample,
 } from './prompts.js';
 import type { Message } from './types.js';
 
 const testVocabulary: VocabularySet = {
   words: ['vibe', 'drip'],
   phrases: ['on god'],
+  tags: [],
+  source: 'test',
+  richWords: [{ word: 'drip' }, { word: 'vibe' }],
 };
 
 describe('MUMBL_SYSTEM_PROMPT', () => {
@@ -322,7 +327,7 @@ describe('createReactionPrompt', () => {
     const systemContent = messages[0]?.content ?? '';
 
     expect(systemContent).toContain('YOUR VOCABULARY (ACTIVELY USE THESE)');
-    expect(systemContent).toContain('Words: vibe, drip');
+    expect(systemContent).toContain('Words: drip, vibe');
     expect(systemContent).toContain('Phrases: on god');
     expect(systemContent).toContain('ACTIVELY USE THESE');
   });
@@ -331,9 +336,9 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('test', { language: 'en' }, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
-    // Dynamic examples should use actual vocab words
-    expect(systemContent).toContain('so vibe');
-    expect(systemContent).toContain('not vibe');
+    // Dynamic examples should use actual vocab words (alphabetically sorted)
+    expect(systemContent).toContain('so drip');
+    expect(systemContent).toContain('not drip');
     expect(systemContent).not.toContain('so wavy');
     expect(systemContent).not.toContain('not wavy');
   });
@@ -342,9 +347,9 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('テスト', { language: 'ja' }, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
-    // Dynamic examples should use actual vocab words
-    expect(systemContent).toContain('vibeだな');
-    expect(systemContent).toContain('vibeじゃないな');
+    // Dynamic examples should use actual vocab words (alphabetically sorted)
+    expect(systemContent).toContain('dripだな');
+    expect(systemContent).toContain('dripじゃないな');
     expect(systemContent).not.toContain('wavyだな');
     expect(systemContent).not.toContain('wavyじゃない');
   });
@@ -378,15 +383,16 @@ describe('createReactionPrompt', () => {
 });
 
 describe('sampleVocabularyForReaction', () => {
-  it('should return all words when count is within limit', () => {
+  it('should return all words as VocabularyWord when count is within limit', () => {
     const vocab: VocabularySet = {
       words: ['hey', 'yo', 'sup'],
       phrases: [],
       tags: [],
       source: 'test',
+      richWords: [{ word: 'hey' }, { word: 'yo' }, { word: 'sup' }],
     };
     const result = sampleVocabularyForReaction(vocab);
-    expect(result).toEqual(['hey', 'yo', 'sup']);
+    expect(result).toEqual([{ word: 'hey' }, { word: 'yo' }, { word: 'sup' }]);
   });
 
   it('should filter out long words', () => {
@@ -395,27 +401,29 @@ describe('sampleVocabularyForReaction', () => {
       phrases: [],
       tags: [],
       source: 'test',
+      richWords: [{ word: 'short' }, { word: 'this-is-a-very-long-word-that-exceeds-limit' }],
     };
     const result = sampleVocabularyForReaction(vocab);
-    expect(result).toEqual(['short']);
+    expect(result).toEqual([{ word: 'short' }]);
   });
 
-  it('should randomly sample when exceeding maxCount', () => {
-    const words = Array.from({ length: 30 }, (_, i) => `w${i}`);
-    const vocab: VocabularySet = { words, phrases: [], tags: [], source: 'test' };
+  it('should sample when exceeding maxCount without duplicates', () => {
+    const richWords = Array.from({ length: 30 }, (_, i) => ({ word: `w${i}` }));
+    const words = richWords.map((rw) => rw.word);
+    const vocab: VocabularySet = { words, phrases: [], tags: [], source: 'test', richWords };
     const result = sampleVocabularyForReaction(vocab, 10);
     expect(result).toHaveLength(10);
-    // All results should be from the original set
     for (const w of result) {
-      expect(words).toContain(w);
+      expect(words).toContain(w.word);
     }
-    // No duplicates
-    expect(new Set(result).size).toBe(10);
+    const resultWords = result.map((r) => r.word);
+    expect(new Set(resultWords).size).toBe(10);
   });
 
   it('should default to sampling 20 words', () => {
-    const words = Array.from({ length: 50 }, (_, i) => `w${i}`);
-    const vocab: VocabularySet = { words, phrases: [], tags: [], source: 'test' };
+    const richWords = Array.from({ length: 50 }, (_, i) => ({ word: `w${i}` }));
+    const words = richWords.map((rw) => rw.word);
+    const vocab: VocabularySet = { words, phrases: [], tags: [], source: 'test', richWords };
     const result = sampleVocabularyForReaction(vocab);
     expect(result).toHaveLength(20);
   });
@@ -426,9 +434,22 @@ describe('sampleVocabularyForReaction', () => {
       phrases: [],
       tags: [],
       source: 'test',
+      richWords: [{ word: 'this-is-way-too-long-for-reaction' }],
     };
     const result = sampleVocabularyForReaction(vocab);
     expect(result).toEqual([]);
+  });
+
+  it('should fallback to plain words when richWords is empty', () => {
+    const vocab: VocabularySet = {
+      words: ['hey', 'yo'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [],
+    };
+    const result = sampleVocabularyForReaction(vocab);
+    expect(result).toEqual([{ word: 'hey' }, { word: 'yo' }]);
   });
 
   it('should include recent entries context when provided', () => {
@@ -480,6 +501,7 @@ describe('samplePhrasesForReaction', () => {
       phrases: ['on god', 'no cap'],
       tags: [],
       source: 'test',
+      richWords: [],
     };
     const result = samplePhrasesForReaction(vocab);
     expect(result).toEqual(['on god', 'no cap']);
@@ -491,6 +513,7 @@ describe('samplePhrasesForReaction', () => {
       phrases: [],
       tags: [],
       source: 'test',
+      richWords: [{ word: 'hey' }],
     };
     const result = samplePhrasesForReaction(vocab);
     expect(result).toEqual([]);
@@ -498,15 +521,138 @@ describe('samplePhrasesForReaction', () => {
 
   it('should randomly sample when exceeding maxCount', () => {
     const phrases = Array.from({ length: 20 }, (_, i) => `phrase ${i}`);
-    const vocab: VocabularySet = { words: [], phrases, tags: [], source: 'test' };
+    const vocab: VocabularySet = {
+      words: [],
+      phrases,
+      tags: [],
+      source: 'test',
+      richWords: [],
+    };
     const result = samplePhrasesForReaction(vocab, 5);
     expect(result).toHaveLength(5);
-    // All results should be from the original set
     for (const p of result) {
       expect(phrases).toContain(p);
     }
-    // No duplicates
     expect(new Set(result).size).toBe(5);
+  });
+});
+
+describe('weightedSample', () => {
+  it('should return all items when count exceeds items length', () => {
+    const items: VocabularyWord[] = [{ word: 'a' }, { word: 'b' }];
+    const result = weightedSample(items, 5);
+    expect(result).toHaveLength(2);
+  });
+
+  it('should return requested count of items', () => {
+    const items: VocabularyWord[] = Array.from({ length: 20 }, (_, i) => ({
+      word: `w${i}`,
+      frequency: i * 10,
+    }));
+    const result = weightedSample(items, 5);
+    expect(result).toHaveLength(5);
+    const words = result.map((r) => r.word);
+    expect(new Set(words).size).toBe(5);
+  });
+
+  it('should produce no duplicates (without replacement)', () => {
+    const items: VocabularyWord[] = Array.from({ length: 10 }, (_, i) => ({
+      word: `w${i}`,
+      frequency: 100,
+    }));
+    const result = weightedSample(items, 8);
+    const words = result.map((r) => r.word);
+    expect(new Set(words).size).toBe(8);
+  });
+
+  it('should handle items without frequency (defaults to weight 1)', () => {
+    const items: VocabularyWord[] = [{ word: 'a' }, { word: 'b' }, { word: 'c' }];
+    const result = weightedSample(items, 2);
+    expect(result).toHaveLength(2);
+    for (const r of result) {
+      expect(['a', 'b', 'c']).toContain(r.word);
+    }
+  });
+});
+
+describe('groupByPos', () => {
+  it('should group words by their POS tag', () => {
+    const words: VocabularyWord[] = [
+      { word: 'drip', pos: 'noun' },
+      { word: 'flex', pos: 'verb' },
+      { word: 'hustle', pos: 'noun' },
+    ];
+    const groups = groupByPos(words);
+    expect(groups.get('noun')).toEqual(['drip', 'hustle']);
+    expect(groups.get('verb')).toEqual(['flex']);
+  });
+
+  it('should group words without POS under mixed', () => {
+    const words: VocabularyWord[] = [
+      { word: 'drip', pos: 'noun' },
+      { word: 'chill' },
+      { word: 'vibe' },
+    ];
+    const groups = groupByPos(words);
+    expect(groups.get('noun')).toEqual(['drip']);
+    expect(groups.get('mixed')).toEqual(['chill', 'vibe']);
+  });
+
+  it('should return empty map for empty input', () => {
+    const groups = groupByPos([]);
+    expect(groups.size).toBe(0);
+  });
+});
+
+describe('POS-aware vocabulary prompt', () => {
+  it('should show POS-grouped words when POS data is available', () => {
+    const vocabWithPos: VocabularySet = {
+      words: ['drip', 'flex'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [
+        { word: 'drip', pos: 'noun', frequency: 42 },
+        { word: 'flex', pos: 'verb', frequency: 10 },
+      ],
+    };
+    const messages = createReactionPrompt('test', { language: 'en' }, vocabWithPos);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Noun (use as subjects/objects): drip');
+    expect(systemContent).toContain('Verb (use for actions): flex');
+    expect(systemContent).not.toContain('Words: drip, flex');
+  });
+
+  it('should show flat Words list when no POS data', () => {
+    const vocabNoPos: VocabularySet = {
+      words: ['drip', 'flex'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [{ word: 'drip' }, { word: 'flex' }],
+    };
+    const messages = createReactionPrompt('test', { language: 'en' }, vocabNoPos);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Words: drip, flex');
+    expect(systemContent).not.toContain('Noun (');
+  });
+
+  it('should group mixed POS and no-POS words correctly', () => {
+    const vocabMixed: VocabularySet = {
+      words: ['drip', 'chill', 'flex'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [{ word: 'chill' }, { word: 'drip', pos: 'noun' }, { word: 'flex', pos: 'verb' }],
+    };
+    const messages = createReactionPrompt('test', { language: 'en' }, vocabMixed);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Noun (use as subjects/objects): drip');
+    expect(systemContent).toContain('Verb (use for actions): flex');
+    expect(systemContent).toContain('Mixed (general use): chill');
   });
 });
 
