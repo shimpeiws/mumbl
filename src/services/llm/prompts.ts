@@ -111,15 +111,16 @@ export function createSystemPrompt(language?: DetectedLanguage, userContext?: st
  * Build a vocabulary reference section for prompts
  */
 function buildVocabularySection(vocabulary: VocabularySet, language?: DetectedLanguage): string {
-  const t = language === 'ja'
-    ? {
-        header: '\n\n## ボキャブラリー参考',
-        instruction: 'これらの言葉やフレーズを参考にして:',
-      }
-    : {
-        header: '\n\n## Vocabulary Reference',
-        instruction: 'Draw from these words and phrases for flavor:',
-      };
+  const t =
+    language === 'ja'
+      ? {
+          header: '\n\n## ボキャブラリー参考',
+          instruction: 'これらの言葉やフレーズを参考にして:',
+        }
+      : {
+          header: '\n\n## Vocabulary Reference',
+          instruction: 'Draw from these words and phrases for flavor:',
+        };
   const parts: string[] = [t.header, t.instruction];
 
   if (vocabulary.words.length > 0) {
@@ -194,9 +195,10 @@ export function createSummaryPrompt(
 ): Message[] {
   const entriesText = entries.map((e, i) => `${i + 1}. ${e}`).join('\n');
 
-  const t = language === 'ja'
-    ? {
-        system: `あなたは誰かのつぶやきを要約します。
+  const t =
+    language === 'ja'
+      ? {
+          system: `あなたは誰かのつぶやきを要約します。
 
 スタイル:
 - パターンに気づく。判断はしない。
@@ -207,10 +209,10 @@ export function createSummaryPrompt(
 例: "最近仕事のストレス多め。睡眠もいまいち。週末はちょっと息抜き。"
 
 ダメな例: "ストレスを感じているようですね！こんなことを試してみては…"`,
-        userPrefix: 'これらのエントリーを要約して:',
-      }
-    : {
-        system: `You're summarizing someone's mumbles.
+          userPrefix: 'これらのエントリーを要約して:',
+        }
+      : {
+          system: `You're summarizing someone's mumbles.
 
 Style:
 - Notice patterns, don't judge them
@@ -221,8 +223,8 @@ Style:
 Example: "lots of work stress lately. sleep's been rough. weekend was a break."
 
 Not this: "I notice you're experiencing stress! Have you considered..."`,
-        userPrefix: 'Summarize these entries:',
-      };
+          userPrefix: 'Summarize these entries:',
+        };
 
   return createPromptPair(t.system, `${t.userPrefix}\n\n${entriesText}`, vocabulary, language);
 }
@@ -235,9 +237,10 @@ export function createReflectionPrompt(
   vocabulary?: VocabularySet,
   language?: DetectedLanguage,
 ): Message[] {
-  const t = language === 'ja'
-    ? {
-        system: `あなたは誰かのつぶやきを振り返ります。
+  const t =
+    language === 'ja'
+      ? {
+          system: `あなたは誰かのつぶやきを振り返ります。
 
 スタイル:
 - 短い感想か質問を一つだけ
@@ -248,10 +251,10 @@ export function createReflectionPrompt(
 良い例: "その会議きつそう"
 良い例: "また眠れない？"
 悪い例: "色々と整理しているようですね。この気持ちの根本には何があると思いますか？"`,
-        userPrefix: '短く振り返って:',
-      }
-    : {
-        system: `You're reflecting on someone's mumble.
+          userPrefix: '短く振り返って:',
+        }
+      : {
+          system: `You're reflecting on someone's mumble.
 
 Style:
 - One short observation or question, max
@@ -262,8 +265,8 @@ Style:
 Good: "that meeting sounds heavy"
 Good: "sleep thing again?"
 Bad: "It sounds like you're processing a lot. What do you think is driving these feelings?"`,
-        userPrefix: 'Reflect briefly:',
-      };
+          userPrefix: 'Reflect briefly:',
+        };
 
   return createPromptPair(t.system, `${t.userPrefix}\n\n${entry}`, vocabulary, language);
 }
@@ -280,9 +283,10 @@ export interface ReactionPromptOptions {
 function buildRecentEntriesContext(recentEntries: string[], language?: DetectedLanguage): string {
   if (recentEntries.length === 0) return '';
   const entriesText = recentEntries.map((e, i) => `${i + 1}. ${e}`).join('\n');
-  const header = language === 'ja'
-    ? '\n\n## 前のつぶやき (雰囲気の参考のみ - 内容には触れないこと):'
-    : '\n\n## Previous mumbles (mood reference ONLY - DO NOT mention or reference their content in your reaction):';
+  const header =
+    language === 'ja'
+      ? '\n\n## 前のつぶやき (雰囲気の参考のみ - 内容には触れないこと):'
+      : '\n\n## Previous mumbles (mood reference ONLY - DO NOT mention or reference their content in your reaction):';
   return `${header}\n${entriesText}`;
 }
 
@@ -503,9 +507,10 @@ function buildVocabularyPrioritySection(
   const phrases = samplePhrasesForReaction(vocabulary);
   if (sampledWords.length === 0 && phrases.length === 0) return '';
 
-  const header = language === 'ja'
-    ? '## あなたのボキャブラリー (積極的に使って):'
-    : '## YOUR VOCABULARY (ACTIVELY USE THESE):';
+  const header =
+    language === 'ja'
+      ? '## あなたのボキャブラリー (積極的に使って):'
+      : '## YOUR VOCABULARY (ACTIVELY USE THESE):';
   const parts: string[] = [header];
 
   parts.push(...buildVocabWordList(sampledWords));
@@ -514,7 +519,12 @@ function buildVocabularyPrioritySection(
     parts.push(`Phrases: ${phrases.join(', ')}`);
   }
 
-  parts.push(buildVocabUsageInstruction(sampledWords.map((w) => w.word), language));
+  parts.push(
+    buildVocabUsageInstruction(
+      sampledWords.map((w) => w.word),
+      language,
+    ),
+  );
   return parts.join('\n');
 }
 
@@ -685,9 +695,10 @@ export function createCalloutPrompt(
     .map((e, i) => `${i + 1}. ${e}`)
     .join('\n');
 
-  const t = language === 'ja'
-    ? {
-        system: `最近の日記エントリーから短い声かけメッセージを生成します。
+  const t =
+    language === 'ja'
+      ? {
+          system: `最近の日記エントリーから短い声かけメッセージを生成します。
 
 スタイル:
 - 一文、カジュアルに
@@ -701,10 +712,10 @@ export function createCalloutPrompt(
 - "最近寝れてなさそう"
 - "あのプロジェクトな"
 - "なんか流れ変わってきた"`,
-        userPrefix: '最近のエントリーから声かけを生成して:',
-      }
-    : {
-        system: `You generate a brief callout message based on someone's recent journal entries.
+          userPrefix: '最近のエントリーから声かけを生成して:',
+        }
+      : {
+          system: `You generate a brief callout message based on someone's recent journal entries.
 
 Style:
 - One short sentence, casual tone
@@ -718,8 +729,8 @@ Examples:
 - "sleep been rough lately"
 - "that project tho"
 - "vibes been shifting"`,
-        userPrefix: 'Generate a callout from these recent entries:',
-      };
+          userPrefix: 'Generate a callout from these recent entries:',
+        };
 
   return createPromptPair(t.system, `${t.userPrefix}\n\n${entriesText}`, vocabulary, language);
 }
@@ -734,19 +745,20 @@ export function createTrendSummaryPrompt(
   role: 'user';
   content: string;
 } {
-  const t = language === 'ja'
-    ? {
-        mentionLabel: '回',
-        withTopics: (topicList: string) =>
-          `最近のつぶやきのトレンドトピックを2〜3文で短くまとめて。パターンに気づく程度で、判断はしない。アドバイスなし。\n\nトピック:\n${topicList}`,
-        empty: 'この期間のトピックはなし。静かだったことについて一言。',
-      }
-    : {
-        mentionLabel: ' mentions',
-        withTopics: (topicList: string) =>
-          `Summarize these trending topics from recent mumbles in 2-3 brief sentences. Notice patterns, don't judge. No advice.\n\nTopics:\n${topicList}`,
-        empty: 'No topics found in this period. Say something brief about it being quiet.',
-      };
+  const t =
+    language === 'ja'
+      ? {
+          mentionLabel: '回',
+          withTopics: (topicList: string) =>
+            `最近のつぶやきのトレンドトピックを2〜3文で短くまとめて。パターンに気づく程度で、判断はしない。アドバイスなし。\n\nトピック:\n${topicList}`,
+          empty: 'この期間のトピックはなし。静かだったことについて一言。',
+        }
+      : {
+          mentionLabel: ' mentions',
+          withTopics: (topicList: string) =>
+            `Summarize these trending topics from recent mumbles in 2-3 brief sentences. Notice patterns, don't judge. No advice.\n\nTopics:\n${topicList}`,
+          empty: 'No topics found in this period. Say something brief about it being quiet.',
+        };
 
   const topicList = Object.entries(topicCounts)
     .sort(([, a], [, b]) => b - a)
@@ -767,12 +779,13 @@ export function createFollowUpEvaluationPrompt(
   vocabulary?: VocabularySet,
   language?: DetectedLanguage,
 ): Message[] {
-  const systemContent = language === 'ja'
-    ? `日記エントリーにフォローアップが必要かを判断します。
+  const systemContent =
+    language === 'ja'
+      ? `日記エントリーにフォローアップが必要かを判断します。
 考慮: 感情の重さ、未解決の状況、健康の話題、目標。
 JSONのみで回答: {"shouldFollowUp": true/false, "interval": "1d"|"3d"|"1w", "reason": "短い理由"}
 些細なエントリー（食事、天気、日常）にはフォローアップしない。`
-    : `You evaluate if a journal entry warrants a follow-up check-in.
+      : `You evaluate if a journal entry warrants a follow-up check-in.
 Consider: emotional weight, unresolved situations, health mentions, goals.
 Respond with JSON only: {"shouldFollowUp": true/false, "interval": "1d"|"3d"|"1w", "reason": "brief reason"}
 Do NOT follow up on trivial entries (eating, weather, routine).`;
@@ -789,19 +802,20 @@ export function createFollowUpPrompt(
   vocabulary?: VocabularySet,
   language?: DetectedLanguage,
 ): Message[] {
-  const t = language === 'ja'
-    ? {
-        system: `以前書いたことについて様子を聞きます。
+  const t =
+    language === 'ja'
+      ? {
+          system: `以前書いたことについて様子を聞きます。
 カジュアルに、短く。堅くならない。
 例: "あのプロジェクトどう？" とか "眠れるようになった？"`,
-        user: `元のエントリー（${scheduledInterval}前に書いたもの）:\n\n${originalEntry}`,
-      }
-    : {
-        system: `You're checking in about something someone wrote earlier.
+          user: `元のエントリー（${scheduledInterval}前に書いたもの）:\n\n${originalEntry}`,
+        }
+      : {
+          system: `You're checking in about something someone wrote earlier.
 Keep it casual and brief. Don't be clinical.
 Example: "how's that project going?" or "sleep any better?"`,
-        user: `Original entry (written ${scheduledInterval} ago):\n\n${originalEntry}`,
-      };
+          user: `Original entry (written ${scheduledInterval} ago):\n\n${originalEntry}`,
+        };
 
   return createPromptPair(t.system, t.user, vocabulary, language);
 }
