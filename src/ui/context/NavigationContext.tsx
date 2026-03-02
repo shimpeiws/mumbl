@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 export type AppMode = 'list' | 'write' | 'config';
 
@@ -64,21 +64,20 @@ export function NavigationProvider({ children, initialMode = 'write' }: Navigati
     setMode((current) => (current === 'list' ? 'write' : 'list'));
   }, []);
 
-  return (
-    <NavigationContext.Provider
-      value={{
-        mode,
-        switchToList,
-        switchToWrite,
-        switchToConfig,
-        toggleMode,
-        listState,
-        setListState,
-        writeState,
-        setWriteState,
-      }}
-    >
-      {children}
-    </NavigationContext.Provider>
+  const value = useMemo(
+    () => ({
+      mode,
+      switchToList,
+      switchToWrite,
+      switchToConfig,
+      toggleMode,
+      listState,
+      setListState,
+      writeState,
+      setWriteState,
+    }),
+    [mode, switchToList, switchToWrite, switchToConfig, toggleMode, listState, writeState],
   );
+
+  return <NavigationContext.Provider value={value}>{children}</NavigationContext.Provider>;
 }

@@ -1,5 +1,5 @@
 import { useInput } from 'ink';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 export interface UseKeyboardNavigationOptions {
   itemCount: number;
@@ -8,7 +8,6 @@ export interface UseKeyboardNavigationOptions {
   onSelect?: (index: number) => void;
   onAction?: () => void;
   onEscape?: () => void;
-  onIndexChange?: (index: number) => void;
 }
 
 export interface UseKeyboardNavigationResult {
@@ -19,36 +18,30 @@ export interface UseKeyboardNavigationResult {
 export function useKeyboardNavigation(
   options: UseKeyboardNavigationOptions,
 ): UseKeyboardNavigationResult {
-  const {
-    itemCount,
-    enabled = true,
-    initialIndex = 0,
-    onSelect,
-    onAction,
-    onEscape,
-    onIndexChange,
-  } = options;
-  const [selectedIndex, setSelectedIndex] = useState(initialIndex);
+  const { itemCount, enabled = true, initialIndex = 0, onSelect, onAction, onEscape } = options;
+  const [selectedIndex, setSelectedIndexState] = useState(initialIndex);
+  const selectedIndexRef = useRef(initialIndex);
+
+  const updateSelectedIndex = useCallback((index: number) => {
+    selectedIndexRef.current = index;
+    setSelectedIndexState(index);
+  }, []);
 
   const moveUp = useCallback(() => {
     if (itemCount === 0) return;
-    setSelectedIndex((prev) => {
-      const newIndex = prev > 0 ? prev - 1 : prev;
-      onSelect?.(newIndex);
-      onIndexChange?.(newIndex);
-      return newIndex;
-    });
-  }, [itemCount, onSelect, onIndexChange]);
+    const prev = selectedIndexRef.current;
+    const newIndex = prev > 0 ? prev - 1 : prev;
+    updateSelectedIndex(newIndex);
+    onSelect?.(newIndex);
+  }, [itemCount, onSelect, updateSelectedIndex]);
 
   const moveDown = useCallback(() => {
     if (itemCount === 0) return;
-    setSelectedIndex((prev) => {
-      const newIndex = prev < itemCount - 1 ? prev + 1 : prev;
-      onSelect?.(newIndex);
-      onIndexChange?.(newIndex);
-      return newIndex;
-    });
-  }, [itemCount, onSelect, onIndexChange]);
+    const prev = selectedIndexRef.current;
+    const newIndex = prev < itemCount - 1 ? prev + 1 : prev;
+    updateSelectedIndex(newIndex);
+    onSelect?.(newIndex);
+  }, [itemCount, onSelect, updateSelectedIndex]);
 
   useInput(
     (input, key) => {
@@ -79,6 +72,6 @@ export function useKeyboardNavigation(
 
   return {
     selectedIndex,
-    setSelectedIndex,
+    setSelectedIndex: updateSelectedIndex,
   };
 }
