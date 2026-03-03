@@ -104,6 +104,7 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
         </ConfigProvider>
       </QueueProvider>
     </ServiceProvider>,
+    { incrementalRendering: true },
   );
 
   await instance.waitUntilExit();
