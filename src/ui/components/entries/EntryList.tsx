@@ -1,5 +1,5 @@
 import { Box, Text } from 'ink';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { JournalEntry } from '../../../repositories/types.js';
 import { useNavigation } from '../../context/NavigationContext.js';
 import { useEntries } from '../../hooks/useEntries.js';
@@ -91,10 +91,20 @@ export function EntryList({ onViewingDetailChange }: EntryListProps) {
         setViewingEntry(selectedEntry);
       }
     },
-    onIndexChange: (index) => {
-      setListState({ selectedIndex: index });
-    },
   });
+
+  // Track current index in a ref so we can save it to context on unmount
+  const selectedIndexRef = useRef(resolvedInitialIndex);
+  useEffect(() => {
+    selectedIndexRef.current = selectedIndex;
+  }, [selectedIndex]);
+
+  // Save selected index to context when leaving list mode (unmount)
+  useEffect(() => {
+    return () => {
+      setListState({ selectedIndex: selectedIndexRef.current });
+    };
+  }, [setListState]);
 
   // When entries load and sentinel was set, update to last entry
   useEffect(() => {
