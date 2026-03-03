@@ -7,7 +7,11 @@ interface EntryGroupHeaderProps {
   maxWidth?: number;
 }
 
-export function EntryGroupHeader({ groupName, entryCount, maxWidth = 60 }: EntryGroupHeaderProps) {
+export const EntryGroupHeader = React.memo(function EntryGroupHeader({
+  groupName,
+  entryCount,
+  maxWidth = 60,
+}: EntryGroupHeaderProps) {
   const prefixLength = 4 + groupName.length + 3 + String(entryCount).length + 2;
   const separatorLength = Math.max(3, maxWidth - prefixLength);
 
@@ -21,4 +25,4 @@ export function EntryGroupHeader({ groupName, entryCount, maxWidth = 60 }: Entry
       <Text dimColor>{'─'.repeat(separatorLength)}</Text>
     </Box>
   );
-}
+});

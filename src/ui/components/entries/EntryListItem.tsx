@@ -27,7 +27,12 @@ export function formatReactionDisplay(reaction: Reaction): string {
   }
 }
 
-export function EntryListItem({ entry, isSelected, maxWidth = 60, reaction }: EntryListItemProps) {
+export const EntryListItem = React.memo(function EntryListItem({
+  entry,
+  isSelected,
+  maxWidth = 60,
+  reaction,
+}: EntryListItemProps) {
   const timestamp = formatEntryTimestamp(entry.timestamp);
   const timestampWidth = timestamp.length + 1; // +1 for space before timestamp
   const contentWidth = Math.max(10, maxWidth - timestampWidth - 2); // 2 for cursor "> "
@@ -55,4 +60,4 @@ export function EntryListItem({ entry, isSelected, maxWidth = 60, reaction }: En
       </Box>
     </Box>
   );
-}
+});
