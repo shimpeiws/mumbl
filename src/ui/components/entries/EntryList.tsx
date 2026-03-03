@@ -126,8 +126,16 @@ export function EntryList({ onViewingDetailChange }: EntryListProps) {
   // Get terminal size for viewport calculation
   const { rows: terminalRows, columns: terminalColumns } = useTerminalSize();
 
-  // Calculate viewport height: terminal rows - header (2 lines) - padding (2 lines) - footer reserve (3 lines)
-  const viewportHeight = Math.max(5, terminalRows - 7);
+  // Calculate viewport height: terminal rows minus all non-viewport UI lines.
+  // Ink clears the entire terminal when output height >= stdout.rows (ink.js:181),
+  // bypassing incrementalRendering. We must keep total output below terminal rows.
+  //
+  // Non-viewport overhead (10 lines):
+  //   App header:  padding-top(1) + content(1) + padding-bottom(1) + marginBottom(1) = 4
+  //   EntryList:   padding-top(1) + title(1) + title-marginBottom(1) + padding-bottom(1) = 4
+  //   Footer:      marginTop(1) + content(1) = 2
+  // Plus 1 line buffer to ensure total stays strictly below stdout.rows.
+  const viewportHeight = Math.max(5, terminalRows - 11);
 
   // Calculate max width: terminal columns - padding (1 char each side from Box padding={1})
   const listMaxWidth = Math.max(30, terminalColumns - 2);
