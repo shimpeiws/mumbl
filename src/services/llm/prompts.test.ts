@@ -329,47 +329,44 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('test', undefined, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('YOUR VOCABULARY (ACTIVELY USE THESE)');
+    expect(systemContent).toContain('YOUR VOCABULARY (use when it fits)');
     expect(systemContent).toContain('Words: drip, vibe');
     expect(systemContent).toContain('Phrases: on god');
-    expect(systemContent).toContain('ACTIVELY USE THESE');
   });
 
-  it('should use actual vocabulary words in examples, not hardcoded words', () => {
+  it('should include natural usage guidance for English vocabulary', () => {
     const messages = createReactionPrompt('test', { language: 'en' }, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
-    // Dynamic examples should use actual vocab words (alphabetically sorted)
-    expect(systemContent).toContain('so drip');
-    expect(systemContent).toContain('not drip');
-    expect(systemContent).not.toContain('so wavy');
-    expect(systemContent).not.toContain('not wavy');
+    expect(systemContent).toContain('genuinely fits the mood');
+    expect(systemContent).toContain('Do NOT mechanically slot words');
   });
 
-  it('should use actual vocabulary words in Japanese examples', () => {
+  it('should include natural usage guidance for Japanese vocabulary', () => {
     const messages = createReactionPrompt('テスト', { language: 'ja' }, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
-    // Dynamic examples should use actual vocab words (alphabetically sorted)
-    expect(systemContent).toContain('dripだな');
-    expect(systemContent).toContain('dripじゃないな');
-    expect(systemContent).not.toContain('wavyだな');
-    expect(systemContent).not.toContain('wavyじゃない');
+    expect(systemContent).toContain('genuinely fits the mood');
+    expect(systemContent).toContain('Do NOT mechanically attach particles');
   });
 
-  it('should instruct to vary grammatical patterns in Japanese vocabulary section', () => {
+  it('should not contain mechanical template patterns in vocabulary section', () => {
     const messages = createReactionPrompt('テスト', { language: 'ja' }, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('Vary your grammatical patterns');
-    expect(systemContent).not.toContain('すぎ"');
+    // Should not have "dripだな" or similar mechanical vocab+particle templates
+    expect(systemContent).not.toContain('dripだな');
+    expect(systemContent).not.toContain('dripじゃん');
+    expect(systemContent).not.toContain('vibeよな');
+    // Should not have the old "Vocab word + particle:" instruction pattern
+    expect(systemContent).not.toContain('Vocab word + particle');
   });
 
   it('should include mood mapping even when vocabulary is provided', () => {
     const messages = createReactionPrompt('test', { language: 'en' }, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('YOUR VOCABULARY (ACTIVELY USE THESE)');
+    expect(systemContent).toContain('YOUR VOCABULARY (use when it fits)');
     expect(systemContent).toContain('Mood mapping');
     expect(systemContent).toContain('classify the entry');
   });
@@ -378,7 +375,7 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('test', { language: 'en' }, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('YOUR VOCABULARY (ACTIVELY USE THESE)');
+    expect(systemContent).toContain('YOUR VOCABULARY (use when it fits)');
     // Generic examples block (the long list of "entry" -> reaction) should be excluded
     expect(systemContent).not.toContain('"snack was good" -> fire');
     expect(systemContent).not.toContain('"baby took first steps"');
