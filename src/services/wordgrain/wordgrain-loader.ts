@@ -117,7 +117,20 @@ export function parseWordgrainFile(filePath: string): WordgrainFile | null {
       }
     }
 
-    return { name, type: 'grain', schemaVersion, grains, bars: [] };
+    // v0.2.0: also read top-level "bars" array if present
+    const bars: Bar[] = [];
+    if (Array.isArray(record['bars'])) {
+      for (const item of record['bars']) {
+        if (isValidBar(item)) {
+          bars.push(item);
+        }
+      }
+    }
+
+    const resolvedType: WordgrainType =
+      bars.length > 0 && grains.length > 0 ? 'mixed' : bars.length > 0 ? 'bar' : 'grain';
+
+    return { name, type: resolvedType, schemaVersion, grains, bars };
   } catch {
     return null;
   }
