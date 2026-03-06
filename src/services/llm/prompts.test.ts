@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { VocabularySet, VocabularyWord } from '../wordgrain/types.js';
 import {
   MUMBL_SYSTEM_PROMPT,
+  buildBarReferenceSection,
   createCalloutPrompt,
   createChatMessages,
   createFollowUpEvaluationPrompt,
@@ -12,6 +13,7 @@ import {
   createSystemPrompt,
   createTrendSummaryPrompt,
   groupByPos,
+  sampleBarsForReaction,
   samplePhrasesForReaction,
   sampleVocabularyForReaction,
   weightedSample,
@@ -24,6 +26,7 @@ const testVocabulary: VocabularySet = {
   tags: [],
   source: 'test',
   richWords: [{ word: 'drip' }, { word: 'vibe' }],
+  bars: [],
 };
 
 describe('MUMBL_SYSTEM_PROMPT', () => {
@@ -390,6 +393,7 @@ describe('sampleVocabularyForReaction', () => {
       tags: [],
       source: 'test',
       richWords: [{ word: 'hey' }, { word: 'yo' }, { word: 'sup' }],
+      bars: [],
     };
     const result = sampleVocabularyForReaction(vocab);
     expect(result).toEqual([{ word: 'hey' }, { word: 'yo' }, { word: 'sup' }]);
@@ -402,6 +406,7 @@ describe('sampleVocabularyForReaction', () => {
       tags: [],
       source: 'test',
       richWords: [{ word: 'short' }, { word: 'this-is-a-very-long-word-that-exceeds-limit' }],
+      bars: [],
     };
     const result = sampleVocabularyForReaction(vocab);
     expect(result).toEqual([{ word: 'short' }]);
@@ -410,7 +415,14 @@ describe('sampleVocabularyForReaction', () => {
   it('should sample when exceeding maxCount without duplicates', () => {
     const richWords = Array.from({ length: 30 }, (_, i) => ({ word: `w${i}` }));
     const words = richWords.map((rw) => rw.word);
-    const vocab: VocabularySet = { words, phrases: [], tags: [], source: 'test', richWords };
+    const vocab: VocabularySet = {
+      words,
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords,
+      bars: [],
+    };
     const result = sampleVocabularyForReaction(vocab, 10);
     expect(result).toHaveLength(10);
     for (const w of result) {
@@ -423,7 +435,14 @@ describe('sampleVocabularyForReaction', () => {
   it('should default to sampling 20 words', () => {
     const richWords = Array.from({ length: 50 }, (_, i) => ({ word: `w${i}` }));
     const words = richWords.map((rw) => rw.word);
-    const vocab: VocabularySet = { words, phrases: [], tags: [], source: 'test', richWords };
+    const vocab: VocabularySet = {
+      words,
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords,
+      bars: [],
+    };
     const result = sampleVocabularyForReaction(vocab);
     expect(result).toHaveLength(20);
   });
@@ -435,6 +454,7 @@ describe('sampleVocabularyForReaction', () => {
       tags: [],
       source: 'test',
       richWords: [{ word: 'this-is-way-too-long-for-reaction' }],
+      bars: [],
     };
     const result = sampleVocabularyForReaction(vocab);
     expect(result).toEqual([]);
@@ -447,6 +467,7 @@ describe('sampleVocabularyForReaction', () => {
       tags: [],
       source: 'test',
       richWords: [],
+      bars: [],
     };
     const result = sampleVocabularyForReaction(vocab);
     expect(result).toEqual([{ word: 'hey' }, { word: 'yo' }]);
@@ -502,6 +523,7 @@ describe('samplePhrasesForReaction', () => {
       tags: [],
       source: 'test',
       richWords: [],
+      bars: [],
     };
     const result = samplePhrasesForReaction(vocab);
     expect(result).toEqual(['on god', 'no cap']);
@@ -514,6 +536,7 @@ describe('samplePhrasesForReaction', () => {
       tags: [],
       source: 'test',
       richWords: [{ word: 'hey' }],
+      bars: [],
     };
     const result = samplePhrasesForReaction(vocab);
     expect(result).toEqual([]);
@@ -527,6 +550,7 @@ describe('samplePhrasesForReaction', () => {
       tags: [],
       source: 'test',
       richWords: [],
+      bars: [],
     };
     const result = samplePhrasesForReaction(vocab, 5);
     expect(result).toHaveLength(5);
@@ -615,6 +639,7 @@ describe('POS-aware vocabulary prompt', () => {
         { word: 'drip', pos: 'noun', frequency: 42 },
         { word: 'flex', pos: 'verb', frequency: 10 },
       ],
+      bars: [],
     };
     const messages = createReactionPrompt('test', { language: 'en' }, vocabWithPos);
     const systemContent = messages[0]?.content ?? '';
@@ -631,6 +656,7 @@ describe('POS-aware vocabulary prompt', () => {
       tags: [],
       source: 'test',
       richWords: [{ word: 'drip' }, { word: 'flex' }],
+      bars: [],
     };
     const messages = createReactionPrompt('test', { language: 'en' }, vocabNoPos);
     const systemContent = messages[0]?.content ?? '';
@@ -646,6 +672,7 @@ describe('POS-aware vocabulary prompt', () => {
       tags: [],
       source: 'test',
       richWords: [{ word: 'chill' }, { word: 'drip', pos: 'noun' }, { word: 'flex', pos: 'verb' }],
+      bars: [],
     };
     const messages = createReactionPrompt('test', { language: 'en' }, vocabMixed);
     const systemContent = messages[0]?.content ?? '';
@@ -830,5 +857,124 @@ describe('Japanese language support', () => {
       expect(messages[0]?.content).toContain('Vocabulary Reference');
       expect(messages[0]?.content).toContain('Draw from these');
     });
+  });
+});
+
+describe('sampleBarsForReaction', () => {
+  it('should return all bars when count is within limit', () => {
+    const vocab: VocabularySet = {
+      words: [],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [],
+      bars: [
+        { text: 'line one', source: { artist: 'KOHH', track: 'Track A' } },
+        { text: 'line two' },
+      ],
+    };
+    const result = sampleBarsForReaction(vocab);
+    expect(result).toHaveLength(2);
+  });
+
+  it('should return empty array when no bars exist', () => {
+    const vocab: VocabularySet = {
+      words: [],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [],
+      bars: [],
+    };
+    const result = sampleBarsForReaction(vocab);
+    expect(result).toEqual([]);
+  });
+
+  it('should sample when exceeding maxCount', () => {
+    const bars = Array.from({ length: 20 }, (_, i) => ({ text: `bar ${i}` }));
+    const vocab: VocabularySet = {
+      words: [],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [],
+      bars,
+    };
+    const result = sampleBarsForReaction(vocab, 3);
+    expect(result).toHaveLength(3);
+    for (const b of result) {
+      expect(bars.map((x) => x.text)).toContain(b.text);
+    }
+  });
+});
+
+describe('buildBarReferenceSection', () => {
+  it('should build English section with artist and track', () => {
+    const bars = [
+      { text: 'hello world', source: { artist: 'KOHH', track: 'Real Love' } },
+      { text: 'another line' },
+    ];
+    const section = buildBarReferenceSection(bars);
+
+    expect(section).toContain('LYRIC REFERENCES');
+    expect(section).toContain('Bars from KOHH');
+    expect(section).toContain('"hello world" (Real Love)');
+    expect(section).toContain('"another line"');
+    expect(section).toContain("Don't force it");
+  });
+
+  it('should build Japanese section when language is ja', () => {
+    const bars = [{ text: 'some bar', source: { artist: 'KOHH' } }];
+    const section = buildBarReferenceSection(bars, 'ja');
+
+    expect(section).toContain('KOHH のバー');
+    expect(section).toContain('無理に入れない');
+  });
+
+  it('should return empty string for empty bars', () => {
+    const section = buildBarReferenceSection([]);
+    expect(section).toBe('');
+  });
+});
+
+describe('createReactionPrompt with bars', () => {
+  it('should include bar reference section when vocabulary has bars', () => {
+    const vocabWithBars: VocabularySet = {
+      words: ['drip'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [{ word: 'drip' }],
+      bars: [{ text: 'lyric line', source: { artist: 'KOHH', track: 'Track' } }],
+    };
+    const messages = createReactionPrompt('test', { language: 'en' }, vocabWithBars);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('LYRIC REFERENCES');
+    expect(systemContent).toContain('"lyric line" (Track)');
+  });
+
+  it('should not include bar section when vocabulary has no bars', () => {
+    const messages = createReactionPrompt('test', { language: 'en' }, testVocabulary);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).not.toContain('LYRIC REFERENCES');
+  });
+
+  it('should suppress generic examples when bars are present even without words', () => {
+    const barOnlyVocab: VocabularySet = {
+      words: [],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [],
+      bars: [{ text: 'a bar line' }],
+    };
+    const messages = createReactionPrompt('test', { language: 'en' }, barOnlyVocab);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('LYRIC REFERENCES');
+    expect(systemContent).not.toContain('"snack was good" -> fire');
+    expect(systemContent).not.toContain('Word/phrase reference');
   });
 });

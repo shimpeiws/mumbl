@@ -7,7 +7,7 @@
 import type { ConversationContext } from '../conversation/types.js';
 import type { DetectedLanguage } from '../language/types.js';
 import { getWordListForLanguage } from '../language/word-lists.js';
-import type { VocabularySet, VocabularyWord } from '../wordgrain/types.js';
+import type { Bar, VocabularySet, VocabularyWord } from '../wordgrain/types.js';
 import type { Message } from './types.js';
 
 /**
@@ -528,6 +528,54 @@ function buildVocabularyPrioritySection(
   return parts.join('\n');
 }
 
+const MAX_BAR_SAMPLE_COUNT = 5;
+
+/**
+ * Sample bars from vocabulary for use in reaction prompts.
+ * Uses uniform random sampling.
+ */
+export function sampleBarsForReaction(
+  vocabulary: VocabularySet,
+  maxCount: number = MAX_BAR_SAMPLE_COUNT,
+): Bar[] {
+  const bars = vocabulary.bars;
+  if (bars.length === 0) return [];
+  if (bars.length <= maxCount) return [...bars];
+
+  const shuffled = shuffleArray([...bars]);
+  return shuffled.slice(0, maxCount);
+}
+
+/**
+ * Build a lyric reference section for prompts from sampled bars.
+ */
+export function buildBarReferenceSection(bars: Bar[], language?: DetectedLanguage): string {
+  if (bars.length === 0) return '';
+
+  const artists = new Set<string>();
+  for (const bar of bars) {
+    if (bar.source?.artist) artists.add(bar.source.artist);
+  }
+  const artistLabel = artists.size > 0 ? [...artists].join(', ') : 'various';
+
+  const header =
+    language === 'ja'
+      ? `## LYRIC REFERENCES (reaction inspiration):\n${artistLabel} のバー。引用、アレンジ、または雰囲気の参考に。`
+      : `## LYRIC REFERENCES (use as reaction inspiration):\nBars from ${artistLabel}. You can quote, adapt, or let them color your response.`;
+
+  const lines = bars.map((bar) => {
+    const track = bar.source?.track ? ` (${bar.source.track})` : '';
+    return `- "${bar.text}"${track}`;
+  });
+
+  const footer =
+    language === 'ja'
+      ? 'しっくり来る時だけ使って。無理に入れない。短く。'
+      : "Use a bar when it resonates. Don't force it. Keep it short.";
+
+  return [header, ...lines, footer].join('\n');
+}
+
 function buildResponseModeSection(language?: DetectedLanguage): string {
   if (language === 'ja') {
     return `## Response modes:
@@ -634,6 +682,10 @@ export function createReactionPrompt(
   const wordList = language ? getWordListForLanguage(language) : getWordListForLanguage('en');
 
   const vocabSection = vocabulary ? buildVocabularyPrioritySection(vocabulary, language) : '';
+  const barSection =
+    vocabulary && vocabulary.bars.length > 0
+      ? buildBarReferenceSection(sampleBarsForReaction(vocabulary), language)
+      : '';
 
   const styleLabel = language === 'ja' ? 'Japanese slang style' : 'Rapper slang style';
 
@@ -644,14 +696,16 @@ export function createReactionPrompt(
   const dedupBlock = buildDedupBlock(options?.recentReactions ?? []);
 
   const vocabInstruction = vocabSection ? `\n${vocabSection}\n` : '';
+  const barInstruction = barSection ? `\n${barSection}\n` : '';
 
   // When personal vocabulary is available, don't include generic word list at all
   // so the LLM is forced to use vocabulary words
-  const wordListSection = vocabSection ? '' : `## Word/phrase reference:\n${wordList}`;
+  const hasPersonalContent = vocabSection || barSection;
+  const wordListSection = hasPersonalContent ? '' : `## Word/phrase reference:\n${wordList}`;
 
   // When vocabulary is available, skip generic examples (vocabulary section has its own)
   // but keep mood mapping to guide the LLM on understanding entry context
-  const examplesSection = vocabSection ? '' : buildExamplesSection(language);
+  const examplesSection = hasPersonalContent ? '' : buildExamplesSection(language);
   const moodSection = buildMoodMappingSection(language);
 
   // Pass undefined for vocabulary so no separate vocabulary section is appended
@@ -660,7 +714,7 @@ export function createReactionPrompt(
 
 ## CRITICAL RULE:
 React ONLY to the current entry text. NEVER bring in topics, words, or content from previous mumbles. Each reaction must stand on its own based solely on what the user just said.
-${vocabInstruction}
+${vocabInstruction}${barInstruction}
 ${buildResponseModeSection(language)}
 
 ${wordListSection}
