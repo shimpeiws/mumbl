@@ -248,7 +248,6 @@ describe('createReactionPrompt', () => {
     expect(systemContent).toContain('Japanese slang style');
     expect(systemContent).toContain('仕事だるい');
     expect(systemContent).toContain('コーヒー飲んだ');
-    expect(systemContent).toContain('疲れた');
     expect(systemContent).not.toContain('"work is tough"');
     expect(systemContent).not.toContain('"had coffee"');
   });
@@ -259,7 +258,6 @@ describe('createReactionPrompt', () => {
 
     expect(systemContent).toContain('おつ');
     expect(systemContent).toContain('まじか');
-    expect(systemContent).toContain('だるいよな');
     expect(systemContent).toContain('きつそう');
   });
 
@@ -284,19 +282,19 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('テスト', { language: 'ja' });
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('Achievement (おつ、やるじゃん');
-    expect(systemContent).toContain('Negative/tough (つらいな');
-    expect(systemContent).toContain('Surprise (まじか');
-    expect(systemContent).toContain('Feeling it (それな');
+    expect(systemContent).toContain('Achievement (おつ)');
+    expect(systemContent).toContain('Negative/tough (きつそう)');
+    expect(systemContent).toContain('Surprise (まじか)');
+    expect(systemContent).toContain('Feeling it (それな)');
   });
 
   it('should include mood mapping rules for en language', () => {
     const messages = createReactionPrompt('test', { language: 'en' });
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('Achievement (nice work on that');
-    expect(systemContent).toContain("Negative/tough (that's rough");
-    expect(systemContent).toContain("Surprise (that's wild");
+    expect(systemContent).toContain('Achievement (lets go)');
+    expect(systemContent).toContain('Negative/tough (felt that)');
+    expect(systemContent).toContain('Surprise (no way)');
   });
 
   it('should include dedup block when recentReactions provided', () => {
@@ -376,9 +374,9 @@ describe('createReactionPrompt', () => {
     const systemContent = messages[0]?.content ?? '';
 
     expect(systemContent).toContain('YOUR VOCABULARY (use when it fits)');
-    // Generic examples block (the long list of "entry" -> reaction) should be excluded
+    // Generic examples block should be excluded when vocabulary is provided
     expect(systemContent).not.toContain('"snack was good" -> fire');
-    expect(systemContent).not.toContain('"baby took first steps"');
+    expect(systemContent).not.toContain('"baby took first steps" -> no way');
   });
 });
 

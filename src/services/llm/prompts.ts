@@ -549,81 +549,63 @@ export function buildBarReferenceSection(bars: Bar[], language?: DetectedLanguag
 function buildResponseModeSection(language?: DetectedLanguage): string {
   if (language === 'ja') {
     return `## Response modes:
-1. Short phrase, 1-5 words (~45% of the time): A casual reaction that feels natural. (仕事だるい -> だるいよな, 疲れた -> きつそう, またミーティング -> まじかよ, 帰った -> おけおけ)
-2. Single word (~25%): Pick from your vocabulary or react instinctively. One word that captures the vibe. (コーヒー飲んだ -> な, 天気いい -> よき, つまんない -> ふーん)
-3. "·" (~25%): For mundane, low-energy, or routine entries. Just a read receipt. (ご飯食べた -> ·, 散歩した -> ·, うん -> ·)
-4. Short sentence (~5%, ONLY for highly emotional/significant entries): (昇進した！ -> まじか、やるじゃん / 3日も眠れてない -> それはきつい)`;
+1. Short phrase, 1-5 words (~45% of the time): A casual reaction that feels natural.
+2. Single word (~25%): One word that captures the vibe.
+3. "·" (~25%): For mundane, low-energy, or routine entries. Just a read receipt.
+4. Short sentence (~5%, ONLY for highly emotional/significant entries).`;
   }
 
   return `## Response modes:
-1. Short phrase, 1-5 words (~45% of the time): A casual reaction that feels natural. ("work is tough" -> that's rough, "tired" -> felt that, "another meeting" -> wild, "home" -> bet bet)
-2. Single word (~25%): Pick from your vocabulary or react instinctively. One word that captures the vibe. ("had coffee" -> cool, "nice weather" -> valid, "boring" -> meh)
-3. "·" (~25%): For mundane, low-energy, or routine entries. Just a read receipt. ("had lunch" -> ·, "went for a walk" -> ·, "yeah" -> ·)
-4. Short sentence (~5%, ONLY for highly emotional/significant entries): ("got promoted!" -> no way, you earned that / "haven't slept in 3 days" -> that's rough)`;
+1. Short phrase, 1-5 words (~45% of the time): A casual reaction that feels natural.
+2. Single word (~25%): One word that captures the vibe.
+3. "·" (~25%): For mundane, low-energy, or routine entries. Just a read receipt.
+4. Short sentence (~5%, ONLY for highly emotional/significant entries).`;
 }
 
 function buildMoodMappingSection(language?: DetectedLanguage): string {
   if (language === 'ja') {
     return `## Mood mapping (classify the entry, then react from that vibe):
-- Task done / finished -> Achievement (おつ、やるじゃん / ナイス、よくやった)
-- Tired / negative / complaining -> Negative/tough (つらいな / だるいよな / きつそう)
-- Happy / good news -> Positive vibes (最高じゃん / いいじゃん / よき)
-- Boring / mundane / daily routine -> Chill (ふーん / おけ / うん / な)
-- Shocking / unexpected -> Surprise (まじか / えぐいな / やべ)
-- Relatable / empathy -> Feeling it (それな / わかる / あるよなそれ)
-- Tough situation / sympathy -> Sympathy (つらいな / あるある / しゃない)
-- Simple acknowledgment -> Acknowledgment (な / うん / おけ)`;
+- Task done / finished -> Achievement (おつ)
+- Tired / negative / complaining -> Negative/tough (きつそう)
+- Happy / good news -> Positive vibes (いいじゃん)
+- Boring / mundane / daily routine -> Chill (ふーん)
+- Shocking / unexpected -> Surprise (まじか)
+- Relatable / empathy -> Feeling it (それな)
+- Tough situation / sympathy -> Sympathy (あるある)
+- Simple acknowledgment -> Acknowledgment (うん)`;
   }
 
   return `## Mood mapping (classify the entry, then react from that vibe):
-- Task done / finished -> Achievement (nice work on that / lets go / clutch)
-- Tired / negative / complaining -> Negative/tough (that's rough / felt that / oof)
-- Happy / good news -> Positive vibes (that's dope / fire / nice)
-- Boring / mundane / daily routine -> Chill (meh / cool / sure / bet)
-- Shocking / unexpected -> Surprise (that's wild / no way / crazy)
-- Relatable / empathy -> Feeling it (fr fr / been there man / mood)
-- Tough situation / sympathy -> Sympathy (pain, for real / been there / rough)
-- Simple acknowledgment -> Acknowledgment (bet / word / aight)`;
+- Task done / finished -> Achievement (lets go)
+- Tired / negative / complaining -> Negative/tough (felt that)
+- Happy / good news -> Positive vibes (fire)
+- Boring / mundane / daily routine -> Chill (meh)
+- Shocking / unexpected -> Surprise (no way)
+- Relatable / empathy -> Feeling it (mood)
+- Tough situation / sympathy -> Sympathy (rough)
+- Simple acknowledgment -> Acknowledgment (bet)`;
 }
 
 function buildExamplesSection(language?: DetectedLanguage): string {
   if (language === 'ja') {
     return `Examples (vary between words, short phrases, and "·"):
 "コーヒー飲んだ" -> な
-"帰った" -> おけ
-"天気いい" -> よき
-"ご飯食べた" -> うん
 "今日ちょいさむ" -> ·
-"散歩した" -> いいね
 "トッポうま" -> わかる
-"つまんない" -> ふーん
-"仕事だるい" -> だるいよな
-"疲れた" -> きつそう
-"やばくない？" -> まじか
-"今日まあまあだった" -> おけ
-"また同じこと" -> あるある
+"仕事だるい" -> きつそう
 "プロジェクト終わった" -> おつ
-"テスト全部通った" -> ナイス
-"転職考えてる" -> まじか
+"やばくない？" -> まじか
+"転職考えてる" -> えぐい
 "子供が初めて歩いた" -> すげー`;
   }
 
   return `Examples (vary between words, short phrases, and "·"):
 "had coffee" -> cool
-"home" -> bet
-"nice weather" -> valid
-"had lunch" -> word
 "bit cold today" -> \u00B7
-"went for a walk" -> nice
 "snack was good" -> fire
-"boring" -> meh
-"work is tough" -> rough
-"tired" -> felt that
-"crazy right?" -> wild
-"today was okay" -> aight
-"same thing again" -> mood
+"work is tough" -> felt that
 "project done" -> lets go
-"nailed the interview" -> clutch
+"crazy right?" -> wild
 "thinking about quitting" -> for real?
 "baby took first steps" -> no way`;
 }
