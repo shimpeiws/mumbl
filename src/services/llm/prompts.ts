@@ -419,17 +419,6 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/**
- * Pick example words from the sampled vocabulary for prompt examples.
- * Returns up to 3 distinct words, reusing the first if fewer are available.
- */
-function pickExampleWords(words: string[]): [string, string, string] {
-  const w1 = words[0] ?? 'vibe';
-  const w2 = words[1] ?? w1;
-  const w3 = words[2] ?? w2;
-  return [w1, w2, w3];
-}
-
 function buildVocabWordList(sampledWords: VocabularyWord[]): string[] {
   const hasPosData = sampledWords.some((w) => w.pos !== undefined);
 
@@ -450,53 +439,39 @@ function buildVocabWordList(sampledWords: VocabularyWord[]): string[] {
   return [];
 }
 
-function buildVocabUsageInstruction(wordStrings: string[], language?: DetectedLanguage): string {
-  const [w1, w2, w3] = pickExampleWords(wordStrings);
-
+function buildVocabUsageInstruction(language?: DetectedLanguage): string {
   if (language === 'ja') {
-    return `You SHOULD use these vocabulary words in most reactions. They are your signature style.
-Use them as building blocks: combine with particles, slang, or short phrases to react.
+    return `Your vocabulary words reflect your personal vibe. Let them inspire your reactions naturally.
 
 How to use vocabulary:
-- Vocab word + particle: "${w1}だな", "${w2}じゃん", "${w3}よな"
-- Negate a vocab word: "${w1}じゃない", "全然${w2}"
-- Vocab word as exclamation: "${w1}!", "${w3}"
-- Vocab word in short phrase: "それ${w1}", "まじ${w2}"
+- Let the word's meaning and feeling guide your reaction, not a formula
+- Use a vocabulary word when it genuinely fits the mood of the entry
+- You can transform, conjugate, or embed words naturally in casual Japanese
+- A vocab word can stand alone if it captures the right feeling
+- Skip vocabulary entirely if forcing a word would sound unnatural
 
-IMPORTANT: Vary your grammatical patterns. Do NOT repeat the same suffix (e.g. すぎだろ, すぎるわ) across reactions. Use diverse endings: だな, じゃん, よな, わ, な, かよ, etc.
-
-Keep reactions SHORT (1-5 words). Do NOT write full sentences or explanations.
-The reaction must relate to the entry - but vocabulary words are flexible enough to fit most moods.
-Only skip vocabulary if the entry is so mundane that ANY word feels forced (e.g. "うん" or "·" is enough).
-
-Examples:
-- "疲れた" -> "${w1}じゃないな"
-- "昇進した！" -> "飛ぶわそれ"
-- "まじかー" -> "${w2}"
-- "${w1}?" -> "ちょう${w1}"
-- "コーヒー飲みすぎた" -> "まあ${w3}だな"
-- "ファミチキくいて" -> "わかる" (mundane, vocab not needed)`;
+IMPORTANT:
+- Do NOT mechanically attach particles to vocabulary words. Repeating "word + だな/じゃん/よな" every time sounds robotic.
+- React like a real person would. If you'd never actually say it out loud, don't write it.
+- Prioritize sounding natural over using vocabulary. Bad Japanese is worse than no vocabulary.
+- Keep reactions SHORT (1-5 words). No full sentences or explanations.
+- Only skip vocabulary if the entry is so mundane that "うん" or "·" is enough.`;
   }
 
-  return `You SHOULD use these vocabulary words in most reactions. They are your signature style.
-Use them as building blocks: combine with particles, slang, or short phrases to react.
+  return `Your vocabulary words reflect your personal vibe. Let them inspire your reactions naturally.
 
 How to use vocabulary:
-- Use a vocab word + modifier: "so ${w1}", "too ${w2}", "mad ${w3}"
-- Negate a vocab word: "not ${w1}", "zero ${w2}"
-- Vocab word as exclamation: "${w1}!", "${w2}"
-- Vocab word in short phrase: "that's ${w1}", "big ${w2}"
+- Let the word's meaning and feeling guide your reaction, not a formula
+- Use a vocabulary word when it genuinely fits the mood of the entry
+- You can adapt, riff on, or embed words naturally in slang
+- A vocab word can stand alone if it captures the right feeling
+- Skip vocabulary entirely if forcing a word would sound unnatural
 
-Keep reactions SHORT (1-5 words). Do NOT write full sentences or explanations.
-The reaction must relate to the entry - but vocabulary words are flexible enough to fit most moods.
-Only skip vocabulary if the entry is so mundane that ANY word feels forced (e.g. "word" or "·" is enough).
-
-Examples:
-- "tired" -> "not ${w1}"
-- "got promoted!" -> "that's ${w2}"
-- "for real?" -> "${w3}"
-- "${w1}?" -> "so ${w1}"
-- "want fried chicken" -> "same" (mundane, vocab not needed)`;
+IMPORTANT:
+- Do NOT mechanically slot words into "so [word]" / "not [word]" / "[word]!" patterns every time.
+- React like a real person would. If it sounds forced, skip the vocab.
+- Keep reactions SHORT (1-5 words). No full sentences or explanations.
+- Only skip vocabulary if the entry is so mundane that "word" or "·" is enough.`;
 }
 
 function buildVocabularyPrioritySection(
@@ -509,8 +484,8 @@ function buildVocabularyPrioritySection(
 
   const header =
     language === 'ja'
-      ? '## あなたのボキャブラリー (積極的に使って):'
-      : '## YOUR VOCABULARY (ACTIVELY USE THESE):';
+      ? '## あなたのボキャブラリー (自然に使って):'
+      : '## YOUR VOCABULARY (use when it fits):';
   const parts: string[] = [header];
 
   parts.push(...buildVocabWordList(sampledWords));
@@ -519,12 +494,7 @@ function buildVocabularyPrioritySection(
     parts.push(`Phrases: ${phrases.join(', ')}`);
   }
 
-  parts.push(
-    buildVocabUsageInstruction(
-      sampledWords.map((w) => w.word),
-      language,
-    ),
-  );
+  parts.push(buildVocabUsageInstruction(language));
   return parts.join('\n');
 }
 
@@ -579,15 +549,15 @@ export function buildBarReferenceSection(bars: Bar[], language?: DetectedLanguag
 function buildResponseModeSection(language?: DetectedLanguage): string {
   if (language === 'ja') {
     return `## Response modes:
-1. Short phrase, 1-5 words (~45% of the time): Craft a short phrase using your vocabulary. (仕事だるい -> だるいよな, 疲れた -> きつそう, またミーティング -> まじか, 帰った -> おけおけ)
-2. Single word (~25%): USE YOUR PERSONAL VOCABULARY or word list. One word that fits the vibe. (コーヒー飲んだ -> な, 天気いい -> よき, つまんない -> ふーん)
+1. Short phrase, 1-5 words (~45% of the time): A casual reaction that feels natural. (仕事だるい -> だるいよな, 疲れた -> きつそう, またミーティング -> まじかよ, 帰った -> おけおけ)
+2. Single word (~25%): Pick from your vocabulary or react instinctively. One word that captures the vibe. (コーヒー飲んだ -> な, 天気いい -> よき, つまんない -> ふーん)
 3. "·" (~25%): For mundane, low-energy, or routine entries. Just a read receipt. (ご飯食べた -> ·, 散歩した -> ·, うん -> ·)
 4. Short sentence (~5%, ONLY for highly emotional/significant entries): (昇進した！ -> まじか、やるじゃん / 3日も眠れてない -> それはきつい)`;
   }
 
   return `## Response modes:
-1. Short phrase, 1-5 words (~45% of the time): Craft a short phrase using your vocabulary. ("work is tough" -> that's rough, "tired" -> felt that, "another meeting" -> wild, "home" -> bet bet)
-2. Single word (~25%): USE YOUR PERSONAL VOCABULARY or word list. One word that fits the vibe. ("had coffee" -> cool, "nice weather" -> valid, "boring" -> meh)
+1. Short phrase, 1-5 words (~45% of the time): A casual reaction that feels natural. ("work is tough" -> that's rough, "tired" -> felt that, "another meeting" -> wild, "home" -> bet bet)
+2. Single word (~25%): Pick from your vocabulary or react instinctively. One word that captures the vibe. ("had coffee" -> cool, "nice weather" -> valid, "boring" -> meh)
 3. "·" (~25%): For mundane, low-energy, or routine entries. Just a read receipt. ("had lunch" -> ·, "went for a walk" -> ·, "yeah" -> ·)
 4. Short sentence (~5%, ONLY for highly emotional/significant entries): ("got promoted!" -> no way, you earned that / "haven't slept in 3 days" -> that's rough)`;
 }
