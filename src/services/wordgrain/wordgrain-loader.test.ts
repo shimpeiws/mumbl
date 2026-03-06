@@ -326,6 +326,57 @@ describe('parseWordgrainFile', () => {
     expect(result?.bars).toHaveLength(0);
   });
 
+  it('should parse v0.2.0 files with separate top-level bars array', () => {
+    const filePath = path.join(tmpDir, 'v020-bars.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        schema_version: '0.2.0',
+        meta: { artist: 'KOHH' },
+        grains: [
+          { word: 'cbd', frequency: 119, pos: 'noun' },
+          { word: 'money', frequency: 50, pos: 'noun' },
+        ],
+        bars: [
+          { text: 'line one', source: { track: 'Track A' } },
+          { text: 'line two', source: { track: 'Track B' } },
+          { text: 'line three' },
+        ],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.name).toBe('KOHH');
+    expect(result?.type).toBe('mixed');
+    expect(result?.schemaVersion).toBe('0.2.0');
+    expect(result?.grains).toHaveLength(2);
+    expect(result?.bars).toHaveLength(3);
+    expect(result?.bars[0]?.text).toBe('line one');
+    expect(result?.bars[2]?.text).toBe('line three');
+  });
+
+  it('should parse v0.2.0 files with only top-level bars array and empty grains', () => {
+    const filePath = path.join(tmpDir, 'v020-bars-only.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        schema_version: '0.2.0',
+        meta: { artist: 'Test' },
+        grains: [],
+        bars: [{ text: 'bar one' }, { text: 'bar two' }],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.type).toBe('bar');
+    expect(result?.grains).toHaveLength(0);
+    expect(result?.bars).toHaveLength(2);
+  });
+
   it('should reject bar entries with non-string text', () => {
     const filePath = path.join(tmpDir, 'bad-bar.wg.json');
     fs.writeFileSync(
