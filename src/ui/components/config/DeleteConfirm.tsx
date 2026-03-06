@@ -32,7 +32,8 @@ export function DeleteConfirm() {
       </Box>
 
       <Text>
-        Unregister <Text bold>{file.filename}</Text> ({file.name}, {file.grainCount} grains)?
+        Unregister <Text bold>{file.filename}</Text> ({file.name},{' '}
+        {file.barCount > 0 ? `${file.barCount} bars` : `${file.grainCount} grains`})?
       </Text>
 
       <Box marginTop={1}>

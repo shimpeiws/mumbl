@@ -40,6 +40,8 @@ describe('listWordgrainFiles', () => {
       filename: 'test.wg.json',
       name: 'test-vocab',
       grainCount: 2,
+      barCount: 0,
+      type: 'grain',
     });
   });
 
@@ -179,6 +181,7 @@ describe('getWordgrainStats', () => {
       wordCount: 0,
       phraseCount: 0,
       tagCount: 0,
+      barCount: 0,
     });
   });
 
@@ -191,6 +194,7 @@ describe('getWordgrainStats', () => {
       wordCount: 0,
       phraseCount: 0,
       tagCount: 0,
+      barCount: 0,
     });
   });
 
@@ -248,5 +252,46 @@ describe('getWordgrainStats', () => {
     expect(stats.totalFiles).toBe(1);
     expect(stats.totalGrains).toBe(0);
     expect(stats.wordCount).toBe(0);
+  });
+
+  it('should count bars in bar-type files', () => {
+    const barFile = path.join(tmpDir, 'bar.wg.json');
+    fs.writeFileSync(
+      barFile,
+      JSON.stringify({
+        schema_version: '0.2.0',
+        type: 'bar',
+        meta: { artist: 'KOHH' },
+        grains: [
+          { text: 'line one', source: { artist: 'KOHH', track: 'Track A' } },
+          { text: 'line two' },
+        ],
+      }),
+    );
+
+    const stats = getWordgrainStats([barFile]);
+
+    expect(stats.totalFiles).toBe(1);
+    expect(stats.totalGrains).toBe(0);
+    expect(stats.barCount).toBe(2);
+  });
+
+  it('should include bar count in file info', () => {
+    const barFile = path.join(tmpDir, 'bar.wg.json');
+    fs.writeFileSync(
+      barFile,
+      JSON.stringify({
+        type: 'bar',
+        meta: { artist: 'Test' },
+        grains: [{ text: 'a bar' }],
+      }),
+    );
+
+    const result = listWordgrainFiles([barFile]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.barCount).toBe(1);
+    expect(result[0]?.grainCount).toBe(0);
+    expect(result[0]?.type).toBe('bar');
   });
 });

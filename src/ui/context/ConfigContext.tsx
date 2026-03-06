@@ -51,6 +51,7 @@ const emptyStats: WordgrainStats = {
   wordCount: 0,
   phraseCount: 0,
   tagCount: 0,
+  barCount: 0,
 };
 
 const emptyVocabulary: VocabularySet = {
@@ -59,6 +60,7 @@ const emptyVocabulary: VocabularySet = {
   tags: [],
   source: '',
   richWords: [],
+  bars: [],
 };
 
 export function ConfigProvider({ config, children }: ConfigProviderProps) {

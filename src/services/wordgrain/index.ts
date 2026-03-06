@@ -1,7 +1,16 @@
 /**
  * Wordgrain vocabulary module
  */
-export type { Grain, GrainPos, VocabularySet, VocabularyWord, WordgrainFile } from './types.js';
+export type {
+  Bar,
+  BarSource,
+  Grain,
+  GrainPos,
+  VocabularySet,
+  VocabularyWord,
+  WordgrainFile,
+  WordgrainType,
+} from './types.js';
 export { extractVocabulary } from './vocabulary-extractor.js';
 export { loadWordgrainFiles, parseWordgrainFile } from './wordgrain-loader.js';
 export type { WordgrainFileInfo, WordgrainStats } from './wordgrain-manager.js';
@@ -25,7 +34,12 @@ export function loadVocabulary(filePaths: string[]): VocabularySet | null {
   if (files.length === 0) return null;
 
   const vocabulary = extractVocabulary(files);
-  if (vocabulary.words.length === 0 && vocabulary.phrases.length === 0) return null;
+  if (
+    vocabulary.words.length === 0 &&
+    vocabulary.phrases.length === 0 &&
+    vocabulary.bars.length === 0
+  )
+    return null;
 
   return vocabulary;
 }

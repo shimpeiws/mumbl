@@ -4,7 +4,9 @@ import { extractVocabulary } from './vocabulary-extractor.js';
 
 describe('extractVocabulary', () => {
   it('should extract words from grains', () => {
-    const files: WordgrainFile[] = [{ name: 'test', grains: [{ word: 'drip' }, { word: 'flex' }] }];
+    const files: WordgrainFile[] = [
+      { name: 'test', grains: [{ word: 'drip' }, { word: 'flex' }], bars: [] },
+    ];
 
     const result = extractVocabulary(files);
 
@@ -18,6 +20,7 @@ describe('extractVocabulary', () => {
       {
         name: 'test',
         grains: [{ word: 'drip' }, { word: 'go hard' }, { word: 'no cap' }],
+        bars: [],
       },
     ];
 
@@ -29,8 +32,8 @@ describe('extractVocabulary', () => {
 
   it('should deduplicate words and phrases', () => {
     const files: WordgrainFile[] = [
-      { name: 'a', grains: [{ word: 'drip' }, { word: 'flex' }] },
-      { name: 'b', grains: [{ word: 'drip' }, { word: 'fire' }] },
+      { name: 'a', grains: [{ word: 'drip' }, { word: 'flex' }], bars: [] },
+      { name: 'b', grains: [{ word: 'drip' }, { word: 'fire' }], bars: [] },
     ];
 
     const result = extractVocabulary(files);
@@ -46,6 +49,7 @@ describe('extractVocabulary', () => {
           { word: 'drip', tags: ['style', 'fashion'] },
           { word: 'flex', tags: ['style', 'money'] },
         ],
+        bars: [],
       },
     ];
 
@@ -61,11 +65,12 @@ describe('extractVocabulary', () => {
     expect(result.phrases).toEqual([]);
     expect(result.tags).toEqual([]);
     expect(result.source).toBe('');
+    expect(result.bars).toEqual([]);
   });
 
   it('should skip empty/whitespace-only words', () => {
     const files: WordgrainFile[] = [
-      { name: 'test', grains: [{ word: '' }, { word: '   ' }, { word: 'valid' }] },
+      { name: 'test', grains: [{ word: '' }, { word: '   ' }, { word: 'valid' }], bars: [] },
     ];
 
     const result = extractVocabulary(files);
@@ -78,6 +83,7 @@ describe('extractVocabulary', () => {
       {
         name: 'test',
         grains: [{ word: 'zap' }, { word: 'ace' }, { word: 'no cap' }, { word: 'all day' }],
+        bars: [],
       },
     ];
 
@@ -89,8 +95,8 @@ describe('extractVocabulary', () => {
 
   it('should join multiple file names as source', () => {
     const files: WordgrainFile[] = [
-      { name: 'future', grains: [{ word: 'drip' }] },
-      { name: 'travis', grains: [{ word: 'flame' }] },
+      { name: 'future', grains: [{ word: 'drip' }], bars: [] },
+      { name: 'travis', grains: [{ word: 'flame' }], bars: [] },
     ];
 
     const result = extractVocabulary(files);
@@ -103,6 +109,7 @@ describe('extractVocabulary', () => {
       {
         name: 'test',
         grains: [{ word: 'drip', tags: ['style', '', '  '] }],
+        bars: [],
       },
     ];
 
@@ -119,6 +126,7 @@ describe('extractVocabulary', () => {
           { word: 'drip', pos: 'noun', frequency: 42 },
           { word: 'flex', pos: 'verb', frequency: 10 },
         ],
+        bars: [],
       },
     ];
 
@@ -131,7 +139,7 @@ describe('extractVocabulary', () => {
 
   it('should generate richWords without metadata when pos/frequency absent', () => {
     const files: WordgrainFile[] = [
-      { name: 'test', grains: [{ word: 'chill' }, { word: 'vibe' }] },
+      { name: 'test', grains: [{ word: 'chill' }, { word: 'vibe' }], bars: [] },
     ];
 
     const result = extractVocabulary(files);
@@ -146,10 +154,12 @@ describe('extractVocabulary', () => {
       {
         name: 'a',
         grains: [{ word: 'drip', pos: 'noun', frequency: 10 }],
+        bars: [],
       },
       {
         name: 'b',
         grains: [{ word: 'drip', pos: 'verb', frequency: 50 }],
+        bars: [],
       },
     ];
 
@@ -168,6 +178,7 @@ describe('extractVocabulary', () => {
           { word: 'chill' },
           { word: 'flex', frequency: 5 },
         ],
+        bars: [],
       },
     ];
 
@@ -193,6 +204,7 @@ describe('extractVocabulary', () => {
           { word: 'drip', pos: 'noun' },
           { word: 'go hard', pos: 'verb' },
         ],
+        bars: [],
       },
     ];
 
@@ -210,6 +222,7 @@ describe('extractVocabulary', () => {
           { word: 'zap', frequency: 1 },
           { word: 'ace', frequency: 99 },
         ],
+        bars: [],
       },
     ];
 
@@ -217,5 +230,47 @@ describe('extractVocabulary', () => {
 
     expect(result.words).toEqual(['ace', 'zap']);
     expect(result.richWords.map((rw) => rw.word)).toEqual(['ace', 'zap']);
+  });
+
+  it('should collect bars from files and deduplicate by text', () => {
+    const files: WordgrainFile[] = [
+      {
+        name: 'KOHH',
+        grains: [],
+        bars: [
+          { text: 'line one', source: { artist: 'KOHH', track: 'Track A' } },
+          { text: 'line two' },
+        ],
+      },
+      {
+        name: 'Other',
+        grains: [],
+        bars: [
+          { text: 'line one', source: { artist: 'KOHH', track: 'Track B' } },
+          { text: 'line three' },
+        ],
+      },
+    ];
+
+    const result = extractVocabulary(files);
+
+    expect(result.bars).toHaveLength(3);
+    expect(result.bars.map((b) => b.text)).toEqual(['line one', 'line two', 'line three']);
+    expect(result.bars[0]?.source?.track).toBe('Track A');
+  });
+
+  it('should skip bars with empty text', () => {
+    const files: WordgrainFile[] = [
+      {
+        name: 'test',
+        grains: [],
+        bars: [{ text: '' }, { text: '  ' }, { text: 'valid bar' }],
+      },
+    ];
+
+    const result = extractVocabulary(files);
+
+    expect(result.bars).toHaveLength(1);
+    expect(result.bars[0]?.text).toBe('valid bar');
   });
 });

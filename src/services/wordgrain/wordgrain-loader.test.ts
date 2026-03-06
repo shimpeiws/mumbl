@@ -253,6 +253,102 @@ describe('parseWordgrainFile', () => {
     expect(result?.grains).toHaveLength(1);
     expect(result?.grains[0]?.frequency).toBe(0);
   });
+
+  it('should parse v0.2.0 bar-type files', () => {
+    const filePath = path.join(tmpDir, 'bar.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        schema_version: '0.2.0',
+        type: 'bar',
+        meta: { artist: 'KOHH' },
+        grains: [
+          { text: 'line one', source: { artist: 'KOHH', track: 'Track A' } },
+          { text: 'line two' },
+        ],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.name).toBe('KOHH');
+    expect(result?.type).toBe('bar');
+    expect(result?.schemaVersion).toBe('0.2.0');
+    expect(result?.grains).toHaveLength(0);
+    expect(result?.bars).toHaveLength(2);
+    expect(result?.bars[0]?.text).toBe('line one');
+    expect(result?.bars[0]?.source?.artist).toBe('KOHH');
+    expect(result?.bars[0]?.source?.track).toBe('Track A');
+    expect(result?.bars[1]?.text).toBe('line two');
+  });
+
+  it('should parse mixed-type files with both grains and bars', () => {
+    const filePath = path.join(tmpDir, 'mixed.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        schema_version: '0.2.0',
+        type: 'mixed',
+        name: 'test-mixed',
+        grains: [
+          { word: 'drip', tags: ['style'] },
+          { text: 'lyric line', source: { artist: 'Test' } },
+        ],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.type).toBe('mixed');
+    expect(result?.grains).toHaveLength(1);
+    expect(result?.grains[0]?.word).toBe('drip');
+    expect(result?.bars).toHaveLength(1);
+    expect(result?.bars[0]?.text).toBe('lyric line');
+  });
+
+  it('should default to grain type and include empty bars for v0.1.0 files', () => {
+    const filePath = path.join(tmpDir, 'grain.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        name: 'test',
+        grains: [{ word: 'flow' }],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.type).toBe('grain');
+    expect(result?.grains).toHaveLength(1);
+    expect(result?.bars).toHaveLength(0);
+  });
+
+  it('should reject bar entries with non-string text', () => {
+    const filePath = path.join(tmpDir, 'bad-bar.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        type: 'bar',
+        meta: { artist: 'Test' },
+        grains: [
+          { text: 'valid bar' },
+          { text: 123 },
+          { notText: 'invalid' },
+          { text: 'also valid' },
+        ],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.bars).toHaveLength(2);
+    expect(result?.bars[0]?.text).toBe('valid bar');
+    expect(result?.bars[1]?.text).toBe('also valid');
+  });
 });
 
 describe('loadWordgrainFiles', () => {

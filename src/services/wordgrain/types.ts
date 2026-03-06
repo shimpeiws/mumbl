@@ -29,6 +29,21 @@ export interface VocabularyWord {
   frequency?: number;
 }
 
+export interface BarSource {
+  artist?: string;
+  track?: string;
+  album?: string;
+  year?: number;
+}
+
+export interface Bar {
+  text: string;
+  source?: BarSource;
+  language?: string;
+}
+
+export type WordgrainType = 'grain' | 'bar' | 'mixed';
+
 export interface WordgrainMeta {
   artist?: string;
 }
@@ -36,7 +51,10 @@ export interface WordgrainMeta {
 export interface WordgrainFile {
   name: string;
   meta?: WordgrainMeta;
+  type?: WordgrainType;
+  schemaVersion?: string;
   grains: Grain[];
+  bars: Bar[];
 }
 
 export interface VocabularySet {
@@ -45,4 +63,5 @@ export interface VocabularySet {
   tags: string[];
   source: string;
   richWords: VocabularyWord[];
+  bars: Bar[];
 }

@@ -12,6 +12,8 @@ export interface WordgrainFileInfo {
   filename: string;
   name: string;
   grainCount: number;
+  barCount: number;
+  type?: string;
 }
 
 export interface WordgrainStats {
@@ -20,6 +22,7 @@ export interface WordgrainStats {
   wordCount: number;
   phraseCount: number;
   tagCount: number;
+  barCount: number;
 }
 
 /**
@@ -36,6 +39,8 @@ export function listWordgrainFiles(filePaths: string[]): WordgrainFileInfo[] {
           filename: path.basename(filePath),
           name: parsed.name,
           grainCount: parsed.grains.length,
+          barCount: parsed.bars.length,
+          type: parsed.type,
         });
       }
     } catch {
@@ -96,11 +101,13 @@ export function getWordgrainStats(filePaths: string[]): WordgrainStats {
     wordCount: 0,
     phraseCount: 0,
     tagCount: 0,
+    barCount: 0,
   };
 
   try {
     let totalFiles = 0;
     let totalGrains = 0;
+    let totalBars = 0;
     const wordSet = new Set<string>();
     const phraseSet = new Set<string>();
     const tagSet = new Set<string>();
@@ -111,6 +118,7 @@ export function getWordgrainStats(filePaths: string[]): WordgrainStats {
 
       totalFiles++;
       totalGrains += parsed.grains.length;
+      totalBars += parsed.bars.length;
 
       for (const grain of parsed.grains) {
         const trimmed = grain.word.trim();
@@ -137,6 +145,7 @@ export function getWordgrainStats(filePaths: string[]): WordgrainStats {
       wordCount: wordSet.size,
       phraseCount: phraseSet.size,
       tagCount: tagSet.size,
+      barCount: totalBars,
     };
   } catch {
     return empty;

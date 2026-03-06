@@ -27,7 +27,11 @@ export function WordgrainSection() {
               <Text bold={index === selectedFileIndex}>{file.name}</Text>
               <Text dimColor>
                 {' '}
-                ({file.filename}, {file.grainCount} grains)
+                ({file.filename},{' '}
+                {file.barCount > 0
+                  ? `${file.barCount} bars`
+                  : `${file.grainCount} grains`}
+                )
               </Text>
             </Text>
           ))}
@@ -39,6 +43,7 @@ export function WordgrainSection() {
           <Text dimColor>
             Total: {stats.totalFiles} files, {stats.totalGrains} grains ({stats.wordCount} words,{' '}
             {stats.phraseCount} phrases, {stats.tagCount} tags)
+            {stats.barCount > 0 ? `, ${stats.barCount} bars` : ''}
           </Text>
         </Box>
       )}

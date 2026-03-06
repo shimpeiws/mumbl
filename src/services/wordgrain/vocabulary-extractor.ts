@@ -1,7 +1,14 @@
 /**
  * Extract vocabulary from wordgrain files
  */
-import type { Grain, GrainPos, VocabularySet, VocabularyWord, WordgrainFile } from './types.js';
+import type {
+  Bar,
+  Grain,
+  GrainPos,
+  VocabularySet,
+  VocabularyWord,
+  WordgrainFile,
+} from './types.js';
 
 interface WordMeta {
   pos?: GrainPos;
@@ -73,11 +80,20 @@ export function extractVocabulary(files: WordgrainFile[]): VocabularySet {
   const tagSet = new Set<string>();
   const sources: string[] = [];
   const wordMetaMap = new Map<string, WordMeta>();
+  const barTextSet = new Set<string>();
+  const bars: Bar[] = [];
 
   for (const file of files) {
     sources.push(file.name);
     for (const grain of file.grains) {
       processGrain(grain, wordSet, phraseSet, tagSet, wordMetaMap);
+    }
+    for (const bar of file.bars) {
+      const trimmed = bar.text.trim();
+      if (trimmed && !barTextSet.has(trimmed)) {
+        barTextSet.add(trimmed);
+        bars.push(bar);
+      }
     }
   }
 
@@ -89,5 +105,6 @@ export function extractVocabulary(files: WordgrainFile[]): VocabularySet {
     tags: [...tagSet].sort(),
     source: sources.join(', '),
     richWords: buildRichWords(sortedWords, wordMetaMap),
+    bars,
   };
 }

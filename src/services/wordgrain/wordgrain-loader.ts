@@ -2,7 +2,7 @@
  * Load .wg.json files from individual file paths
  */
 import * as fs from 'node:fs';
-import type { Grain, GrainPos, WordgrainFile } from './types.js';
+import type { Bar, Grain, GrainPos, WordgrainFile, WordgrainType } from './types.js';
 
 const VALID_POS_VALUES: ReadonlySet<string> = new Set<GrainPos>([
   'noun',
@@ -17,6 +17,19 @@ const VALID_POS_VALUES: ReadonlySet<string> = new Set<GrainPos>([
   'particle',
   'other',
 ]);
+
+/**
+ * Validate that a parsed object is a valid Bar
+ */
+export function isValidBar(obj: unknown): obj is Bar {
+  if (typeof obj !== 'object' || obj === null) return false;
+  const record = obj as Record<string, unknown>;
+  if (typeof record['text'] !== 'string') return false;
+  if (record['source'] !== undefined && (typeof record['source'] !== 'object' || record['source'] === null))
+    return false;
+  if (record['language'] !== undefined && typeof record['language'] !== 'string') return false;
+  return true;
+}
 
 /**
  * Validate that a parsed object is a valid Grain
@@ -58,8 +71,42 @@ export function parseWordgrainFile(filePath: string): WordgrainFile | null {
           ? meta['artist']
           : null;
     if (!name) return null;
-    if (!Array.isArray(record['grains'])) return null;
 
+    const schemaVersion =
+      typeof record['schema_version'] === 'string' ? record['schema_version'] : undefined;
+    const fileType = (
+      typeof record['type'] === 'string' ? record['type'] : 'grain'
+    ) as WordgrainType;
+
+    if (fileType === 'bar') {
+      // Bar-only file: entries are in "grains" array but validated as bars
+      if (!Array.isArray(record['grains'])) return null;
+      const bars: Bar[] = [];
+      for (const item of record['grains']) {
+        if (isValidBar(item)) {
+          bars.push(item);
+        }
+      }
+      return { name, type: 'bar', schemaVersion, grains: [], bars };
+    }
+
+    if (fileType === 'mixed') {
+      // Mixed file: try both validators per entry
+      if (!Array.isArray(record['grains'])) return null;
+      const grains: Grain[] = [];
+      const bars: Bar[] = [];
+      for (const item of record['grains']) {
+        if (isValidGrain(item)) {
+          grains.push(item);
+        } else if (isValidBar(item)) {
+          bars.push(item);
+        }
+      }
+      return { name, type: 'mixed', schemaVersion, grains, bars };
+    }
+
+    // Default: grain type (v0.1.0 or explicit grain)
+    if (!Array.isArray(record['grains'])) return null;
     const grains: Grain[] = [];
     for (const item of record['grains']) {
       if (isValidGrain(item)) {
@@ -67,7 +114,7 @@ export function parseWordgrainFile(filePath: string): WordgrainFile | null {
       }
     }
 
-    return { name, grains };
+    return { name, type: 'grain', schemaVersion, grains, bars: [] };
   } catch {
     return null;
   }
