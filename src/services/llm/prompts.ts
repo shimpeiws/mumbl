@@ -534,7 +534,10 @@ const MAX_BAR_SAMPLE_COUNT = 5;
  * Sample bars from vocabulary for use in reaction prompts.
  * Uses uniform random sampling.
  */
-export function sampleBarsForReaction(vocabulary: VocabularySet, maxCount: number = MAX_BAR_SAMPLE_COUNT): Bar[] {
+export function sampleBarsForReaction(
+  vocabulary: VocabularySet,
+  maxCount: number = MAX_BAR_SAMPLE_COUNT,
+): Bar[] {
   const bars = vocabulary.bars;
   if (bars.length === 0) return [];
   if (bars.length <= maxCount) return [...bars];
@@ -546,10 +549,7 @@ export function sampleBarsForReaction(vocabulary: VocabularySet, maxCount: numbe
 /**
  * Build a lyric reference section for prompts from sampled bars.
  */
-export function buildBarReferenceSection(
-  bars: Bar[],
-  language?: DetectedLanguage,
-): string {
+export function buildBarReferenceSection(bars: Bar[], language?: DetectedLanguage): string {
   if (bars.length === 0) return '';
 
   const artists = new Set<string>();

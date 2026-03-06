@@ -415,7 +415,14 @@ describe('sampleVocabularyForReaction', () => {
   it('should sample when exceeding maxCount without duplicates', () => {
     const richWords = Array.from({ length: 30 }, (_, i) => ({ word: `w${i}` }));
     const words = richWords.map((rw) => rw.word);
-    const vocab: VocabularySet = { words, phrases: [], tags: [], source: 'test', richWords, bars: [] };
+    const vocab: VocabularySet = {
+      words,
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords,
+      bars: [],
+    };
     const result = sampleVocabularyForReaction(vocab, 10);
     expect(result).toHaveLength(10);
     for (const w of result) {
@@ -428,7 +435,14 @@ describe('sampleVocabularyForReaction', () => {
   it('should default to sampling 20 words', () => {
     const richWords = Array.from({ length: 50 }, (_, i) => ({ word: `w${i}` }));
     const words = richWords.map((rw) => rw.word);
-    const vocab: VocabularySet = { words, phrases: [], tags: [], source: 'test', richWords, bars: [] };
+    const vocab: VocabularySet = {
+      words,
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords,
+      bars: [],
+    };
     const result = sampleVocabularyForReaction(vocab);
     expect(result).toHaveLength(20);
   });

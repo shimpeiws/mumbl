@@ -25,7 +25,10 @@ export function isValidBar(obj: unknown): obj is Bar {
   if (typeof obj !== 'object' || obj === null) return false;
   const record = obj as Record<string, unknown>;
   if (typeof record['text'] !== 'string') return false;
-  if (record['source'] !== undefined && (typeof record['source'] !== 'object' || record['source'] === null))
+  if (
+    record['source'] !== undefined &&
+    (typeof record['source'] !== 'object' || record['source'] === null)
+  )
     return false;
   if (record['language'] !== undefined && typeof record['language'] !== 'string') return false;
   return true;

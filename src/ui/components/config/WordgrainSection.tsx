@@ -28,10 +28,7 @@ export function WordgrainSection() {
               <Text dimColor>
                 {' '}
                 ({file.filename},{' '}
-                {file.barCount > 0
-                  ? `${file.barCount} bars`
-                  : `${file.grainCount} grains`}
-                )
+                {file.barCount > 0 ? `${file.barCount} bars` : `${file.grainCount} grains`})
               </Text>
             </Text>
           ))}
