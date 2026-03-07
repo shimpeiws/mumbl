@@ -552,7 +552,11 @@ function buildResponseModeSection(language?: DetectedLanguage): string {
 1. Short phrase, 1-5 words (~45% of the time): A casual reaction that feels natural.
 2. Single word (~25%): One word that captures the vibe.
 3. "·" (~25%): For mundane, low-energy, or routine entries. Just a read receipt.
-4. Short sentence (~5%, ONLY for highly emotional/significant entries).`;
+4. Short sentence (~5%, ONLY for highly emotional/significant entries).
+
+BANNED in Japanese:
+- ですます調 (です、ます、でした、ました) — use タメ口 only
+- 。(Japanese period) — never end with 。`;
   }
 
   return `## Response modes:

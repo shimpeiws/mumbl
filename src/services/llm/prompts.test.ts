@@ -252,6 +252,31 @@ describe('createReactionPrompt', () => {
     expect(systemContent).not.toContain('"had coffee"');
   });
 
+  it('should ban desu-masu forms in Japanese reactions', () => {
+    const messages = createReactionPrompt('テスト', { language: 'ja' });
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('ですます調');
+    expect(systemContent).toContain('タメ口');
+  });
+
+  it('should ban Japanese period in Japanese reactions', () => {
+    const messages = createReactionPrompt('テスト', { language: 'ja' });
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('。(Japanese period)');
+    expect(systemContent).toContain('never end with 。');
+  });
+
+  it('should not include Japanese-specific bans in English reactions', () => {
+    const messages = createReactionPrompt('test', { language: 'en' });
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).not.toContain('ですます調');
+    expect(systemContent).not.toContain('タメ口');
+    expect(systemContent).not.toContain('。(Japanese period)');
+  });
+
   it('should include new category examples for ja language', () => {
     const messages = createReactionPrompt('テスト', { language: 'ja' });
     const systemContent = messages[0]?.content ?? '';
