@@ -3,6 +3,7 @@
  * Simple text processing without NLP libraries
  */
 
+import { tokenize } from '../../utils/tokenize.js';
 import { isStopWord } from './stopwords.js';
 
 const MIN_WORD_LENGTH = 2;
@@ -13,16 +14,6 @@ const MAX_TOPICS = 10;
  */
 function normalizeText(text: string): string {
   return text.toLowerCase().trim();
-}
-
-/**
- * Split text into tokens (handles both English and Japanese)
- */
-function tokenize(text: string): string[] {
-  // Split on whitespace and common punctuation
-  return text
-    .split(/[\s,.!?;:'"()\[\]{}\-_/\\|@#$%^&*+=<>~`]+/)
-    .filter((token) => token.length >= MIN_WORD_LENGTH);
 }
 
 /**
