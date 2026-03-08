@@ -259,6 +259,35 @@ describe('extractVocabulary', () => {
     expect(result.bars[0]?.source?.track).toBe('Track A');
   });
 
+  it('should preserve sentiment in richWords from grain data', () => {
+    const files: WordgrainFile[] = [
+      {
+        name: 'test',
+        grains: [
+          { word: 'chill', sentiment: 'positive', sentiment_score: 0.8 },
+          { word: 'annoying', sentiment: 'negative', sentiment_score: -1.0 },
+          { word: 'plain' },
+        ],
+        bars: [],
+      },
+    ];
+
+    const result = extractVocabulary(files);
+
+    expect(result.richWords).toHaveLength(3);
+    const annoying = result.richWords.find((w) => w.word === 'annoying');
+    expect(annoying?.sentiment).toBe('negative');
+    expect(annoying?.sentimentScore).toBe(-1.0);
+
+    const chill = result.richWords.find((w) => w.word === 'chill');
+    expect(chill?.sentiment).toBe('positive');
+    expect(chill?.sentimentScore).toBe(0.8);
+
+    const plain = result.richWords.find((w) => w.word === 'plain');
+    expect(plain?.sentiment).toBeUndefined();
+    expect(plain?.sentimentScore).toBeUndefined();
+  });
+
   it('should skip bars with empty text', () => {
     const files: WordgrainFile[] = [
       {

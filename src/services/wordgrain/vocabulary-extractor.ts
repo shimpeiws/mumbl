@@ -13,6 +13,8 @@ import type {
 interface WordMeta {
   pos?: GrainPos;
   frequency?: number;
+  sentiment?: string;
+  sentimentScore?: number;
 }
 
 function processGrain(
@@ -38,10 +40,18 @@ function processGrain(
       if (grain.frequency !== undefined) {
         existing.frequency = Math.max(existing.frequency ?? 0, grain.frequency);
       }
+      if (grain.sentiment && !existing.sentiment) {
+        existing.sentiment = grain.sentiment;
+      }
+      if (grain.sentiment_score !== undefined && existing.sentimentScore === undefined) {
+        existing.sentimentScore = grain.sentiment_score;
+      }
     } else {
       wordMetaMap.set(trimmed, {
         pos: grain.pos,
         frequency: grain.frequency,
+        sentiment: grain.sentiment,
+        sentimentScore: grain.sentiment_score,
       });
     }
   }
@@ -65,6 +75,8 @@ function buildRichWords(
     const entry: VocabularyWord = { word };
     if (meta?.pos) entry.pos = meta.pos;
     if (meta?.frequency !== undefined) entry.frequency = meta.frequency;
+    if (meta?.sentiment) entry.sentiment = meta.sentiment;
+    if (meta?.sentimentScore !== undefined) entry.sentimentScore = meta.sentimentScore;
     return entry;
   });
 }

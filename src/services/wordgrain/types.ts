@@ -21,12 +21,16 @@ export interface Grain {
   tags?: string[];
   pos?: GrainPos;
   frequency?: number;
+  sentiment?: string;
+  sentiment_score?: number;
 }
 
 export interface VocabularyWord {
   word: string;
   pos?: GrainPos;
   frequency?: number;
+  sentiment?: string;
+  sentimentScore?: number;
 }
 
 export interface BarSource {

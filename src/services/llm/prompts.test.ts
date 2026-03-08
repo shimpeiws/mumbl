@@ -3,6 +3,7 @@ import type { VocabularySet, VocabularyWord } from '../wordgrain/types.js';
 import {
   MUMBL_SYSTEM_PROMPT,
   buildBarReferenceSection,
+  buildSentimentHints,
   createCalloutPrompt,
   createChatMessages,
   createFollowUpEvaluationPrompt,
@@ -1061,5 +1062,106 @@ describe('createReactionPrompt with bars', () => {
     expect(systemContent).toContain('LYRIC REFERENCES');
     expect(systemContent).not.toContain('"snack was good" -> fire');
     expect(systemContent).not.toContain('Word/phrase reference');
+  });
+});
+
+describe('buildSentimentHints', () => {
+  it('should group words by sentiment', () => {
+    const words: VocabularyWord[] = [
+      { word: 'chill', sentiment: 'positive', sentimentScore: 0.8 },
+      { word: 'annoying', sentiment: 'negative', sentimentScore: -1.0 },
+      { word: 'great', sentiment: 'positive', sentimentScore: 0.9 },
+    ];
+    const hints = buildSentimentHints(words);
+
+    expect(hints).toHaveLength(2);
+    expect(hints).toContain('Positive-toned: chill, great');
+    expect(hints).toContain('Negative-toned: annoying');
+  });
+
+  it('should return empty array when no words have sentiment', () => {
+    const words: VocabularyWord[] = [{ word: 'plain' }, { word: 'basic' }];
+    const hints = buildSentimentHints(words);
+
+    expect(hints).toEqual([]);
+  });
+
+  it('should skip words without sentiment', () => {
+    const words: VocabularyWord[] = [{ word: 'chill', sentiment: 'positive' }, { word: 'plain' }];
+    const hints = buildSentimentHints(words);
+
+    expect(hints).toHaveLength(1);
+    expect(hints[0]).toBe('Positive-toned: chill');
+  });
+});
+
+describe('sentiment-matching rule in vocabulary usage', () => {
+  it('should include sentiment-matching rule for Japanese vocabulary', () => {
+    const vocab: VocabularySet = {
+      words: ['chill'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [{ word: 'chill' }],
+      bars: [],
+    };
+    const messages = createReactionPrompt('test', { language: 'ja' }, vocab);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('NEVER use dismissive or negative words');
+    expect(systemContent).toContain('nostalgic');
+  });
+
+  it('should include sentiment-matching rule for English vocabulary', () => {
+    const vocab: VocabularySet = {
+      words: ['chill'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [{ word: 'chill' }],
+      bars: [],
+    };
+    const messages = createReactionPrompt('test', { language: 'en' }, vocab);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('NEVER use dismissive or negative words');
+    expect(systemContent).toContain('nostalgic');
+  });
+
+  it('should include sentiment hints in prompt when vocabulary has sentiment data', () => {
+    const vocab: VocabularySet = {
+      words: ['annoying', 'great'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [
+        { word: 'annoying', sentiment: 'negative', sentimentScore: -1.0 },
+        { word: 'great', sentiment: 'positive', sentimentScore: 0.9 },
+      ],
+      bars: [],
+    };
+    const messages = createReactionPrompt('test', { language: 'en' }, vocab);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Negative-toned: annoying');
+    expect(systemContent).toContain('Positive-toned: great');
+  });
+});
+
+describe('nostalgia mood category', () => {
+  it('should include nostalgia in Japanese mood mapping', () => {
+    const messages = createReactionPrompt('test', { language: 'ja' });
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Nostalgia');
+    expect(systemContent).toContain('なつかし');
+  });
+
+  it('should include nostalgia in English mood mapping', () => {
+    const messages = createReactionPrompt('test', { language: 'en' });
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Nostalgia');
+    expect(systemContent).toContain('takes me back');
   });
 });
