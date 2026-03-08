@@ -645,7 +645,10 @@ export function createReactionPrompt(
   const vocabSection = vocabulary ? buildVocabularyPrioritySection(vocabulary, language) : '';
   const barSection =
     vocabulary && vocabulary.bars.length > 0
-      ? buildBarReferenceSection(sampleBarsForReaction(vocabulary, entry, MAX_BAR_SAMPLE_COUNT, language), language)
+      ? buildBarReferenceSection(
+          sampleBarsForReaction(vocabulary, entry, MAX_BAR_SAMPLE_COUNT, language),
+          language,
+        )
       : '';
 
   const styleLabel = language === 'ja' ? 'Japanese slang style' : 'Rapper slang style';
