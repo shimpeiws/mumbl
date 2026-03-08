@@ -254,6 +254,87 @@ describe('parseWordgrainFile', () => {
     expect(result?.grains[0]?.frequency).toBe(0);
   });
 
+  it('should parse grains with valid sentiment fields', () => {
+    const filePath = path.join(tmpDir, 'sentiment.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        name: 'test',
+        grains: [
+          { word: 'chill', sentiment: 'positive', sentiment_score: 0.8 },
+          { word: 'annoying', sentiment: 'negative', sentiment_score: -1.0 },
+        ],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.grains).toHaveLength(2);
+    expect(result?.grains[0]?.sentiment).toBe('positive');
+    expect(result?.grains[0]?.sentiment_score).toBe(0.8);
+    expect(result?.grains[1]?.sentiment).toBe('negative');
+    expect(result?.grains[1]?.sentiment_score).toBe(-1.0);
+  });
+
+  it('should accept grains without sentiment fields', () => {
+    const filePath = path.join(tmpDir, 'no-sentiment.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        name: 'test',
+        grains: [{ word: 'plain' }],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.grains).toHaveLength(1);
+    expect(result?.grains[0]?.sentiment).toBeUndefined();
+    expect(result?.grains[0]?.sentiment_score).toBeUndefined();
+  });
+
+  it('should reject grains with non-string sentiment', () => {
+    const filePath = path.join(tmpDir, 'bad-sentiment.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        name: 'test',
+        grains: [
+          { word: 'valid', sentiment: 'positive' },
+          { word: 'invalid', sentiment: 123 },
+        ],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.grains).toHaveLength(1);
+    expect(result?.grains[0]?.word).toBe('valid');
+  });
+
+  it('should reject grains with non-number sentiment_score', () => {
+    const filePath = path.join(tmpDir, 'bad-score.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        name: 'test',
+        grains: [
+          { word: 'valid', sentiment_score: 0.5 },
+          { word: 'invalid', sentiment_score: 'high' },
+        ],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.grains).toHaveLength(1);
+    expect(result?.grains[0]?.word).toBe('valid');
+  });
+
   it('should parse v0.2.0 bar-type files', () => {
     const filePath = path.join(tmpDir, 'bar.wg.json');
     fs.writeFileSync(

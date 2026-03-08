@@ -455,6 +455,7 @@ How to use vocabulary:
 - You can transform, conjugate, or embed words naturally in casual Japanese
 - A vocab word can stand alone if it captures the right feeling
 - Skip vocabulary entirely if forcing a word would sound unnatural
+- NEVER use dismissive or negative words when the user shares emotional, nostalgic, or significant moments. When in doubt, skip vocabulary.
 
 IMPORTANT:
 - Do NOT mechanically attach particles to vocabulary words. Repeating "word + だな/じゃん/よな" every time sounds robotic.
@@ -472,12 +473,38 @@ How to use vocabulary:
 - You can adapt, riff on, or embed words naturally in slang
 - A vocab word can stand alone if it captures the right feeling
 - Skip vocabulary entirely if forcing a word would sound unnatural
+- NEVER use dismissive or negative words when the user shares emotional, nostalgic, or significant moments. When in doubt, skip vocabulary.
 
 IMPORTANT:
 - Do NOT mechanically slot words into "so [word]" / "not [word]" / "[word]!" patterns every time.
 - React like a real person would. If it sounds forced, skip the vocab.
 - Keep reactions SHORT (1-5 words). No full sentences or explanations.
 - Only skip vocabulary if the entry is so mundane that "word" or "·" is enough.`;
+}
+
+/**
+ * Build sentiment hint labels for vocabulary words that have sentiment data.
+ * Groups words by sentiment and displays them as concise labels.
+ */
+export function buildSentimentHints(words: VocabularyWord[]): string[] {
+  const groups = new Map<string, string[]>();
+  for (const w of words) {
+    if (!w.sentiment) continue;
+    const key = capitalize(w.sentiment);
+    const group = groups.get(key);
+    if (group) {
+      group.push(w.word);
+    } else {
+      groups.set(key, [w.word]);
+    }
+  }
+  if (groups.size === 0) return [];
+
+  const lines: string[] = [];
+  for (const [sentiment, wordList] of groups) {
+    lines.push(`${sentiment}-toned: ${wordList.join(', ')}`);
+  }
+  return lines;
 }
 
 function buildVocabularyPrioritySection(
@@ -495,6 +522,11 @@ function buildVocabularyPrioritySection(
   const parts: string[] = [header];
 
   parts.push(...buildVocabWordList(sampledWords));
+
+  const sentimentHints = buildSentimentHints(sampledWords);
+  if (sentimentHints.length > 0) {
+    parts.push(...sentimentHints);
+  }
 
   if (phrases.length > 0) {
     parts.push(`Phrases: ${phrases.join(', ')}`);
@@ -581,6 +613,7 @@ function buildMoodMappingSection(language?: DetectedLanguage): string {
 - Shocking / unexpected -> Surprise (まじか)
 - Relatable / empathy -> Feeling it (それな)
 - Tough situation / sympathy -> Sympathy (あるある)
+- Nostalgic / remembering / emotional memory -> Nostalgia (なつかし)
 - Simple acknowledgment -> Acknowledgment (うん)`;
   }
 
@@ -592,6 +625,7 @@ function buildMoodMappingSection(language?: DetectedLanguage): string {
 - Shocking / unexpected -> Surprise (no way)
 - Relatable / empathy -> Feeling it (mood)
 - Tough situation / sympathy -> Sympathy (rough)
+- Nostalgic / remembering / emotional memory -> Nostalgia (takes me back)
 - Simple acknowledgment -> Acknowledgment (bet)`;
 }
 

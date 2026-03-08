@@ -52,6 +52,9 @@ function isValidGrain(obj: unknown): obj is Grain {
   if (record['frequency'] !== undefined) {
     if (typeof record['frequency'] !== 'number' || record['frequency'] < 0) return false;
   }
+  if (record['sentiment'] !== undefined && typeof record['sentiment'] !== 'string') return false;
+  if (record['sentiment_score'] !== undefined && typeof record['sentiment_score'] !== 'number')
+    return false;
   return true;
 }
 
