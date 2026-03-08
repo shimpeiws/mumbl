@@ -429,6 +429,11 @@ function buildVocabWordList(sampledWords: VocabularyWord[]): string[] {
       const hint = POS_USAGE_HINTS[pos] ?? 'general use';
       lines.push(`${capitalize(pos)} (${hint}): ${wordList.join(', ')}`);
     }
+    if (posGroups.size >= 2) {
+      lines.push(
+        "Vary which word categories you draw from across reactions. Don't always reach for the same type (e.g., all nouns or all interjections).",
+      );
+    }
     return lines;
   }
 

@@ -701,6 +701,57 @@ describe('POS-aware vocabulary prompt', () => {
     expect(systemContent).toContain('Verb (use for actions): flex');
     expect(systemContent).toContain('Mixed (general use): chill');
   });
+
+  it('should include balancing guidance when multiple POS groups exist', () => {
+    const vocabMultiPos: VocabularySet = {
+      words: ['drip', 'flex'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [
+        { word: 'drip', pos: 'noun', frequency: 42 },
+        { word: 'flex', pos: 'verb', frequency: 10 },
+      ],
+      bars: [],
+    };
+    const messages = createReactionPrompt('test', { language: 'en' }, vocabMultiPos);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Vary which word categories you draw from');
+  });
+
+  it('should not include balancing guidance when only one POS group exists', () => {
+    const vocabSinglePos: VocabularySet = {
+      words: ['drip', 'swag'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [
+        { word: 'drip', pos: 'noun', frequency: 42 },
+        { word: 'swag', pos: 'noun', frequency: 10 },
+      ],
+      bars: [],
+    };
+    const messages = createReactionPrompt('test', { language: 'en' }, vocabSinglePos);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).not.toContain('Vary which word categories you draw from');
+  });
+
+  it('should not include balancing guidance when no POS data exists', () => {
+    const vocabNoPos: VocabularySet = {
+      words: ['drip', 'flex'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [{ word: 'drip' }, { word: 'flex' }],
+      bars: [],
+    };
+    const messages = createReactionPrompt('test', { language: 'en' }, vocabNoPos);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).not.toContain('Vary which word categories you draw from');
+  });
 });
 
 describe('createFollowUpEvaluationPrompt', () => {
