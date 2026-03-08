@@ -8,6 +8,7 @@ import type { ConversationContext } from '../conversation/types.js';
 import type { DetectedLanguage } from '../language/types.js';
 import { getWordListForLanguage } from '../language/word-lists.js';
 import type { Bar, VocabularySet, VocabularyWord } from '../wordgrain/types.js';
+import { selectBarsForReaction } from './bar-selector.js';
 import type { Message } from './types.js';
 
 /**
@@ -507,18 +508,17 @@ const MAX_BAR_SAMPLE_COUNT = 5;
 
 /**
  * Sample bars from vocabulary for use in reaction prompts.
- * Uses uniform random sampling.
+ * Uses context-aware selection: keyword-matching bars are preferred,
+ * with remaining slots filled by random bars.
+ * Falls back to all-random when entryText is empty.
  */
 export function sampleBarsForReaction(
   vocabulary: VocabularySet,
+  entryText = '',
   maxCount: number = MAX_BAR_SAMPLE_COUNT,
+  language?: DetectedLanguage,
 ): Bar[] {
-  const bars = vocabulary.bars;
-  if (bars.length === 0) return [];
-  if (bars.length <= maxCount) return [...bars];
-
-  const shuffled = shuffleArray([...bars]);
-  return shuffled.slice(0, maxCount);
+  return selectBarsForReaction(vocabulary.bars, entryText, maxCount, 3, language);
 }
 
 /**
@@ -645,7 +645,7 @@ export function createReactionPrompt(
   const vocabSection = vocabulary ? buildVocabularyPrioritySection(vocabulary, language) : '';
   const barSection =
     vocabulary && vocabulary.bars.length > 0
-      ? buildBarReferenceSection(sampleBarsForReaction(vocabulary), language)
+      ? buildBarReferenceSection(sampleBarsForReaction(vocabulary, entry, MAX_BAR_SAMPLE_COUNT, language), language)
       : '';
 
   const styleLabel = language === 'ja' ? 'Japanese slang style' : 'Rapper slang style';

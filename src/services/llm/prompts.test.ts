@@ -944,7 +944,7 @@ describe('sampleBarsForReaction', () => {
         { text: 'line two' },
       ],
     };
-    const result = sampleBarsForReaction(vocab);
+    const result = sampleBarsForReaction(vocab, 'some entry text');
     expect(result).toHaveLength(2);
   });
 
@@ -957,7 +957,7 @@ describe('sampleBarsForReaction', () => {
       richWords: [],
       bars: [],
     };
-    const result = sampleBarsForReaction(vocab);
+    const result = sampleBarsForReaction(vocab, 'some entry text');
     expect(result).toEqual([]);
   });
 
@@ -971,11 +971,25 @@ describe('sampleBarsForReaction', () => {
       richWords: [],
       bars,
     };
-    const result = sampleBarsForReaction(vocab, 3);
+    const result = sampleBarsForReaction(vocab, 'some entry text', 3);
     expect(result).toHaveLength(3);
     for (const b of result) {
       expect(bars.map((x) => x.text)).toContain(b.text);
     }
+  });
+
+  it('should work with empty entry text (falls back to random)', () => {
+    const bars = Array.from({ length: 10 }, (_, i) => ({ text: `bar ${i}` }));
+    const vocab: VocabularySet = {
+      words: [],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [],
+      bars,
+    };
+    const result = sampleBarsForReaction(vocab, '');
+    expect(result).toHaveLength(5);
   });
 });
 
