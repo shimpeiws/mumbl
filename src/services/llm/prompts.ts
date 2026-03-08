@@ -431,7 +431,7 @@ function buildVocabWordList(sampledWords: VocabularyWord[]): string[] {
     }
     if (posGroups.size >= 2) {
       lines.push(
-        'Vary which word categories you draw from across reactions. Don\'t always reach for the same type (e.g., all nouns or all interjections).',
+        "Vary which word categories you draw from across reactions. Don't always reach for the same type (e.g., all nouns or all interjections).",
       );
     }
     return lines;
