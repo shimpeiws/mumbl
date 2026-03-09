@@ -84,4 +84,18 @@ describe('extractTopics', () => {
     const topics = extractTopics('email@work.com project-update #deadline');
     expect(topics.length).toBeGreaterThan(0);
   });
+
+  it('should extract topics from Japanese text', () => {
+    const topics = extractTopics('仕事がつらい');
+    expect(topics.length).toBeGreaterThan(0);
+    expect(topics).toContain('仕事');
+    expect(topics).toContain('つらい');
+  });
+
+  it('should extract topics from longer Japanese sentences', () => {
+    const topics = extractTopics('今日は天気がいいので散歩した');
+    expect(topics.length).toBeGreaterThan(0);
+    expect(topics).toContain('今日');
+    expect(topics).toContain('天気');
+  });
 });

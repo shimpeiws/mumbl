@@ -5,26 +5,16 @@
  * then selects a mix of relevant + random bars.
  */
 
+import { tokenize } from '../../utils/tokenize.js';
 import type { DetectedLanguage } from '../language/types.js';
 import { isStopWord } from '../trends/stopwords.js';
 import type { Bar } from '../wordgrain/types.js';
 
-const MIN_TOKEN_LENGTH = 2;
-
 /**
- * Normalize text for token matching (duplicated from topic-extractor to avoid coupling)
+ * Normalize text for token matching
  */
 function normalizeText(text: string): string {
   return text.toLowerCase().trim();
-}
-
-/**
- * Split text into tokens (duplicated from topic-extractor to avoid coupling)
- */
-function tokenize(text: string): string[] {
-  return text
-    .split(/[\s,.!?;:'"()\[\]{}\-_/\\|@#$%^&*+=<>~`]+/)
-    .filter((token) => token.length >= MIN_TOKEN_LENGTH);
 }
 
 /**
