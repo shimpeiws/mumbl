@@ -1,7 +1,43 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initializeSchema } from '../infrastructure/database/schema.js';
-import { type ReactionServiceInterface, createReactionService } from './reaction-service.js';
+import {
+  type ReactionServiceInterface,
+  createReactionService,
+  isLikelyBrokenJapanese,
+} from './reaction-service.js';
+
+describe('isLikelyBrokenJapanese', () => {
+  it('should detect broken all-hiragana strings longer than 6 chars', () => {
+    expect(isLikelyBrokenJapanese('れいかないよ', 'ja')).toBe(true);
+    expect(isLikelyBrokenJapanese('あいうえおかきく', 'ja')).toBe(true);
+  });
+
+  it('should allow short hiragana strings', () => {
+    expect(isLikelyBrokenJapanese('きつそう', 'ja')).toBe(false);
+    expect(isLikelyBrokenJapanese('うん', 'ja')).toBe(false);
+    expect(isLikelyBrokenJapanese('それな', 'ja')).toBe(false);
+  });
+
+  it('should allow strings with kanji or katakana', () => {
+    expect(isLikelyBrokenJapanese('半端ないって', 'ja')).toBe(false);
+    expect(isLikelyBrokenJapanese('マジかよ', 'ja')).toBe(false);
+  });
+
+  it('should not flag non-Japanese language', () => {
+    expect(isLikelyBrokenJapanese('abcdefgh', 'en')).toBe(false);
+    expect(isLikelyBrokenJapanese('れいかないよ', 'en')).toBe(false);
+  });
+
+  it('should not flag when language is undefined', () => {
+    expect(isLikelyBrokenJapanese('れいかないよ', undefined)).toBe(false);
+  });
+
+  it('should allow 4-char or shorter strings', () => {
+    expect(isLikelyBrokenJapanese('あいう', 'ja')).toBe(false);
+    expect(isLikelyBrokenJapanese('あいうえ', 'ja')).toBe(false);
+  });
+});
 
 describe('ReactionService', () => {
   let db: Database.Database;
@@ -297,6 +333,41 @@ describe('ReactionService', () => {
 
       expect(reaction?.content).toBe('vibe');
       expect(reaction?.reactionType).toBe('read');
+    });
+
+    it('should reject broken Japanese and use fallback', async () => {
+      const mockLLMService = {
+        react: vi.fn().mockResolvedValue({ content: 'れいかないよ' }),
+      };
+
+      const llmService = createReactionService(
+        db,
+        { useLLM: true, language: 'ja' },
+        mockLLMService as unknown as Parameters<typeof createReactionService>[2],
+      );
+
+      const reaction = await llmService.generateReaction('entry-1', 'テスト');
+
+      // Should fallback since 'れいかないよ' is broken Japanese
+      expect(reaction?.content).toBe('·');
+      expect(reaction?.reactionType).toBe('read');
+    });
+
+    it('should accept valid short Japanese reactions', async () => {
+      const mockLLMService = {
+        react: vi.fn().mockResolvedValue({ content: 'きつそう' }),
+      };
+
+      const llmService = createReactionService(
+        db,
+        { useLLM: true, language: 'ja' },
+        mockLLMService as unknown as Parameters<typeof createReactionService>[2],
+      );
+
+      const reaction = await llmService.generateReaction('entry-1', 'テスト');
+
+      expect(reaction?.content).toBe('きつそう');
+      expect(reaction?.reactionType).toBe('custom');
     });
 
     it('should pass recent reactions to LLM after generating reactions', async () => {
