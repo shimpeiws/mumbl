@@ -181,4 +181,35 @@ describe('selectBarsForReaction', () => {
     const result = selectBarsForReaction(bars, 'hustle grind', 5, 3);
     expect(result.length).toBeLessThanOrEqual(5);
   });
+
+  it('should match Japanese bars with Japanese entry text', () => {
+    const bars: Bar[] = [
+      { text: '仕事は大変だけど頑張ろう', language: 'ja' },
+      { text: '天気がいい日は散歩しよう', language: 'ja' },
+      { text: 'sunshine rainbow', language: 'en' },
+      { text: 'random filler one', language: 'en' },
+      { text: 'random filler two', language: 'en' },
+      { text: 'random filler three', language: 'en' },
+      { text: 'random filler four', language: 'en' },
+      { text: 'random filler five', language: 'en' },
+    ];
+    let matchCount = 0;
+    const runs = 20;
+    for (let i = 0; i < runs; i++) {
+      const result = selectBarsForReaction(bars, '仕事がつらい', 5, 3, 'ja');
+      for (const r of result) {
+        if (r.text === '仕事は大変だけど頑張ろう') matchCount++;
+      }
+    }
+    // The Japanese bar with "仕事" overlap should appear frequently
+    expect(matchCount / runs).toBeGreaterThan(0.5);
+  });
+});
+
+describe('buildEntryTokens - Japanese', () => {
+  it('should tokenize Japanese entry text into meaningful tokens', () => {
+    const tokens = buildEntryTokens('仕事がつらい');
+    expect(tokens.has('仕事')).toBe(true);
+    expect(tokens.has('つらい')).toBe(true);
+  });
 });
