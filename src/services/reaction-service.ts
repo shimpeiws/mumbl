@@ -34,6 +34,18 @@ const DEFAULT_CONFIG: ReactionConfig = {
 const RECENT_REACTION_LIMIT = 8;
 
 /**
+ * Detect likely broken Japanese output.
+ * All-hiragana strings longer than 6 characters are almost certainly
+ * garbled output from the LLM rather than intentional reactions.
+ */
+export function isLikelyBrokenJapanese(text: string, language?: DetectedLanguage): boolean {
+  if (language !== 'ja') return false;
+  if (text.length <= 4) return false;
+  const allHiragana = /^[\u3040-\u309F]+$/.test(text);
+  return allHiragana && text.length >= 6;
+}
+
+/**
  * Reaction content templates aligned with mumbl personality
  */
 const REACTION_CONTENT: Record<ReactionType, string[]> = {
@@ -179,8 +191,12 @@ export function createReactionService(
           recentReactions: recentReactions.length > 0 ? [...recentReactions] : undefined,
         });
         const trimmed = response.content.trim();
-        // Use LLM response if non-empty and short enough
-        if (trimmed && trimmed.length <= MAX_REACTION_LENGTH) {
+        // Use LLM response if non-empty, short enough, and not broken Japanese
+        if (
+          trimmed &&
+          trimmed.length <= MAX_REACTION_LENGTH &&
+          !isLikelyBrokenJapanese(trimmed, language)
+        ) {
           reactionContent = trimmed;
           reactionType = 'custom';
         } else {

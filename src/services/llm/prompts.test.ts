@@ -373,6 +373,38 @@ describe('createReactionPrompt', () => {
     expect(systemContent).toContain('Do NOT mechanically attach particles');
   });
 
+  it('should include vocabulary usage examples with sample words', () => {
+    const messages = createReactionPrompt('test', { language: 'en' }, testVocabulary);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Vocabulary usage examples:');
+    expect(systemContent).toContain('(no vocab fits) -> ·');
+  });
+
+  it('should include vocabulary usage examples in Japanese', () => {
+    const messages = createReactionPrompt('テスト', { language: 'ja' }, testVocabulary);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Vocabulary usage examples:');
+    expect(systemContent).toContain('コーヒー飲んだ');
+    expect(systemContent).toContain('(no vocab fits) -> ·');
+  });
+
+  it('should include grammar guard instructions for Japanese vocabulary', () => {
+    const messages = createReactionPrompt('テスト', { language: 'ja' }, testVocabulary);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('NEVER output meaningless hiragana strings');
+    expect(systemContent).toContain('native Japanese speaker actually say this');
+  });
+
+  it('should not include grammar guard instructions for English vocabulary', () => {
+    const messages = createReactionPrompt('test', { language: 'en' }, testVocabulary);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).not.toContain('NEVER output meaningless hiragana strings');
+  });
+
   it('should not contain mechanical template patterns in vocabulary section', () => {
     const messages = createReactionPrompt('テスト', { language: 'ja' }, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
@@ -394,14 +426,14 @@ describe('createReactionPrompt', () => {
     expect(systemContent).toContain('classify the entry');
   });
 
-  it('should not include generic examples when vocabulary is provided', () => {
+  it('should include base examples even when vocabulary is provided', () => {
     const messages = createReactionPrompt('test', { language: 'en' }, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
     expect(systemContent).toContain('YOUR VOCABULARY (use when it fits)');
-    // Generic examples block should be excluded when vocabulary is provided
-    expect(systemContent).not.toContain('"snack was good" -> fire');
-    expect(systemContent).not.toContain('"baby took first steps" -> no way');
+    // Base examples are always included as grammar/format reference
+    expect(systemContent).toContain('"snack was good" -> fire');
+    expect(systemContent).toContain('"baby took first steps" -> no way');
   });
 });
 
@@ -1046,7 +1078,7 @@ describe('createReactionPrompt with bars', () => {
     expect(systemContent).not.toContain('LYRIC REFERENCES');
   });
 
-  it('should suppress generic examples when bars are present even without words', () => {
+  it('should include base examples even when bars are present without words', () => {
     const barOnlyVocab: VocabularySet = {
       words: [],
       phrases: [],
@@ -1059,7 +1091,9 @@ describe('createReactionPrompt with bars', () => {
     const systemContent = messages[0]?.content ?? '';
 
     expect(systemContent).toContain('LYRIC REFERENCES');
-    expect(systemContent).not.toContain('"snack was good" -> fire');
+    // Base examples always included as grammar/format reference
+    expect(systemContent).toContain('"snack was good" -> fire');
+    // Word/phrase reference still suppressed when personal content exists
     expect(systemContent).not.toContain('Word/phrase reference');
   });
 });

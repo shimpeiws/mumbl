@@ -445,7 +445,12 @@ function buildVocabWordList(sampledWords: VocabularyWord[]): string[] {
   return [];
 }
 
-function buildVocabUsageInstruction(language?: DetectedLanguage): string {
+function buildVocabUsageInstruction(
+  language?: DetectedLanguage,
+  sampleWords: string[] = [],
+): string {
+  const vocabExamples = buildVocabExamples(sampleWords, language);
+
   if (language === 'ja') {
     return `Your vocabulary words reflect your personal vibe. Let them inspire your reactions naturally.
 
@@ -455,13 +460,15 @@ How to use vocabulary:
 - You can transform, conjugate, or embed words naturally in casual Japanese
 - A vocab word can stand alone if it captures the right feeling
 - Skip vocabulary entirely if forcing a word would sound unnatural
-
+${vocabExamples}
 IMPORTANT:
 - Do NOT mechanically attach particles to vocabulary words. Repeating "word + だな/じゃん/よな" every time sounds robotic.
 - React like a real person would. If you'd never actually say it out loud, don't write it.
 - Prioritize sounding natural over using vocabulary. Bad Japanese is worse than no vocabulary.
 - Keep reactions SHORT (1-5 words). No full sentences or explanations.
-- Only skip vocabulary if the entry is so mundane that "うん" or "·" is enough.`;
+- Only skip vocabulary if the entry is so mundane that "うん" or "·" is enough.
+- NEVER output meaningless hiragana strings. If it does not sound like something a native speaker would actually say, use "·" instead.
+- Before outputting, self-check: "Would a native Japanese speaker actually say this?" If not, fall back to "·".`;
   }
 
   return `Your vocabulary words reflect your personal vibe. Let them inspire your reactions naturally.
@@ -472,12 +479,44 @@ How to use vocabulary:
 - You can adapt, riff on, or embed words naturally in slang
 - A vocab word can stand alone if it captures the right feeling
 - Skip vocabulary entirely if forcing a word would sound unnatural
-
+${vocabExamples}
 IMPORTANT:
 - Do NOT mechanically slot words into "so [word]" / "not [word]" / "[word]!" patterns every time.
 - React like a real person would. If it sounds forced, skip the vocab.
 - Keep reactions SHORT (1-5 words). No full sentences or explanations.
 - Only skip vocabulary if the entry is so mundane that "word" or "·" is enough.`;
+}
+
+/**
+ * Build vocabulary usage examples from sampled words.
+ * Shows the LLM how to correctly apply vocab words with concrete input->output pairs.
+ */
+function buildVocabExamples(sampleWords: string[], language?: DetectedLanguage): string {
+  if (sampleWords.length === 0) return '';
+
+  const words = sampleWords.slice(0, 3);
+
+  if (language === 'ja') {
+    const lines = ['\nVocabulary usage examples:'];
+    if (words[0]) {
+      lines.push(`"疲れた" + vocab "${words[0]}" -> ${words[0]}`);
+    }
+    if (words[1]) {
+      lines.push(`"プロジェクト終わった" + vocab "${words[1]}" -> ${words[1]}`);
+    }
+    lines.push('"コーヒー飲んだ" + (no vocab fits) -> ·');
+    return `${lines.join('\n')}\n`;
+  }
+
+  const lines = ['\nVocabulary usage examples:'];
+  if (words[0]) {
+    lines.push(`"work is tough" + vocab "${words[0]}" -> ${words[0]}`);
+  }
+  if (words[1]) {
+    lines.push(`"project done" + vocab "${words[1]}" -> ${words[1]}`);
+  }
+  lines.push('"had coffee" + (no vocab fits) -> ·');
+  return `${lines.join('\n')}\n`;
 }
 
 function buildVocabularyPrioritySection(
@@ -500,7 +539,8 @@ function buildVocabularyPrioritySection(
     parts.push(`Phrases: ${phrases.join(', ')}`);
   }
 
-  parts.push(buildVocabUsageInstruction(language));
+  const wordStrings = sampledWords.map((w) => w.word);
+  parts.push(buildVocabUsageInstruction(language, wordStrings));
   return parts.join('\n');
 }
 
@@ -667,9 +707,10 @@ export function createReactionPrompt(
   const hasPersonalContent = vocabSection || barSection;
   const wordListSection = hasPersonalContent ? '' : `## Word/phrase reference:\n${wordList}`;
 
-  // When vocabulary is available, skip generic examples (vocabulary section has its own)
-  // but keep mood mapping to guide the LLM on understanding entry context
-  const examplesSection = hasPersonalContent ? '' : buildExamplesSection(language);
+  // Always include base examples as grammar/format reference,
+  // even when vocabulary is present. Local LLMs need concrete examples
+  // to produce natural language.
+  const examplesSection = buildExamplesSection(language);
   const moodSection = buildMoodMappingSection(language);
 
   // Pass undefined for vocabulary so no separate vocabulary section is appended
