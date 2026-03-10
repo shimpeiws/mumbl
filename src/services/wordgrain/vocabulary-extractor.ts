@@ -15,6 +15,10 @@ interface WordMeta {
   frequency?: number;
   sentiment?: string;
   sentimentScore?: number;
+  tfidf?: number;
+  collocations?: string[];
+  categories?: string[];
+  isSlang?: boolean;
 }
 
 function processGrain(
@@ -46,12 +50,32 @@ function processGrain(
       if (grain.sentiment_score !== undefined && existing.sentimentScore === undefined) {
         existing.sentimentScore = grain.sentiment_score;
       }
+      if (grain.tfidf !== undefined) {
+        existing.tfidf = Math.max(existing.tfidf ?? 0, grain.tfidf);
+      }
+      if (grain.collocations) {
+        const merged = new Set(existing.collocations ?? []);
+        for (const c of grain.collocations) merged.add(c);
+        existing.collocations = [...merged];
+      }
+      if (grain.categories) {
+        const merged = new Set(existing.categories ?? []);
+        for (const c of grain.categories) merged.add(c);
+        existing.categories = [...merged];
+      }
+      if (grain.is_slang === true) {
+        existing.isSlang = true;
+      }
     } else {
       wordMetaMap.set(trimmed, {
         pos: grain.pos,
         frequency: grain.frequency,
         sentiment: grain.sentiment,
         sentimentScore: grain.sentiment_score,
+        tfidf: grain.tfidf,
+        collocations: grain.collocations ? [...grain.collocations] : undefined,
+        categories: grain.categories ? [...grain.categories] : undefined,
+        isSlang: grain.is_slang,
       });
     }
   }
@@ -77,6 +101,10 @@ function buildRichWords(
     if (meta?.frequency !== undefined) entry.frequency = meta.frequency;
     if (meta?.sentiment) entry.sentiment = meta.sentiment;
     if (meta?.sentimentScore !== undefined) entry.sentimentScore = meta.sentimentScore;
+    if (meta?.tfidf !== undefined) entry.tfidf = meta.tfidf;
+    if (meta?.collocations && meta.collocations.length > 0) entry.collocations = meta.collocations;
+    if (meta?.categories && meta.categories.length > 0) entry.categories = meta.categories;
+    if (meta?.isSlang === true) entry.isSlang = true;
     return entry;
   });
 }

@@ -3,7 +3,10 @@ import type { VocabularySet, VocabularyWord } from '../wordgrain/types.js';
 import {
   MUMBL_SYSTEM_PROMPT,
   buildBarReferenceSection,
+  buildCategoryHints,
+  buildCollocationHints,
   buildSentimentHints,
+  buildSlangHints,
   createCalloutPrompt,
   createChatMessages,
   createFollowUpEvaluationPrompt,
@@ -1179,6 +1182,173 @@ describe('sentiment-matching rule in vocabulary usage', () => {
 
     expect(systemContent).toContain('Negative-toned: annoying');
     expect(systemContent).toContain('Positive-toned: great');
+  });
+});
+
+describe('weightedSample with tfidf', () => {
+  it('should give higher weight to words with tfidf', () => {
+    const items: VocabularyWord[] = [
+      { word: 'common', frequency: 10, tfidf: 0 },
+      { word: 'distinctive', frequency: 10, tfidf: 1.0 },
+    ];
+
+    const counts: Record<string, number> = { common: 0, distinctive: 0 };
+    for (let i = 0; i < 1000; i++) {
+      const result = weightedSample(items, 1);
+      const word = result[0]?.word ?? '';
+      counts[word] = (counts[word] ?? 0) + 1;
+    }
+
+    expect(counts['distinctive']).toBeGreaterThan(counts['common'] ?? 0);
+  });
+
+  it('should not break when tfidf is undefined', () => {
+    const items: VocabularyWord[] = [
+      { word: 'a', frequency: 5 },
+      { word: 'b', frequency: 5 },
+    ];
+    const result = weightedSample(items, 1);
+    expect(result).toHaveLength(1);
+  });
+});
+
+describe('buildCollocationHints', () => {
+  it('should build hints for words with collocations', () => {
+    const words: VocabularyWord[] = [
+      { word: 'drip', collocations: ['ice', 'flex', 'sauce'] },
+      { word: 'plain' },
+    ];
+    const hints = buildCollocationHints(words);
+
+    expect(hints).toHaveLength(1);
+    expect(hints[0]).toBe('"drip" pairs with: ice, flex, sauce');
+  });
+
+  it('should return empty array when no words have collocations', () => {
+    const words: VocabularyWord[] = [{ word: 'plain' }, { word: 'basic' }];
+    const hints = buildCollocationHints(words);
+
+    expect(hints).toEqual([]);
+  });
+});
+
+describe('buildCategoryHints', () => {
+  it('should group words by category and show top 3', () => {
+    const words: VocabularyWord[] = [
+      { word: 'drip', categories: ['style', 'fashion'] },
+      { word: 'flex', categories: ['style', 'money'] },
+      { word: 'chill', categories: ['emotion'] },
+      { word: 'hype', categories: ['emotion'] },
+      { word: 'rare', categories: ['unique'] },
+    ];
+    const hints = buildCategoryHints(words);
+
+    expect(hints).toHaveLength(3);
+    expect(hints[0]).toBe('Category "style": drip, flex');
+    expect(hints[1]).toBe('Category "emotion": chill, hype');
+  });
+
+  it('should return empty array when no words have categories', () => {
+    const words: VocabularyWord[] = [{ word: 'plain' }];
+    const hints = buildCategoryHints(words);
+
+    expect(hints).toEqual([]);
+  });
+});
+
+describe('buildSlangHints', () => {
+  it('should list slang words', () => {
+    const words: VocabularyWord[] = [
+      { word: 'drip', isSlang: true },
+      { word: 'cap', isSlang: true },
+      { word: 'normal' },
+    ];
+    const hints = buildSlangHints(words);
+
+    expect(hints).toHaveLength(1);
+    expect(hints[0]).toBe('Slang/casual: drip, cap');
+  });
+
+  it('should return empty array when no slang words', () => {
+    const words: VocabularyWord[] = [{ word: 'plain' }];
+    const hints = buildSlangHints(words);
+
+    expect(hints).toEqual([]);
+  });
+});
+
+describe('sentiment behavioral rule in prompt', () => {
+  it('should include tone-matching instruction when sentiment data present', () => {
+    const vocab: VocabularySet = {
+      words: ['chill', 'annoying'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [
+        { word: 'chill', sentiment: 'positive' },
+        { word: 'annoying', sentiment: 'negative' },
+      ],
+      bars: [],
+    };
+    const messages = createReactionPrompt('test', { language: 'en' }, vocab);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain(
+      'Match vocabulary tone to entry mood: positive words for upbeat entries, negative for tough ones, any for neutral.',
+    );
+  });
+});
+
+describe('collocation, category, and slang hints in prompt', () => {
+  it('should include collocation hints in reaction prompt', () => {
+    const vocab: VocabularySet = {
+      words: ['drip'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [{ word: 'drip', collocations: ['ice', 'flex'] }],
+      bars: [],
+    };
+    const messages = createReactionPrompt('test', { language: 'en' }, vocab);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('"drip" pairs with: ice, flex');
+  });
+
+  it('should include category hints in reaction prompt', () => {
+    const vocab: VocabularySet = {
+      words: ['drip', 'flex'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [
+        { word: 'drip', categories: ['style'] },
+        { word: 'flex', categories: ['style'] },
+      ],
+      bars: [],
+    };
+    const messages = createReactionPrompt('test', { language: 'en' }, vocab);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Category "style": drip, flex');
+  });
+
+  it('should include slang hints in reaction prompt', () => {
+    const vocab: VocabularySet = {
+      words: ['drip', 'cap'],
+      phrases: [],
+      tags: [],
+      source: 'test',
+      richWords: [
+        { word: 'drip', isSlang: true },
+        { word: 'cap', isSlang: true },
+      ],
+      bars: [],
+    };
+    const messages = createReactionPrompt('test', { language: 'en' }, vocab);
+    const systemContent = messages[0]?.content ?? '';
+
+    expect(systemContent).toContain('Slang/casual: drip, cap');
   });
 });
 

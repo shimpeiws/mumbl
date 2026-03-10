@@ -55,6 +55,19 @@ function isValidGrain(obj: unknown): obj is Grain {
   if (record['sentiment'] !== undefined && typeof record['sentiment'] !== 'string') return false;
   if (record['sentiment_score'] !== undefined && typeof record['sentiment_score'] !== 'number')
     return false;
+  if (record['tfidf'] !== undefined) {
+    if (typeof record['tfidf'] !== 'number' || record['tfidf'] < 0) return false;
+  }
+  if (record['categories'] !== undefined) {
+    if (!Array.isArray(record['categories'])) return false;
+    if (!record['categories'].every((c: unknown) => typeof c === 'string')) return false;
+  }
+  if (record['collocations'] !== undefined) {
+    if (!Array.isArray(record['collocations'])) return false;
+    if (!record['collocations'].every((c: unknown) => typeof c === 'string')) return false;
+  }
+  if (record['is_slang'] !== undefined && typeof record['is_slang'] !== 'boolean') return false;
+  if (record['definition'] !== undefined && typeof record['definition'] !== 'string') return false;
   return true;
 }
 
