@@ -64,6 +64,7 @@ export function WriteView() {
         padding={1}
         flexDirection="column"
         height={textInputHeight}
+        width="100%"
       >
         <Text>{writeState.content || <Text dimColor>Start typing...</Text>}</Text>
       </Box>
