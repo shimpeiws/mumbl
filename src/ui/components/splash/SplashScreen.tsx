@@ -29,7 +29,13 @@ export function SplashScreen({ onComplete, duration = 2500 }: SplashScreenProps)
   }, [onComplete, duration]);
 
   return (
-    <Box flexDirection="column" alignItems="center" padding={1} height={terminalRows}>
+    <Box
+      flexDirection="column"
+      alignItems="center"
+      justifyContent="center"
+      padding={1}
+      height={terminalRows}
+    >
       <Logo />
       <Box marginTop={1}>{showLoading && <LoadingAnimation />}</Box>
     </Box>
