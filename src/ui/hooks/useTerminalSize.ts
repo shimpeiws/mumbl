@@ -29,7 +29,6 @@ export function useTerminalSize(): TerminalSize {
     };
 
     stdout.on('resize', handleResize);
-    handleResize();
 
     return () => {
       stdout.off('resize', handleResize);
