@@ -1,5 +1,6 @@
 import { Box } from 'ink';
 import React, { useEffect, useState } from 'react';
+import { useTerminalSize } from '../../hooks/useTerminalSize.js';
 import { LoadingAnimation } from './LoadingAnimation.js';
 import { Logo } from './Logo.js';
 
@@ -9,6 +10,7 @@ interface SplashScreenProps {
 }
 
 export function SplashScreen({ onComplete, duration = 2500 }: SplashScreenProps) {
+  const { rows: terminalRows } = useTerminalSize();
   const [showLoading, setShowLoading] = useState(false);
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export function SplashScreen({ onComplete, duration = 2500 }: SplashScreenProps)
   }, [onComplete, duration]);
 
   return (
-    <Box flexDirection="column" alignItems="center" padding={1}>
+    <Box flexDirection="column" alignItems="center" padding={1} height={terminalRows}>
       <Logo />
       <Box marginTop={1}>{showLoading && <LoadingAnimation />}</Box>
     </Box>
