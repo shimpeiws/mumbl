@@ -3,6 +3,9 @@ import React, { useEffect, useState } from 'react';
 
 const SPINNER_FRAMES = ['💎', '💜', '☁️', '✨', '🔮', '💫'] as const;
 
+const MAX_MESSAGE_LENGTH = 17;
+const SPARKLE_WIDTH = 15;
+
 const MESSAGES = [
   { text: 'la di da di da', color: 'magenta' },
   { text: 'trust the process', color: 'cyan' },
@@ -27,7 +30,7 @@ export function LoadingAnimation() {
   useEffect(() => {
     const timer = setInterval(() => {
       setFrame((f) => (f + 1) % (SPINNER_FRAMES.length * MESSAGES.length));
-    }, 150);
+    }, 250);
     return () => clearInterval(timer);
   }, []);
 
@@ -42,23 +45,27 @@ export function LoadingAnimation() {
   const bottomSparkleIndex = ((frame + 3) % SPARKLES.length) as SparkleIndex;
 
   const dots = '.'.repeat((frame % 3) + 1).padEnd(3, ' ');
-  const sparkle = SPARKLES[sparkleIndex];
-  const bottomSparkle = SPARKLES[bottomSparkleIndex];
   const current = MESSAGES[messageIndex];
 
   return (
     <Box flexDirection="column" alignItems="center">
-      <Text color="magenta">{sparkle}</Text>
+      <Box width={SPARKLE_WIDTH}>
+        <Text color="magenta">{SPARKLES[sparkleIndex]}</Text>
+      </Box>
       <Text> </Text>
       <Box>
-        <Text color="yellow">{SPINNER_FRAMES[spinnerIndex]} </Text>
+        <Box width={3}>
+          <Text color="yellow">{SPINNER_FRAMES[spinnerIndex]} </Text>
+        </Box>
         <Text color={current.color} bold>
-          {current.text}
+          {current.text.padEnd(MAX_MESSAGE_LENGTH, ' ')}
         </Text>
         <Text dimColor> {dots}</Text>
       </Box>
       <Text> </Text>
-      <Text color="magenta">{bottomSparkle}</Text>
+      <Box width={SPARKLE_WIDTH}>
+        <Text color="magenta">{SPARKLES[bottomSparkleIndex]}</Text>
+      </Box>
     </Box>
   );
 }
