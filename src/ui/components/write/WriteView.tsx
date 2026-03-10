@@ -46,13 +46,7 @@ export function WriteView() {
         </Text>
       </Box>
 
-      <Box
-        borderStyle="round"
-        borderColor="green"
-        padding={1}
-        flexDirection="column"
-        minHeight={5}
-      >
+      <Box borderStyle="round" borderColor="green" padding={1} flexDirection="column" minHeight={5}>
         <Text>{writeState.content || <Text dimColor>Start typing...</Text>}</Text>
       </Box>
 
