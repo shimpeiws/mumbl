@@ -288,6 +288,97 @@ describe('extractVocabulary', () => {
     expect(plain?.sentimentScore).toBeUndefined();
   });
 
+  it('should extract tfidf, collocations, categories, and isSlang into richWords', () => {
+    const files: WordgrainFile[] = [
+      {
+        name: 'test',
+        grains: [
+          {
+            word: 'drip',
+            tfidf: 0.85,
+            categories: ['style', 'fashion'],
+            collocations: ['ice', 'flex'],
+            is_slang: true,
+          },
+          { word: 'chill' },
+        ],
+        bars: [],
+      },
+    ];
+
+    const result = extractVocabulary(files);
+
+    const drip = result.richWords.find((w) => w.word === 'drip');
+    expect(drip?.tfidf).toBe(0.85);
+    expect(drip?.categories).toEqual(['style', 'fashion']);
+    expect(drip?.collocations).toEqual(['ice', 'flex']);
+    expect(drip?.isSlang).toBe(true);
+
+    const chill = result.richWords.find((w) => w.word === 'chill');
+    expect(chill?.tfidf).toBeUndefined();
+    expect(chill?.categories).toBeUndefined();
+    expect(chill?.collocations).toBeUndefined();
+    expect(chill?.isSlang).toBeUndefined();
+  });
+
+  it('should merge tfidf keeping max value on duplicates', () => {
+    const files: WordgrainFile[] = [
+      {
+        name: 'a',
+        grains: [{ word: 'drip', tfidf: 0.3 }],
+        bars: [],
+      },
+      {
+        name: 'b',
+        grains: [{ word: 'drip', tfidf: 0.8 }],
+        bars: [],
+      },
+    ];
+
+    const result = extractVocabulary(files);
+    const drip = result.richWords.find((w) => w.word === 'drip');
+    expect(drip?.tfidf).toBe(0.8);
+  });
+
+  it('should merge collocations and categories deduplicating on duplicates', () => {
+    const files: WordgrainFile[] = [
+      {
+        name: 'a',
+        grains: [{ word: 'drip', collocations: ['ice', 'flex'], categories: ['style'] }],
+        bars: [],
+      },
+      {
+        name: 'b',
+        grains: [{ word: 'drip', collocations: ['flex', 'sauce'], categories: ['style', 'slang'] }],
+        bars: [],
+      },
+    ];
+
+    const result = extractVocabulary(files);
+    const drip = result.richWords.find((w) => w.word === 'drip');
+    expect(drip?.collocations).toEqual(['ice', 'flex', 'sauce']);
+    expect(drip?.categories).toEqual(['style', 'slang']);
+  });
+
+  it('should OR isSlang across duplicate grains', () => {
+    const files: WordgrainFile[] = [
+      {
+        name: 'a',
+        grains: [{ word: 'drip', is_slang: false }],
+        bars: [],
+      },
+      {
+        name: 'b',
+        grains: [{ word: 'drip', is_slang: true }],
+        bars: [],
+      },
+    ];
+
+    const result = extractVocabulary(files);
+    const drip = result.richWords.find((w) => w.word === 'drip');
+    expect(drip?.isSlang).toBe(true);
+  });
+
   it('should skip bars with empty text', () => {
     const files: WordgrainFile[] = [
       {

@@ -458,6 +458,160 @@ describe('parseWordgrainFile', () => {
     expect(result?.bars).toHaveLength(2);
   });
 
+  it('should parse grains with valid tfidf, categories, collocations, is_slang, and definition', () => {
+    const filePath = path.join(tmpDir, 'v020-fields.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        name: 'test',
+        grains: [
+          {
+            word: 'drip',
+            tfidf: 0.85,
+            categories: ['style', 'fashion'],
+            collocations: ['ice', 'flex'],
+            is_slang: true,
+            definition: 'stylish appearance',
+          },
+        ],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.grains).toHaveLength(1);
+    expect(result?.grains[0]?.tfidf).toBe(0.85);
+    expect(result?.grains[0]?.categories).toEqual(['style', 'fashion']);
+    expect(result?.grains[0]?.collocations).toEqual(['ice', 'flex']);
+    expect(result?.grains[0]?.is_slang).toBe(true);
+    expect(result?.grains[0]?.definition).toBe('stylish appearance');
+  });
+
+  it('should accept grains without new v0.2.0 fields', () => {
+    const filePath = path.join(tmpDir, 'no-new-fields.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        name: 'test',
+        grains: [{ word: 'plain' }],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.grains).toHaveLength(1);
+    expect(result?.grains[0]?.tfidf).toBeUndefined();
+    expect(result?.grains[0]?.categories).toBeUndefined();
+    expect(result?.grains[0]?.collocations).toBeUndefined();
+    expect(result?.grains[0]?.is_slang).toBeUndefined();
+    expect(result?.grains[0]?.definition).toBeUndefined();
+  });
+
+  it('should reject grains with negative tfidf', () => {
+    const filePath = path.join(tmpDir, 'bad-tfidf.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        name: 'test',
+        grains: [
+          { word: 'valid', tfidf: 0.5 },
+          { word: 'negative', tfidf: -0.1 },
+          { word: 'not-number', tfidf: 'high' },
+        ],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.grains).toHaveLength(1);
+    expect(result?.grains[0]?.word).toBe('valid');
+  });
+
+  it('should reject grains with non-array categories', () => {
+    const filePath = path.join(tmpDir, 'bad-categories.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        name: 'test',
+        grains: [
+          { word: 'valid', categories: ['style'] },
+          { word: 'invalid', categories: 'style' },
+          { word: 'also-invalid', categories: [123] },
+        ],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.grains).toHaveLength(1);
+    expect(result?.grains[0]?.word).toBe('valid');
+  });
+
+  it('should reject grains with non-array collocations', () => {
+    const filePath = path.join(tmpDir, 'bad-collocations.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        name: 'test',
+        grains: [
+          { word: 'valid', collocations: ['ice'] },
+          { word: 'invalid', collocations: 'ice' },
+        ],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.grains).toHaveLength(1);
+    expect(result?.grains[0]?.word).toBe('valid');
+  });
+
+  it('should reject grains with non-boolean is_slang', () => {
+    const filePath = path.join(tmpDir, 'bad-slang.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        name: 'test',
+        grains: [
+          { word: 'valid', is_slang: true },
+          { word: 'invalid', is_slang: 'yes' },
+          { word: 'also-invalid', is_slang: 1 },
+        ],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.grains).toHaveLength(1);
+    expect(result?.grains[0]?.word).toBe('valid');
+  });
+
+  it('should reject grains with non-string definition', () => {
+    const filePath = path.join(tmpDir, 'bad-definition.wg.json');
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        name: 'test',
+        grains: [
+          { word: 'valid', definition: 'a word' },
+          { word: 'invalid', definition: 123 },
+        ],
+      }),
+    );
+
+    const result = parseWordgrainFile(filePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.grains).toHaveLength(1);
+    expect(result?.grains[0]?.word).toBe('valid');
+  });
+
   it('should reject bar entries with non-string text', () => {
     const filePath = path.join(tmpDir, 'bad-bar.wg.json');
     fs.writeFileSync(

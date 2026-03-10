@@ -23,6 +23,11 @@ export interface Grain {
   frequency?: number;
   sentiment?: string;
   sentiment_score?: number;
+  tfidf?: number;
+  categories?: string[];
+  collocations?: string[];
+  is_slang?: boolean;
+  definition?: string;
 }
 
 export interface VocabularyWord {
@@ -31,6 +36,10 @@ export interface VocabularyWord {
   frequency?: number;
   sentiment?: string;
   sentimentScore?: number;
+  tfidf?: number;
+  collocations?: string[];
+  categories?: string[];
+  isSlang?: boolean;
 }
 
 export interface BarSource {

@@ -320,7 +320,9 @@ export function weightedSample(items: VocabularyWord[], count: number): Vocabula
   const remaining = [...items];
 
   for (let picked = 0; picked < count && remaining.length > 0; picked++) {
-    const weights = remaining.map((item) => Math.sqrt((item.frequency ?? 0) + 1));
+    const weights = remaining.map(
+      (item) => Math.sqrt((item.frequency ?? 0) + 1) * (1 + (item.tfidf ?? 0)),
+    );
     const totalWeight = weights.reduce((sum, w) => sum + w, 0);
 
     let random = Math.random() * totalWeight;
@@ -546,6 +548,53 @@ export function buildSentimentHints(words: VocabularyWord[]): string[] {
   return lines;
 }
 
+/**
+ * Build collocation hints for sampled vocabulary words.
+ * Shows the LLM which words naturally pair together.
+ */
+export function buildCollocationHints(words: VocabularyWord[]): string[] {
+  const lines: string[] = [];
+  for (const w of words) {
+    if (w.collocations && w.collocations.length > 0) {
+      lines.push(`"${w.word}" pairs with: ${w.collocations.join(', ')}`);
+    }
+  }
+  return lines;
+}
+
+/**
+ * Build category grouping hints for sampled vocabulary words.
+ * Groups words by category and shows top 3 categories.
+ */
+export function buildCategoryHints(words: VocabularyWord[]): string[] {
+  const groups = new Map<string, string[]>();
+  for (const w of words) {
+    if (!w.categories) continue;
+    for (const cat of w.categories) {
+      const group = groups.get(cat);
+      if (group) {
+        group.push(w.word);
+      } else {
+        groups.set(cat, [w.word]);
+      }
+    }
+  }
+  if (groups.size === 0) return [];
+
+  const sorted = [...groups.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 3);
+  return sorted.map(([cat, wordList]) => `Category "${cat}": ${wordList.join(', ')}`);
+}
+
+/**
+ * Build slang hints for sampled vocabulary words.
+ * Flags which words are slang/casual for appropriate usage.
+ */
+export function buildSlangHints(words: VocabularyWord[]): string[] {
+  const slangWords = words.filter((w) => w.isSlang === true).map((w) => w.word);
+  if (slangWords.length === 0) return [];
+  return [`Slang/casual: ${slangWords.join(', ')}`];
+}
+
 function buildVocabularyPrioritySection(
   vocabulary: VocabularySet,
   language?: DetectedLanguage,
@@ -565,6 +614,24 @@ function buildVocabularyPrioritySection(
   const sentimentHints = buildSentimentHints(sampledWords);
   if (sentimentHints.length > 0) {
     parts.push(...sentimentHints);
+    parts.push(
+      'Match vocabulary tone to entry mood: positive words for upbeat entries, negative for tough ones, any for neutral.',
+    );
+  }
+
+  const collocationHints = buildCollocationHints(sampledWords);
+  if (collocationHints.length > 0) {
+    parts.push(...collocationHints);
+  }
+
+  const categoryHints = buildCategoryHints(sampledWords);
+  if (categoryHints.length > 0) {
+    parts.push(...categoryHints);
+  }
+
+  const slangHints = buildSlangHints(sampledWords);
+  if (slangHints.length > 0) {
+    parts.push(...slangHints);
   }
 
   if (phrases.length > 0) {
