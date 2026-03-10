@@ -1,6 +1,7 @@
 import { Box, Text, useInput } from 'ink';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { JournalEntry } from '../../../repositories/types.js';
+import { useServices } from '../../context/ServiceContext.js';
 import { useReactions } from '../../hooks/useReactions.js';
 import { formatFullDate } from '../../utils/date-formatter.js';
 import { formatReactionDisplay } from './EntryListItem.js';
@@ -8,10 +9,32 @@ import { formatReactionDisplay } from './EntryListItem.js';
 interface EntryDetailProps {
   entry: JournalEntry;
   onClose: () => void;
+  onDelete?: () => void;
 }
 
-export function EntryDetail({ entry, onClose }: EntryDetailProps) {
+export function EntryDetail({ entry, onClose, onDelete }: EntryDetailProps) {
+  const { entryService } = useServices();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+
   useInput((input, key) => {
+    if (confirmingDelete) {
+      if (input === 'y') {
+        entryService.delete(entry.id);
+        onDelete?.();
+        return;
+      }
+      if (input === 'n' || key.escape) {
+        setConfirmingDelete(false);
+        return;
+      }
+      return;
+    }
+
+    if (input === 'd') {
+      setConfirmingDelete(true);
+      return;
+    }
+
     if (key.escape || input === 'q') {
       onClose();
     }
@@ -80,9 +103,20 @@ export function EntryDetail({ entry, onClose }: EntryDetailProps) {
         )}
       </Box>
 
-      <Box marginTop={1} justifyContent="center">
-        <Text dimColor>Press Escape or 'q' to close</Text>
-      </Box>
+      {confirmingDelete ? (
+        <Box marginTop={1} flexDirection="column" alignItems="center">
+          <Text bold color="red">
+            Delete this entry?
+          </Text>
+          <Box marginTop={1}>
+            <Text dimColor>y: confirm | n/Esc: cancel</Text>
+          </Box>
+        </Box>
+      ) : (
+        <Box marginTop={1} justifyContent="center">
+          <Text dimColor>Esc/q: back | d: delete</Text>
+        </Box>
+      )}
     </Box>
   );
 }

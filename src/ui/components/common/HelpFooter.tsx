@@ -19,7 +19,7 @@ export function HelpFooter({ mode, isViewingDetail = false, queueStatus }: HelpF
       return 'j/k: navigate | a: add | d: unregister | r: reload | Esc: back | q: quit';
     }
     if (isViewingDetail) {
-      return 'Esc/q: back | Tab: write';
+      return 'Esc/q: back | d: delete | Tab: write';
     }
     return 'j/k: navigate | Enter: view | Tab: write | c: config | q: quit';
   };

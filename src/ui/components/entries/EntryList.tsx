@@ -33,7 +33,7 @@ interface EntryListProps {
 }
 
 export function EntryList({ onViewingDetailChange }: EntryListProps) {
-  const { entries, loading, error } = useEntries();
+  const { entries, loading, error, refetch } = useEntries();
   const { listState, setListState } = useNavigation();
   const [viewingEntry, setViewingEntry] = useState<JournalEntry | null>(null);
 
@@ -181,7 +181,16 @@ export function EntryList({ onViewingDetailChange }: EntryListProps) {
   }
 
   if (viewingEntry) {
-    return <EntryDetail entry={viewingEntry} onClose={() => setViewingEntry(null)} />;
+    return (
+      <EntryDetail
+        entry={viewingEntry}
+        onClose={() => setViewingEntry(null)}
+        onDelete={() => {
+          setViewingEntry(null);
+          refetch();
+        }}
+      />
+    );
   }
 
   if (entries.length === 0) {
