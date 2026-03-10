@@ -12,10 +12,14 @@ interface SplashScreenProps {
 export function SplashScreen({ onComplete, duration = 2500 }: SplashScreenProps) {
   const { rows: terminalRows } = useTerminalSize();
   const [showLoading, setShowLoading] = useState(false);
+  const [fadingOut, setFadingOut] = useState(false);
 
   useEffect(() => {
     // Show loading animation after initial delay
     const loadingTimer = setTimeout(() => setShowLoading(true), 500);
+
+    // Start fade-out before unmount
+    const fadeTimer = setTimeout(() => setFadingOut(true), duration - 150);
 
     // Complete splash screen after duration
     const completeTimer = setTimeout(() => {
@@ -24,6 +28,7 @@ export function SplashScreen({ onComplete, duration = 2500 }: SplashScreenProps)
 
     return () => {
       clearTimeout(loadingTimer);
+      clearTimeout(fadeTimer);
       clearTimeout(completeTimer);
     };
   }, [onComplete, duration]);
@@ -36,8 +41,10 @@ export function SplashScreen({ onComplete, duration = 2500 }: SplashScreenProps)
       padding={1}
       height={terminalRows}
     >
-      <Logo />
-      <Box marginTop={1}>{showLoading && <LoadingAnimation />}</Box>
+      <Logo dimmed={fadingOut} />
+      <Box marginTop={1} height={5}>
+        {showLoading && !fadingOut ? <LoadingAnimation /> : null}
+      </Box>
     </Box>
   );
 }
