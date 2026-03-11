@@ -11,6 +11,7 @@ import { SplashScreen } from './components/splash/SplashScreen.js';
 import { WriteView } from './components/write/WriteView.js';
 import { NavigationProvider, useNavigation } from './context/NavigationContext.js';
 import { useQueue } from './context/QueueContext.js';
+import { useTerminalSize } from './hooks/useTerminalSize.js';
 
 function AppContent() {
   const { exit } = useApp();
@@ -19,6 +20,13 @@ function AppContent() {
   const [isViewingDetail, setIsViewingDetail] = useState(false);
   const agentStatus = useAgentStatus();
   useTerminalTitle(agentStatus);
+  const { rows: terminalRows } = useTerminalSize();
+
+  // Fixed content height keeps total output height constant across mode switches.
+  // This prevents Ink's incremental renderer from leaving ghost lines when
+  // the rendered height changes (e.g. duplicate headers, stacked borders).
+  // Overhead: header(4) + footer(2) + 1 buffer = 7
+  const contentHeight = Math.max(5, terminalRows - 7);
 
   useInput((input, key) => {
     if (input === 'q' || (key.ctrl && input === 'c')) {
@@ -46,7 +54,7 @@ function AppContent() {
         </Box>
       </Box>
 
-      <Box flexGrow={1}>
+      <Box flexGrow={1} height={contentHeight} overflow="hidden">
         {mode === 'list' && <EntryList onViewingDetailChange={setIsViewingDetail} />}
         {mode === 'write' && <WriteView />}
         {mode === 'config' && <ConfigView />}
