@@ -19,6 +19,16 @@ export default defineConfig({
         'src/ui/**/*.tsx', // TUI components, require ink-testing-library
         'src/ui/hooks/**', // TUI hooks, require ink-testing-library
         'src/ui/context/**', // TUI context, require ink-testing-library
+        // Type-only files (no executable JS)
+        'src/config/types.ts',
+        'src/repositories/types.ts',
+        'src/infrastructure/ollama/types.ts',
+        'src/services/context/types.ts',
+        'src/services/language/types.ts',
+        'src/services/trends/types.ts',
+        'src/services/wordgrain/types.ts',
+        'src/services/follow-up/types.ts',
+        'src/services/conversation/types.ts',
       ],
       thresholds: {
         lines: 70,
