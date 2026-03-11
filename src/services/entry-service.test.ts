@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initializeSchema } from '../infrastructure/database/schema.js';
 import { type EntryServiceInterface, createEntryService } from './entry-service.js';
 
@@ -189,6 +189,65 @@ describe('EntryService', () => {
     it('should return empty array when no matches', () => {
       const results = service.search('elephant');
       expect(results).toHaveLength(0);
+    });
+  });
+
+  describe('create with optional services', () => {
+    it('should call reactionService.queueReaction when provided', () => {
+      const mockReactionService = {
+        queueReaction: vi.fn(),
+        getReaction: vi.fn(),
+        generateReaction: vi.fn(),
+      };
+      const serviceWithReaction = createEntryService(db, mockReactionService as never);
+      const entry = serviceWithReaction.create({ content: 'Test' });
+
+      expect(mockReactionService.queueReaction).toHaveBeenCalledWith(entry.id, 'Test');
+    });
+
+    it('should call trendService.analyzeEntry when provided', () => {
+      const mockTrendService = {
+        analyzeEntry: vi.fn().mockResolvedValue(undefined),
+        getTrends: vi.fn(),
+        getTopics: vi.fn(),
+      };
+      const serviceWithTrend = createEntryService(db, undefined, mockTrendService as never);
+      const entry = serviceWithTrend.create({ content: 'Test' });
+
+      expect(mockTrendService.analyzeEntry).toHaveBeenCalledWith(entry.id, 'Test');
+    });
+
+    it('should call contextService.processEntry when provided', () => {
+      const mockContextService = {
+        processEntry: vi.fn().mockResolvedValue(undefined),
+        getContext: vi.fn(),
+      };
+      const serviceWithContext = createEntryService(
+        db,
+        undefined,
+        undefined,
+        mockContextService as never,
+      );
+      const entry = serviceWithContext.create({ content: 'Test' });
+
+      expect(mockContextService.processEntry).toHaveBeenCalledWith(entry.id, 'Test');
+    });
+
+    it('should call followUpService.evaluateEntry when provided', () => {
+      const mockFollowUpService = {
+        evaluateEntry: vi.fn().mockResolvedValue(undefined),
+        getDueFollowUps: vi.fn(),
+      };
+      const serviceWithFollowUp = createEntryService(
+        db,
+        undefined,
+        undefined,
+        undefined,
+        mockFollowUpService as never,
+      );
+      const entry = serviceWithFollowUp.create({ content: 'Test' });
+
+      expect(mockFollowUpService.evaluateEntry).toHaveBeenCalledWith(entry.id, 'Test');
     });
   });
 });
