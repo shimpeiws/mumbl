@@ -10,6 +10,7 @@ export default defineConfig({
         'coverage/**',
         'dist/**',
         '**/node_modules/**',
+        '.claude/**',
         '**/*.test.ts',
         '**/__tests__/**',
         'test/**',
