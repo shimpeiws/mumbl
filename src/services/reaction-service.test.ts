@@ -4,6 +4,7 @@ import { initializeSchema } from '../infrastructure/database/schema.js';
 import {
   type ReactionServiceInterface,
   createReactionService,
+  isDuplicate,
   isLikelyBrokenJapanese,
 } from './reaction-service.js';
 
@@ -36,6 +37,24 @@ describe('isLikelyBrokenJapanese', () => {
   it('should allow 4-char or shorter strings', () => {
     expect(isLikelyBrokenJapanese('あいう', 'ja')).toBe(false);
     expect(isLikelyBrokenJapanese('あいうえ', 'ja')).toBe(false);
+  });
+});
+
+describe('isDuplicate', () => {
+  it('should detect exact duplicates', () => {
+    expect(isDuplicate('きつそう', ['きつそう', 'やば'])).toBe(true);
+  });
+
+  it('should detect duplicates with whitespace differences', () => {
+    expect(isDuplicate(' きつそう ', ['きつそう', 'やば'])).toBe(true);
+  });
+
+  it('should return false for non-duplicates', () => {
+    expect(isDuplicate('new reaction', ['きつそう', 'やば'])).toBe(false);
+  });
+
+  it('should return false for empty recent list', () => {
+    expect(isDuplicate('anything', [])).toBe(false);
   });
 });
 
@@ -368,6 +387,63 @@ describe('ReactionService', () => {
 
       expect(reaction?.content).toBe('きつそう');
       expect(reaction?.reactionType).toBe('custom');
+    });
+
+    it('should retry once and use fallback when LLM returns duplicate both times', async () => {
+      const mockLLMService = {
+        react: vi.fn().mockResolvedValue({ content: 'きつそう' }),
+      };
+
+      const llmService = createReactionService(
+        db,
+        { useLLM: true, language: 'ja' },
+        mockLLMService as unknown as Parameters<typeof createReactionService>[2],
+      );
+
+      // Insert additional entry
+      db.prepare(
+        `INSERT INTO entries (id, timestamp, content, metadata, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      ).run('entry-2', Date.now() / 1000, 'Content 2', '{}', Date.now() / 1000, Date.now() / 1000);
+
+      // First call succeeds
+      const r1 = await llmService.generateReaction('entry-1', 'test content');
+      expect(r1?.content).toBe('きつそう');
+      expect(mockLLMService.react).toHaveBeenCalledTimes(1);
+
+      // Second call: LLM returns same value both attempts, falls back to default
+      const r2 = await llmService.generateReaction('entry-2', 'more content');
+      expect(r2?.content).toBe('·');
+      // 2 retry attempts
+      expect(mockLLMService.react).toHaveBeenCalledTimes(3);
+    });
+
+    it('should accept LLM response on retry when second attempt is unique', async () => {
+      const mockLLMService = {
+        react: vi
+          .fn()
+          .mockResolvedValueOnce({ content: 'きつそう' })
+          // Second call (first for entry-2): returns duplicate
+          .mockResolvedValueOnce({ content: 'きつそう' })
+          // Third call (retry for entry-2): returns unique value
+          .mockResolvedValueOnce({ content: 'わかる' }),
+      };
+
+      const llmService = createReactionService(
+        db,
+        { useLLM: true, language: 'ja' },
+        mockLLMService as unknown as Parameters<typeof createReactionService>[2],
+      );
+
+      db.prepare(
+        `INSERT INTO entries (id, timestamp, content, metadata, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      ).run('entry-2', Date.now() / 1000, 'Content 2', '{}', Date.now() / 1000, Date.now() / 1000);
+
+      await llmService.generateReaction('entry-1', 'test content');
+      const r2 = await llmService.generateReaction('entry-2', 'more content');
+      expect(r2?.content).toBe('わかる');
+      expect(mockLLMService.react).toHaveBeenCalledTimes(3);
     });
 
     it('should pass recent reactions to LLM after generating reactions', async () => {
