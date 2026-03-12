@@ -34,6 +34,14 @@ const DEFAULT_CONFIG: ReactionConfig = {
 const RECENT_REACTION_LIMIT = 8;
 
 /**
+ * Check if a candidate reaction is a duplicate of any recent reaction.
+ */
+export function isDuplicate(candidate: string, recent: string[]): boolean {
+  const normalized = candidate.trim();
+  return recent.some((r) => r.trim() === normalized);
+}
+
+/**
  * Detect likely broken Japanese output.
  * All-hiragana strings longer than 6 characters are almost certainly
  * garbled output from the LLM rather than intentional reactions.
@@ -174,7 +182,7 @@ export function createReactionService(
 
     seedRecentReactions();
 
-    let reactionContent: string;
+    let reactionContent = '';
     let reactionType: ReactionType = currentConfig.defaultReactionType;
 
     if (currentConfig.useLLM && llmService) {
@@ -185,21 +193,32 @@ export function createReactionService(
           .filter((e) => e.id !== entryId)
           .slice(0, 3)
           .map((e) => e.content);
-        const response = await llmService.react(content, {
-          language,
-          recentEntries,
-          recentReactions: recentReactions.length > 0 ? [...recentReactions] : undefined,
-        });
-        const trimmed = response.content.trim();
-        // Use LLM response if non-empty, short enough, and not broken Japanese
-        if (
-          trimmed &&
-          trimmed.length <= MAX_REACTION_LENGTH &&
-          !isLikelyBrokenJapanese(trimmed, language)
-        ) {
-          reactionContent = trimmed;
-          reactionType = 'custom';
-        } else {
+
+        const MAX_DEDUP_ATTEMPTS = 2;
+        let accepted = false;
+
+        for (let attempt = 0; attempt < MAX_DEDUP_ATTEMPTS; attempt++) {
+          const response = await llmService.react(content, {
+            language,
+            recentEntries,
+            recentReactions: recentReactions.length > 0 ? [...recentReactions] : undefined,
+          });
+          const trimmed = response.content.trim();
+
+          if (
+            trimmed &&
+            trimmed.length <= MAX_REACTION_LENGTH &&
+            !isLikelyBrokenJapanese(trimmed, language) &&
+            !isDuplicate(trimmed, recentReactions)
+          ) {
+            reactionContent = trimmed;
+            reactionType = 'custom';
+            accepted = true;
+            break;
+          }
+        }
+
+        if (!accepted) {
           reactionContent = getVocabularyFallback() ?? getDefaultContent(reactionType);
         }
       } catch {
