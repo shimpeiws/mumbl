@@ -93,4 +93,29 @@ describe('resolveConfig', () => {
       expect(result.baseUrl).toBe('http://file:8080');
     });
   });
+
+  describe('features', () => {
+    it('should use default features when no config provided', () => {
+      const result = resolveConfig();
+      expect(result.features).toEqual({ barQuote: false });
+    });
+
+    it('should merge file features with defaults', () => {
+      vi.mocked(configFile.loadConfigFile).mockReturnValue({
+        features: { barQuote: true },
+      });
+
+      const result = resolveConfig();
+      expect(result.features).toEqual({ barQuote: true });
+    });
+
+    it('should use default for missing feature flags', () => {
+      vi.mocked(configFile.loadConfigFile).mockReturnValue({
+        features: {},
+      });
+
+      const result = resolveConfig();
+      expect(result.features).toEqual({ barQuote: false });
+    });
+  });
 });

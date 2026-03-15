@@ -6,7 +6,7 @@
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import type { MumblConfig } from './types.js';
+import type { MumblConfig, MumblFeatures } from './types.js';
 
 /**
  * Get the path to the config file
@@ -58,6 +58,17 @@ export function loadConfigFile(): Partial<MumblConfig> {
       }
     }
 
+    if (typeof config['features'] === 'object' && config['features'] !== null) {
+      const rawFeatures = config['features'] as Record<string, unknown>;
+      const features: MumblFeatures = {};
+      if (typeof rawFeatures['barQuote'] === 'boolean') {
+        features.barQuote = rawFeatures['barQuote'];
+      }
+      if (Object.keys(features).length > 0) {
+        result.features = features;
+      }
+    }
+
     return result;
   } catch {
     // Silently ignore config file errors (missing, malformed JSON)
@@ -98,6 +109,13 @@ export function saveConfigFile(update: Partial<MumblConfig>): void {
   if (update.baseUrl !== undefined) existing['baseUrl'] = update.baseUrl;
   if (update.wordgrainFiles !== undefined) {
     existing['wordgrainFiles'] = update.wordgrainFiles;
+  }
+  if (update.features !== undefined) {
+    const existingFeatures =
+      typeof existing['features'] === 'object' && existing['features'] !== null
+        ? (existing['features'] as Record<string, unknown>)
+        : {};
+    existing['features'] = { ...existingFeatures, ...update.features };
   }
 
   fs.writeFileSync(configPath, `${JSON.stringify(existing, null, 2)}\n`, 'utf-8');

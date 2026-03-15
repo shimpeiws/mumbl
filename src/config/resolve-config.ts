@@ -5,7 +5,9 @@ import { DEFAULT_OLLAMA_MODEL } from '../services/llm/types.js';
 import { parseCliArgs } from './cli-args.js';
 import { loadConfigFile } from './config-file.js';
 import { loadEnvVars } from './env-vars.js';
-import type { ConfigSource, ResolvedConfig } from './types.js';
+import type { ConfigSource, MumblFeatures, ResolvedConfig } from './types.js';
+
+export const DEFAULT_FEATURES: MumblFeatures = { barQuote: false };
 
 /**
  * Resolve configuration from all sources with priority
@@ -30,10 +32,13 @@ export function resolveConfig(cliArgs?: string[]): ResolvedConfig {
 
   const wordgrainFiles = sources.file.wordgrainFiles;
 
+  const features: MumblFeatures = { ...DEFAULT_FEATURES, ...sources.file.features };
+
   return {
     provider: 'ollama',
     model,
     baseUrl,
     wordgrainFiles,
+    features,
   };
 }
