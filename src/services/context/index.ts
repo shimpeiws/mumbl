@@ -1,5 +1,5 @@
-export { createContextService } from './context-service.js';
-export { extractContextFromEntry } from './context-extractor.js';
+export { createContextService } from './ContextService.js';
+export { extractContextFromEntry } from './ContextExtractor.js';
 export type {
   ContextConfig,
   ContextServiceInterface,

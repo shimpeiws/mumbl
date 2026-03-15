@@ -1,8 +1,8 @@
 import { Box, Text } from 'ink';
 import React from 'react';
 import type { JournalEntry, Reaction } from '../../../repositories/types.js';
-import { formatEntryTimestamp } from '../../utils/date-formatter.js';
-import { getDisplayWidth, getPreviewLine } from '../../utils/text-truncate.js';
+import { formatEntryTimestamp } from '../../utils/DateFormatter.js';
+import { getDisplayWidth, getPreviewLine } from '../../utils/TextTruncate.js';
 
 interface EntryListItemProps {
   entry: JournalEntry;

@@ -7,7 +7,7 @@ import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation.js';
 import { useReactions } from '../../hooks/useReactions.js';
 import { useScrollableList } from '../../hooks/useScrollableList.js';
 import { useTerminalSize } from '../../hooks/useTerminalSize.js';
-import { groupEntriesByDate } from '../../utils/date-formatter.js';
+import { groupEntriesByDate } from '../../utils/DateFormatter.js';
 import { EmptyState } from './EmptyState.js';
 import { EntryDetail } from './EntryDetail.js';
 import { EntryGroupHeader } from './EntryGroupHeader.js';

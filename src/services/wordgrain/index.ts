@@ -11,18 +11,18 @@ export type {
   WordgrainFile,
   WordgrainType,
 } from './types.js';
-export { extractVocabulary } from './vocabulary-extractor.js';
-export { loadWordgrainFiles, parseWordgrainFile } from './wordgrain-loader.js';
-export type { WordgrainFileInfo, WordgrainStats } from './wordgrain-manager.js';
+export { extractVocabulary } from './VocabularyExtractor.js';
+export { loadWordgrainFiles, parseWordgrainFile } from './WordgrainLoader.js';
+export type { WordgrainFileInfo, WordgrainStats } from './WordgrainManager.js';
 export {
   getWordgrainStats,
   listWordgrainFiles,
   registerWordgrainFile,
-} from './wordgrain-manager.js';
+} from './WordgrainManager.js';
 
 import type { VocabularySet } from './types.js';
-import { extractVocabulary } from './vocabulary-extractor.js';
-import { loadWordgrainFiles } from './wordgrain-loader.js';
+import { extractVocabulary } from './VocabularyExtractor.js';
+import { loadWordgrainFiles } from './WordgrainLoader.js';
 
 /**
  * Load vocabulary from individual .wg.json file paths

@@ -2,18 +2,18 @@
 import * as fs from 'node:fs';
 import { render } from 'ink';
 import React from 'react';
-import { getConfigFilePath } from './config/config-file.js';
+import { getConfigFilePath } from './config/ConfigFile.js';
 import { resolveConfig } from './config/index.js';
-import { getReactionConfig } from './infrastructure/config/reaction-config.js';
+import { getReactionConfig } from './infrastructure/config/ReactionConfig.js';
 import { closeDatabase, getDatabase } from './infrastructure/database/client.js';
-import { createContextService } from './services/context/context-service.js';
-import { createEntryService } from './services/entry-service.js';
-import { createFollowUpService } from './services/follow-up/follow-up-service.js';
-import { createLLMServiceFromConfig } from './services/llm/llm-service.js';
-import { ollamaService } from './services/ollama-service.js';
+import { createContextService } from './services/context/ContextService.js';
+import { createEntryService } from './services/EntryService.js';
+import { createFollowUpService } from './services/follow-up/FollowUpService.js';
+import { createLLMServiceFromConfig } from './services/llm/LLMService.js';
+import { ollamaService } from './services/OllamaService.js';
 import { createQueueService } from './services/queue/index.js';
-import { createReactionService } from './services/reaction-service.js';
-import { createTrendService } from './services/trends/trend-service.js';
+import { createReactionService } from './services/ReactionService.js';
+import { createTrendService } from './services/trends/TrendService.js';
 import { loadVocabulary } from './services/wordgrain/index.js';
 import { App } from './ui/App.js';
 import { ConfigProvider } from './ui/context/ConfigContext.js';
@@ -23,7 +23,7 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
 (async () => {
   // Check for CLI subcommands first
   if (process.argv.includes('generate-callout')) {
-    const { generateCallout } = await import('./commands/generate-callout.js');
+    const { generateCallout } = await import('./commands/GenerateCallout.js');
     await generateCallout();
     process.exit(0);
   }

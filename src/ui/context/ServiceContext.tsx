@@ -1,11 +1,11 @@
 import React, { createContext, useContext } from 'react';
 import type { ContextServiceInterface } from '../../services/context/types.js';
-import type { EntryServiceInterface } from '../../services/entry-service.js';
-import type { FollowUpServiceInterface } from '../../services/follow-up/follow-up-service.js';
-import type { LLMServiceInterface } from '../../services/llm/llm-service.js';
-import type { OllamaService } from '../../services/ollama-service.js';
+import type { EntryServiceInterface } from '../../services/EntryService.js';
+import type { FollowUpServiceInterface } from '../../services/follow-up/FollowUpService.js';
+import type { LLMServiceInterface } from '../../services/llm/LLMService.js';
+import type { OllamaService } from '../../services/OllamaService.js';
 import type { QueueServiceInterface } from '../../services/queue/index.js';
-import type { ReactionServiceInterface } from '../../services/reaction-service.js';
+import type { ReactionServiceInterface } from '../../services/ReactionService.js';
 import type { TrendServiceInterface } from '../../services/trends/types.js';
 
 interface ServiceContextValue {
