@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { LLMServiceInterface } from '../llm/LLMService.js';
 import type { ReactionServiceInterface } from '../ReactionService.js';
+import type { LLMServiceInterface } from '../llm/LLMService.js';
 import { type QueueServiceInterface, createQueueService } from './QueueService.js';
 
 // Mock LLM service

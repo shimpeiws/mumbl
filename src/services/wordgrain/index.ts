@@ -20,9 +20,9 @@ export {
   registerWordgrainFile,
 } from './WordgrainManager.js';
 
-import type { VocabularySet } from './types.js';
 import { extractVocabulary } from './VocabularyExtractor.js';
 import { loadWordgrainFiles } from './WordgrainLoader.js';
+import type { VocabularySet } from './types.js';
 
 /**
  * Load vocabulary from individual .wg.json file paths

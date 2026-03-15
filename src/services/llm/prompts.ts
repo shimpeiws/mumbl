@@ -5,8 +5,8 @@
  * Inspired by: Future, mumble rap, Freebandz, Pluto
  */
 import type { ConversationContext } from '../conversation/types.js';
-import type { DetectedLanguage } from '../language/types.js';
 import { getWordListForLanguage } from '../language/WordLists.js';
+import type { DetectedLanguage } from '../language/types.js';
 import type { Bar, VocabularySet, VocabularyWord } from '../wordgrain/types.js';
 import { selectBarsForReaction } from './BarSelector.js';
 import type { Message } from './types.js';

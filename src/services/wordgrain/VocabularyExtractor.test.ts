@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { WordgrainFile } from './types.js';
 import { extractVocabulary } from './VocabularyExtractor.js';
+import type { WordgrainFile } from './types.js';
 
 describe('extractVocabulary', () => {
   it('should extract words from grains', () => {

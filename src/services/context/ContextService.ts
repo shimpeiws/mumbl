@@ -3,11 +3,11 @@
  * Builds and maintains a long-term user profile from journal entries
  */
 import type Database from 'better-sqlite3';
-import type { UserContextRow } from '../../repositories/types.js';
 import {
   type UserContextRepositoryInterface,
   createUserContextRepository,
 } from '../../repositories/UserContextRepository.js';
+import type { UserContextRow } from '../../repositories/types.js';
 import type { LLMServiceInterface } from '../llm/LLMService.js';
 import { extractContextFromEntry } from './ContextExtractor.js';
 import type {

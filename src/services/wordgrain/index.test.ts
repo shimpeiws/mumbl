@@ -8,9 +8,9 @@ vi.mock('./VocabularyExtractor.js', () => ({
   extractVocabulary: vi.fn(),
 }));
 
-import { loadVocabulary } from './index.js';
 import { extractVocabulary } from './VocabularyExtractor.js';
 import { loadWordgrainFiles } from './WordgrainLoader.js';
+import { loadVocabulary } from './index.js';
 
 const mockLoadFiles = vi.mocked(loadWordgrainFiles);
 const mockExtract = vi.mocked(extractVocabulary);

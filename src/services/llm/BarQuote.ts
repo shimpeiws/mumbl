@@ -3,8 +3,8 @@
  * without going through the LLM, when keyword matching succeeds.
  */
 
-import type { DetectedLanguage } from '../language/types.js';
 import { isDuplicate } from '../ReactionService.js';
+import type { DetectedLanguage } from '../language/types.js';
 import type { BarSource } from '../wordgrain/types.js';
 import type { BarIndex } from './BarIndex.js';
 

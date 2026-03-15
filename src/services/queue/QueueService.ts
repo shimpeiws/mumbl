@@ -3,8 +3,8 @@
  */
 
 import { generateEntryId } from '../IdService.js';
-import type { LLMServiceInterface } from '../llm/LLMService.js';
 import type { ReactionServiceInterface } from '../ReactionService.js';
+import type { LLMServiceInterface } from '../llm/LLMService.js';
 import { shouldRetryError, sleep, withRetry } from './retry.js';
 import {
   type ChatTaskPayload,

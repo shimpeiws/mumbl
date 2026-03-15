@@ -8,10 +8,10 @@ import type {
   UpdateEntryOptions,
 } from '../repositories/types.js';
 import { debugLog } from '../utils/log.js';
-import type { ContextServiceInterface } from './context/types.js';
-import type { FollowUpServiceInterface } from './follow-up/FollowUpService.js';
 import { generateEntryId } from './IdService.js';
 import type { ReactionServiceInterface } from './ReactionService.js';
+import type { ContextServiceInterface } from './context/types.js';
+import type { FollowUpServiceInterface } from './follow-up/FollowUpService.js';
 import type { TrendServiceInterface } from './trends/types.js';
 
 /**
