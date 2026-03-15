@@ -818,8 +818,9 @@ export function createReactionPrompt(
   return createPromptPair(
     `React to the mumble. ${styleLabel}. Distant but present. Vary your responses.
 
-## CRITICAL RULE:
+## CRITICAL RULES:
 React ONLY to the current entry text. NEVER bring in topics, words, or content from previous mumbles. Each reaction must stand on its own based solely on what the user just said.
+Do NOT parrot or echo specific words, numbers, or phrases from the entry. React to the vibe/mood, not the literal content. Example: entry "新しいやつ試してる" -> good: "いいじゃん" / bad: "新しいやつ凄いじゃん"
 ${vocabInstruction}${barInstruction}
 ${buildResponseModeSection(language)}
 
@@ -833,6 +834,7 @@ NEVER use:
 - Advice or solutions
 - Emojis
 - Content or topics from previous entries (react ONLY to the current mumble)
+- Direct quotes or parroting of specific words/numbers from the entry (react to the vibe, not the words)
 
 ${examplesSection}${recentContext}`,
     entry,
