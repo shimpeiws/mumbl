@@ -1,10 +1,13 @@
 import type { Database as DatabaseType } from 'better-sqlite3';
+import type { MumblFeatures } from '../config/types.js';
 import { createEntryRepository } from '../repositories/entry-repository.js';
 import { createReactionRepository } from '../repositories/reaction-repository.js';
 import type { Reaction, ReactionType } from '../repositories/types.js';
 import { generateEntryId } from './id-service.js';
 import { detectLanguage } from './language/detect.js';
 import type { DetectedLanguage } from './language/types.js';
+import { type BarIndex, buildBarIndex } from './llm/bar-index.js';
+import { tryBarQuote } from './llm/bar-quote.js';
 import type { LLMServiceInterface } from './llm/llm-service.js';
 import type { VocabularySet } from './wordgrain/types.js';
 
@@ -78,6 +81,7 @@ export interface ReactionServiceInterface {
   updateConfig(config: Partial<ReactionConfig>): void;
   getConfig(): ReactionConfig;
   setVocabulary(vocabulary: VocabularySet): void;
+  setFeatures(features: MumblFeatures): void;
 }
 
 /**
@@ -106,11 +110,18 @@ export function createReactionService(
   const entryRepository = createEntryRepository(db);
   let currentConfig: ReactionConfig = { ...DEFAULT_CONFIG, ...config };
   let vocabulary: VocabularySet | undefined;
+  let features: MumblFeatures = {};
+  let barIndex: BarIndex | undefined;
   const recentReactions: string[] = [];
   let seededFromDb = false;
 
   const setVocabulary = (v: VocabularySet): void => {
     vocabulary = v;
+    barIndex = v.bars && v.bars.length > 0 ? buildBarIndex(v.bars) : undefined;
+  };
+
+  const setFeatures = (f: MumblFeatures): void => {
+    features = f;
   };
 
   const getVocabularyFallback = (): string | undefined => {
@@ -181,6 +192,28 @@ export function createReactionService(
     }
 
     seedRecentReactions();
+
+    // Try bar quote path before LLM (when feature flag is enabled)
+    if (features.barQuote && barIndex) {
+      const language = resolveLanguage(content);
+      const quote = tryBarQuote(content, barIndex, recentReactions, language);
+      if (quote) {
+        const reaction: Reaction = {
+          id: generateEntryId(),
+          entryId,
+          reactionType: 'custom',
+          content: quote.text,
+          createdAt: new Date(),
+        };
+        recentReactions.push(quote.text);
+        if (recentReactions.length > RECENT_REACTION_LIMIT) {
+          recentReactions.shift();
+        }
+        repository.insert(reaction);
+        emit('reactionCreated', reaction);
+        return reaction;
+      }
+    }
 
     let reactionContent = '';
     let reactionType: ReactionType = currentConfig.defaultReactionType;
@@ -289,5 +322,6 @@ export function createReactionService(
     updateConfig,
     getConfig,
     setVocabulary,
+    setFeatures,
   };
 }
