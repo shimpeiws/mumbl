@@ -144,8 +144,9 @@ export function ConfigProvider({ config, children }: ConfigProviderProps) {
       const updated = { ...features, [key]: !features[key] };
       setFeatures(updated);
       saveConfigFile({ features: updated });
+      reactionService.setFeatures(updated);
     },
-    [features],
+    [features, reactionService],
   );
 
   return (

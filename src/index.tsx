@@ -53,6 +53,7 @@ import { ServiceProvider } from './ui/context/ServiceContext.js';
   const reactionConfig = getReactionConfig();
   const reactionLLMService = reactionConfig.useLLM ? llmService : undefined;
   const reactionService = createReactionService(db, reactionConfig, reactionLLMService);
+  reactionService.setFeatures(config.features);
 
   // Load wordgrain vocabulary if configured
   if (config.wordgrainFiles && config.wordgrainFiles.length > 0) {
