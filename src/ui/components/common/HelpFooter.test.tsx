@@ -36,6 +36,7 @@ describe('HelpFooter', () => {
     const { lastFrame } = render(<HelpFooter mode="config" />);
 
     expect(lastFrame()).toContain('j/k: navigate');
+    expect(lastFrame()).toContain('Space: toggle');
     expect(lastFrame()).toContain('a: add');
     expect(lastFrame()).toContain('d: unregister');
     expect(lastFrame()).toContain('r: reload');

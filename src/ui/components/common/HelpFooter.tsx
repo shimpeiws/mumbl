@@ -16,7 +16,7 @@ export function HelpFooter({ mode, isViewingDetail = false, queueStatus }: HelpF
       return 'Tab: list | Esc: cancel | q: quit';
     }
     if (mode === 'config') {
-      return 'j/k: navigate | a: add | d: unregister | r: reload | Esc: back | q: quit';
+      return 'j/k: navigate | Space: toggle | a: add | d: unregister | r: reload | Esc: back | q: quit';
     }
     if (isViewingDetail) {
       return 'Esc/q: back | d: delete | Tab: write';

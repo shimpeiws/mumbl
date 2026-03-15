@@ -1,5 +1,5 @@
 import { Box, useInput } from 'ink';
-import React, { useState } from 'react';
+import React from 'react';
 import { useConfig } from '../../context/ConfigContext.js';
 import { useNavigation } from '../../context/NavigationContext.js';
 import { AddFileView } from './AddFileView.js';
@@ -19,7 +19,10 @@ export function ConfigView() {
     reloadFiles,
     toggleFeature,
   } = useConfig();
-  const [featuresSelectedIndex, setFeaturesSelectedIndex] = useState(0);
+
+  const totalItems = files.length + FEATURE_KEYS.length;
+  const isFeatureSelected = selectedFileIndex >= files.length;
+  const featureIndex = selectedFileIndex - files.length;
 
   useInput(
     (input, key) => {
@@ -29,14 +32,14 @@ export function ConfigView() {
       }
 
       if (input === 'j' || key.downArrow) {
-        if (files.length > 0) {
-          setSelectedFileIndex(Math.min(selectedFileIndex + 1, files.length - 1));
+        if (totalItems > 0) {
+          setSelectedFileIndex(Math.min(selectedFileIndex + 1, totalItems - 1));
         }
         return;
       }
 
       if (input === 'k' || key.upArrow) {
-        if (files.length > 0) {
+        if (totalItems > 0) {
           setSelectedFileIndex(Math.max(selectedFileIndex - 1, 0));
         }
         return;
@@ -47,7 +50,7 @@ export function ConfigView() {
         return;
       }
 
-      if (input === 'd' && files.length > 0) {
+      if (input === 'd' && !isFeatureSelected && files.length > 0) {
         setSubMode('delete-confirm');
         return;
       }
@@ -57,40 +60,15 @@ export function ConfigView() {
         return;
       }
 
-      if (input === 'f') {
-        setSubMode('features');
-        return;
-      }
-    },
-    { isActive: subMode === 'normal' },
-  );
-
-  useInput(
-    (input, key) => {
-      if (key.escape) {
-        setSubMode('normal');
-        return;
-      }
-
-      if (input === 'j' || key.downArrow) {
-        setFeaturesSelectedIndex(Math.min(featuresSelectedIndex + 1, FEATURE_KEYS.length - 1));
-        return;
-      }
-
-      if (input === 'k' || key.upArrow) {
-        setFeaturesSelectedIndex(Math.max(featuresSelectedIndex - 1, 0));
-        return;
-      }
-
-      if (input === ' ' || key.return) {
-        const featureKey = FEATURE_KEYS[featuresSelectedIndex];
+      if ((input === ' ' || key.return) && isFeatureSelected) {
+        const featureKey = FEATURE_KEYS[featureIndex];
         if (featureKey) {
           toggleFeature(featureKey);
         }
         return;
       }
     },
-    { isActive: subMode === 'features' },
+    { isActive: subMode === 'normal' },
   );
 
   if (subMode === 'add-file') {
@@ -116,7 +94,10 @@ export function ConfigView() {
         <WordgrainSection />
       </Box>
       <Box marginTop={1}>
-        <FeaturesSection isActive={subMode === 'features'} selectedIndex={featuresSelectedIndex} />
+        <FeaturesSection
+          isActive={isFeatureSelected}
+          selectedIndex={featureIndex}
+        />
       </Box>
     </Box>
   );
