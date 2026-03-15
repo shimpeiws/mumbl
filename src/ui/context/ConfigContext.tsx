@@ -1,6 +1,6 @@
 import * as path from 'node:path';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { saveConfigFile } from '../../config/config-file.js';
+import { saveConfigFile } from '../../config/ConfigFile.js';
 import type { MumblFeatures, ResolvedConfig } from '../../config/types.js';
 import {
   type WordgrainFileInfo,

@@ -4,7 +4,7 @@ import path from 'node:path';
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { initializeDatabase } from '../../src/infrastructure/database/client.js';
-import { createEntryService } from '../../src/services/entry-service.js';
+import { createEntryService } from '../../src/services/EntryService.js';
 
 describe('Storage Concurrent Access', () => {
   let testDbPath: string;

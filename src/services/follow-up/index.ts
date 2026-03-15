@@ -1,5 +1,5 @@
-export { createFollowUpService } from './follow-up-service.js';
-export type { FollowUpServiceInterface } from './follow-up-service.js';
+export { createFollowUpService } from './FollowUpService.js';
+export type { FollowUpServiceInterface } from './FollowUpService.js';
 export type {
   FollowUp,
   FollowUpConfig,

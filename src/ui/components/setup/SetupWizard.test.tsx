@@ -8,7 +8,7 @@ vi.mock('../../../infrastructure/ollama/client.js', () => ({
   listModels: vi.fn(),
 }));
 
-vi.mock('../../../config/config-file.js', () => ({
+vi.mock('../../../config/ConfigFile.js', () => ({
   saveConfigFile: vi.fn(),
 }));
 
@@ -168,7 +168,7 @@ describe('SetupWizard', () => {
   });
 
   it('should save config and call onComplete when model is selected', async () => {
-    const { saveConfigFile } = await import('../../../config/config-file.js');
+    const { saveConfigFile } = await import('../../../config/ConfigFile.js');
     vi.mocked(checkOllamaHealth).mockResolvedValue({
       isConnected: true,
       baseUrl: 'http://127.0.0.1:11434',

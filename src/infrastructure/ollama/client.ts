@@ -1,5 +1,5 @@
 import { Ollama } from 'ollama';
-import { OllamaConnectionError } from '../errors/ollama-errors.js';
+import { OllamaConnectionError } from '../errors/OllamaErrors.js';
 import { type OllamaConfig, getOllamaConfig } from './config.js';
 import type { OllamaHealthStatus, OllamaModel } from './types.js';
 

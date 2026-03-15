@@ -1,5 +1,5 @@
-export { extractTopics } from './topic-extractor.js';
-export { createTrendService } from './trend-service.js';
+export { extractTopics } from './TopicExtractor.js';
+export { createTrendService } from './TrendService.js';
 export type {
   PeriodType,
   Topic,

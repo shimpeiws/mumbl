@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { OllamaConnectionError } from '../errors/ollama-errors.js';
+import { OllamaConnectionError } from '../errors/OllamaErrors.js';
 import {
   checkOllamaHealth,
   getOllamaClient,

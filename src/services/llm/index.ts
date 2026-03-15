@@ -31,10 +31,10 @@ export {
 } from './errors.js';
 
 // Providers
-export { OllamaProvider } from './ollama-provider.js';
+export { OllamaProvider } from './OllamaProvider.js';
 
 // Message History
-export { createMessageHistory, createSessionMessageHistory } from './message-history.js';
+export { createMessageHistory, createSessionMessageHistory } from './MessageHistory.js';
 
 // Prompts
 export {
@@ -45,5 +45,5 @@ export {
 } from './prompts.js';
 
 // Main Service
-export type { LLMServiceConfig } from './llm-service.js';
-export { createProvider, createLLMServiceFromConfig } from './llm-service.js';
+export type { LLMServiceConfig } from './LLMService.js';
+export { createProvider, createLLMServiceFromConfig } from './LLMService.js';

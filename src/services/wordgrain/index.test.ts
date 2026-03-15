@@ -1,16 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('./wordgrain-loader.js', () => ({
+vi.mock('./WordgrainLoader.js', () => ({
   loadWordgrainFiles: vi.fn(),
 }));
 
-vi.mock('./vocabulary-extractor.js', () => ({
+vi.mock('./VocabularyExtractor.js', () => ({
   extractVocabulary: vi.fn(),
 }));
 
+import { extractVocabulary } from './VocabularyExtractor.js';
+import { loadWordgrainFiles } from './WordgrainLoader.js';
 import { loadVocabulary } from './index.js';
-import { extractVocabulary } from './vocabulary-extractor.js';
-import { loadWordgrainFiles } from './wordgrain-loader.js';
 
 const mockLoadFiles = vi.mocked(loadWordgrainFiles);
 const mockExtract = vi.mocked(extractVocabulary);

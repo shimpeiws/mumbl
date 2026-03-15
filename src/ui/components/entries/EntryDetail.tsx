@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import type { JournalEntry } from '../../../repositories/types.js';
 import { useServices } from '../../context/ServiceContext.js';
 import { useReactions } from '../../hooks/useReactions.js';
-import { formatFullDate } from '../../utils/date-formatter.js';
+import { formatFullDate } from '../../utils/DateFormatter.js';
 import { formatReactionDisplay } from './EntryListItem.js';
 
 interface EntryDetailProps {

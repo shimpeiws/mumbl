@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
-import { DatabaseError } from '../errors/domain-errors.js';
+import { DatabaseError } from '../errors/DomainErrors.js';
 import { initializeSchema } from './schema.js';
 
 /**

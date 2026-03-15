@@ -1,6 +1,6 @@
 import { Box, Text, useApp, useInput } from 'ink';
 import React, { useCallback, useEffect, useState } from 'react';
-import { saveConfigFile } from '../../../config/config-file.js';
+import { saveConfigFile } from '../../../config/ConfigFile.js';
 import { checkOllamaHealth, listModels } from '../../../infrastructure/ollama/client.js';
 import type { OllamaModel } from '../../../infrastructure/ollama/types.js';
 import { Logo } from '../splash/Logo.js';
