@@ -1,7 +1,7 @@
 import * as path from 'node:path';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { saveConfigFile } from '../../config/config-file.js';
-import type { ResolvedConfig } from '../../config/types.js';
+import type { MumblFeatures, ResolvedConfig } from '../../config/types.js';
 import {
   type WordgrainFileInfo,
   type WordgrainStats,
@@ -13,7 +13,7 @@ import {
 import type { VocabularySet } from '../../services/wordgrain/types.js';
 import { useServices } from './ServiceContext.js';
 
-export type ConfigSubMode = 'normal' | 'add-file' | 'delete-confirm';
+export type ConfigSubMode = 'normal' | 'add-file' | 'delete-confirm' | 'features';
 
 interface ConfigContextValue {
   config: ResolvedConfig;
@@ -28,6 +28,8 @@ interface ConfigContextValue {
   addFile: (sourcePath: string) => void;
   removeFile: (filename: string) => void;
   reloadFiles: () => void;
+  features: MumblFeatures;
+  toggleFeature: (key: keyof MumblFeatures) => void;
 }
 
 const ConfigContext = createContext<ConfigContextValue | null>(null);
@@ -71,6 +73,7 @@ export function ConfigProvider({ config, children }: ConfigProviderProps) {
   const [selectedFileIndex, setSelectedFileIndex] = useState(0);
   const [subMode, setSubMode] = useState<ConfigSubMode>('normal');
   const [error, setError] = useState<string | null>(null);
+  const [features, setFeatures] = useState<MumblFeatures>(config.features);
 
   const refreshFiles = useCallback(() => {
     if (wordgrainFiles.length === 0) {
@@ -136,6 +139,15 @@ export function ConfigProvider({ config, children }: ConfigProviderProps) {
     hotReload();
   }, [refreshFiles, hotReload]);
 
+  const toggleFeature = useCallback(
+    (key: keyof MumblFeatures) => {
+      const updated = { ...features, [key]: !features[key] };
+      setFeatures(updated);
+      saveConfigFile({ features: updated });
+    },
+    [features],
+  );
+
   return (
     <ConfigContext.Provider
       value={{
@@ -151,6 +163,8 @@ export function ConfigProvider({ config, children }: ConfigProviderProps) {
         addFile,
         removeFile,
         reloadFiles,
+        features,
+        toggleFeature,
       }}
     >
       {children}

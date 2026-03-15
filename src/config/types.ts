@@ -4,6 +4,13 @@
 import type { Provider } from '../services/llm/types.js';
 
 /**
+ * Feature flags for experimental features
+ */
+export interface MumblFeatures {
+  barQuote?: boolean;
+}
+
+/**
  * User-configurable options
  */
 export interface MumblConfig {
@@ -11,6 +18,7 @@ export interface MumblConfig {
   provider?: Provider;
   baseUrl?: string;
   wordgrainFiles?: string[];
+  features?: MumblFeatures;
 }
 
 /**
@@ -21,6 +29,7 @@ export interface ResolvedConfig {
   provider: Provider;
   baseUrl?: string;
   wordgrainFiles?: string[];
+  features: MumblFeatures;
 }
 
 /**

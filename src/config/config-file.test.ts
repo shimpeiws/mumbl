@@ -160,6 +160,34 @@ describe('config-file', () => {
       const result = loadConfigFile();
       expect(result.provider).toBe('ollama');
     });
+
+    it('should parse valid features object', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ features: { barQuote: true } }));
+      const result = loadConfigFile();
+      expect(result.features).toEqual({ barQuote: true });
+    });
+
+    it('should ignore non-object features values', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ features: 'not-object' }));
+      const result = loadConfigFile();
+      expect(result.features).toBeUndefined();
+    });
+
+    it('should ignore non-boolean feature flag values', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ features: { barQuote: 'yes' } }));
+      const result = loadConfigFile();
+      expect(result.features).toBeUndefined();
+    });
+
+    it('should ignore null features value', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ features: null }));
+      const result = loadConfigFile();
+      expect(result.features).toBeUndefined();
+    });
   });
 
   describe('saveConfigFile', () => {
@@ -205,6 +233,45 @@ describe('config-file', () => {
       const writeCall = vi.mocked(fs.writeFileSync).mock.calls[0];
       const written = JSON.parse((writeCall?.[1] as string).trim());
       expect(written.wordgrainFiles).toEqual([]);
+    });
+
+    it('should save features to config file', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(false);
+      vi.mocked(fs.mkdirSync).mockReturnValue(undefined);
+      vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
+
+      saveConfigFile({ features: { barQuote: true } });
+
+      const writeCall = vi.mocked(fs.writeFileSync).mock.calls[0];
+      const written = JSON.parse((writeCall?.[1] as string).trim());
+      expect(written.features).toEqual({ barQuote: true });
+    });
+
+    it('should deep merge features with existing features', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ features: { barQuote: false } }));
+      vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
+
+      saveConfigFile({ features: { barQuote: true } });
+
+      const writeCall = vi.mocked(fs.writeFileSync).mock.calls[0];
+      const written = JSON.parse((writeCall?.[1] as string).trim());
+      expect(written.features).toEqual({ barQuote: true });
+    });
+
+    it('should preserve existing features when saving other fields', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(
+        JSON.stringify({ features: { barQuote: true }, model: 'llama2' }),
+      );
+      vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
+
+      saveConfigFile({ model: 'gpt-4' });
+
+      const writeCall = vi.mocked(fs.writeFileSync).mock.calls[0];
+      const written = JSON.parse((writeCall?.[1] as string).trim());
+      expect(written.features).toEqual({ barQuote: true });
+      expect(written.model).toBe('gpt-4');
     });
   });
 });
