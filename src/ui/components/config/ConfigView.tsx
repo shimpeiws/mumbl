@@ -94,10 +94,7 @@ export function ConfigView() {
         <WordgrainSection />
       </Box>
       <Box marginTop={1}>
-        <FeaturesSection
-          isActive={isFeatureSelected}
-          selectedIndex={featureIndex}
-        />
+        <FeaturesSection isActive={isFeatureSelected} selectedIndex={featureIndex} />
       </Box>
     </Box>
   );
