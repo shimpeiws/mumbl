@@ -73,9 +73,7 @@ export function ConfigView() {
       }
 
       if (input === 'j' || key.downArrow) {
-        setFeaturesSelectedIndex(
-          Math.min(featuresSelectedIndex + 1, FEATURE_KEYS.length - 1),
-        );
+        setFeaturesSelectedIndex(Math.min(featuresSelectedIndex + 1, FEATURE_KEYS.length - 1));
         return;
       }
 
@@ -118,10 +116,7 @@ export function ConfigView() {
         <WordgrainSection />
       </Box>
       <Box marginTop={1}>
-        <FeaturesSection
-          isActive={subMode === 'features'}
-          selectedIndex={featuresSelectedIndex}
-        />
+        <FeaturesSection isActive={subMode === 'features'} selectedIndex={featuresSelectedIndex} />
       </Box>
     </Box>
   );

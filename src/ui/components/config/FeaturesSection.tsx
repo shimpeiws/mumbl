@@ -31,9 +31,7 @@ export function FeaturesSection({ isActive, selectedIndex }: FeaturesSectionProp
           const enabled = features[key] ?? false;
           return (
             <Text key={key}>
-              <Text color={isSelected ? 'cyan' : undefined}>
-                {isSelected ? '> ' : '  '}
-              </Text>
+              <Text color={isSelected ? 'cyan' : undefined}>{isSelected ? '> ' : '  '}</Text>
               <Text bold={isSelected}>{FEATURE_LABELS[key]}</Text>
               <Text color={enabled ? 'green' : 'red'}>{enabled ? ' [on]' : ' [off]'}</Text>
             </Text>

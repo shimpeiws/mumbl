@@ -163,9 +163,7 @@ describe('config-file', () => {
 
     it('should parse valid features object', () => {
       vi.mocked(fs.existsSync).mockReturnValue(true);
-      vi.mocked(fs.readFileSync).mockReturnValue(
-        JSON.stringify({ features: { barQuote: true } }),
-      );
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ features: { barQuote: true } }));
       const result = loadConfigFile();
       expect(result.features).toEqual({ barQuote: true });
     });
@@ -179,9 +177,7 @@ describe('config-file', () => {
 
     it('should ignore non-boolean feature flag values', () => {
       vi.mocked(fs.existsSync).mockReturnValue(true);
-      vi.mocked(fs.readFileSync).mockReturnValue(
-        JSON.stringify({ features: { barQuote: 'yes' } }),
-      );
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ features: { barQuote: 'yes' } }));
       const result = loadConfigFile();
       expect(result.features).toBeUndefined();
     });
@@ -253,9 +249,7 @@ describe('config-file', () => {
 
     it('should deep merge features with existing features', () => {
       vi.mocked(fs.existsSync).mockReturnValue(true);
-      vi.mocked(fs.readFileSync).mockReturnValue(
-        JSON.stringify({ features: { barQuote: false } }),
-      );
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ features: { barQuote: false } }));
       vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
 
       saveConfigFile({ features: { barQuote: true } });
