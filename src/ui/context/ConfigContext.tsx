@@ -13,7 +13,7 @@ import {
 import type { VocabularySet } from '../../services/wordgrain/types.js';
 import { useServices } from './ServiceContext.js';
 
-export type ConfigSubMode = 'normal' | 'add-file' | 'delete-confirm' | 'features';
+export type ConfigSubMode = 'normal' | 'add-file' | 'delete-confirm';
 
 interface ConfigContextValue {
   config: ResolvedConfig;
