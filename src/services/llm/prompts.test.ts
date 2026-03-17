@@ -287,7 +287,7 @@ describe('createReactionPrompt', () => {
 
     expect(systemContent).toContain('おつ');
     expect(systemContent).toContain('まじか');
-    expect(systemContent).toContain('きつそう');
+    expect(systemContent).toContain('だるいね');
   });
 
   it('should use English examples for en language', () => {
@@ -311,19 +311,19 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('テスト', { language: 'ja' });
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('Achievement (おつ)');
-    expect(systemContent).toContain('Negative/tough (きつそう)');
-    expect(systemContent).toContain('Surprise (まじか)');
-    expect(systemContent).toContain('Feeling it (それな)');
+    expect(systemContent).toContain('Achievement (おつ, やるじゃん');
+    expect(systemContent).toContain('Negative/tough (だるいね, しんど');
+    expect(systemContent).toContain('Surprise (まじか, えぐ');
+    expect(systemContent).toContain('Feeling it (それな, わかる');
   });
 
   it('should include mood mapping rules for en language', () => {
     const messages = createReactionPrompt('test', { language: 'en' });
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('Achievement (lets go)');
-    expect(systemContent).toContain('Negative/tough (felt that)');
-    expect(systemContent).toContain('Surprise (no way)');
+    expect(systemContent).toContain('Achievement (lets go, nice');
+    expect(systemContent).toContain('Negative/tough (felt that, rough');
+    expect(systemContent).toContain('Surprise (no way, wild');
   });
 
   it('should include dedup block when recentReactions provided', () => {
