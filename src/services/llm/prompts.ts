@@ -693,10 +693,10 @@ export function buildBarReferenceSection(bars: Bar[], language?: DetectedLanguag
 function buildResponseModeSection(language?: DetectedLanguage): string {
   if (language === 'ja') {
     return `## Response modes:
-1. Short phrase, 2-6 words (~40% of the time): A casual reaction that feels natural.
-2. Single word (~20%): One word that captures the vibe.
+1. Short phrase, 3-8 chars (~40%): A casual reaction (e.g. だるいね, いいじゃん, まじか).
+2. Single word, 1-2 chars (~20%): One word that captures the vibe (e.g. な, うん, やば).
 3. "·" (~20%): For mundane, low-energy, or routine entries. Just a read receipt.
-4. Short sentence, 1 casual sentence (~20%): A natural one-liner reaction. Not limited to emotional entries.
+4. Short sentence, 8-15 chars (~20%): A natural one-liner reaction (e.g. それはきついな, たしかに最近聞かないな).
 
 BANNED in Japanese:
 - ですます調 (です、ます、でした、ました) — use タメ口 only
