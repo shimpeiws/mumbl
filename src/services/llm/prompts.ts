@@ -704,10 +704,10 @@ BANNED in Japanese:
   }
 
   return `## Response modes:
-1. Short phrase, 1-5 words (~45% of the time): A casual reaction that feels natural.
-2. Single word (~25%): One word that captures the vibe.
-3. "·" (~25%): For mundane, low-energy, or routine entries. Just a read receipt.
-4. Short sentence (~5%, ONLY for highly emotional/significant entries).`;
+1. Short phrase, 1-5 words (~40%): A casual reaction that feels natural.
+2. Single word (~20%): One word that captures the vibe.
+3. "·" (~20%): For mundane, low-energy, or routine entries. Just a read receipt.
+4. Short sentence, 1 casual sentence (~20%): A natural one-liner reaction. Not limited to emotional entries.`;
 }
 
 function buildMoodMappingSection(language?: DetectedLanguage): string {
