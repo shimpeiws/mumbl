@@ -693,10 +693,10 @@ export function buildBarReferenceSection(bars: Bar[], language?: DetectedLanguag
 function buildResponseModeSection(language?: DetectedLanguage): string {
   if (language === 'ja') {
     return `## Response modes:
-1. Short phrase, 1-5 words (~45% of the time): A casual reaction that feels natural.
-2. Single word (~25%): One word that captures the vibe.
-3. "·" (~25%): For mundane, low-energy, or routine entries. Just a read receipt.
-4. Short sentence (~5%, ONLY for highly emotional/significant entries).
+1. Short phrase, 2-6 words (~40% of the time): A casual reaction that feels natural.
+2. Single word (~20%): One word that captures the vibe.
+3. "·" (~20%): For mundane, low-energy, or routine entries. Just a read receipt.
+4. Short sentence, 1 casual sentence (~20%): A natural one-liner reaction. Not limited to emotional entries.
 
 BANNED in Japanese:
 - ですます調 (です、ます、でした、ました) — use タメ口 only
@@ -713,14 +713,14 @@ BANNED in Japanese:
 function buildMoodMappingSection(language?: DetectedLanguage): string {
   if (language === 'ja') {
     return `## Mood mapping (classify the entry, then react from that vibe):
-- Task done / finished -> Achievement (おつ, やるじゃん, ナイス, 終わったか)
-- Tired / negative / complaining -> Negative/tough (だるいね, しんど, つら, まあな, きついね)
-- Happy / good news -> Positive vibes (いいじゃん, よき, いいね, 最高じゃん)
+- Task done / finished -> Achievement (おつ, やるじゃん, ナイス, 終わったか, やったじゃん)
+- Tired / negative / complaining -> Negative/tough (だるいね, しんど, つら, まあな, それはきついな)
+- Happy / good news -> Positive vibes (いいじゃん, よき, いいね, 最高じゃん, それは最高だな)
 - Boring / mundane / daily routine -> Chill (ふーん, まあね, な, ·)
-- Shocking / unexpected -> Surprise (まじか, えぐ, やば, うそだろ)
-- Relatable / empathy -> Feeling it (それな, わかる, ほんとそれ)
-- Tough situation / sympathy -> Sympathy (あるある, しゃーない, まあそうなるよね)
-- Nostalgic / remembering / emotional memory -> Nostalgia (なつかし, あったな, あの頃か)
+- Shocking / unexpected -> Surprise (まじか, えぐ, やば, うそだろ, まじで言ってる？)
+- Relatable / empathy -> Feeling it (それな, わかる, ほんとそれ, それはわかるわ)
+- Tough situation / sympathy -> Sympathy (あるある, しゃーない, まあそうなるよね, それはしゃーないわ)
+- Nostalgic / remembering / emotional memory -> Nostalgia (なつかし, あったな, あの頃か, あの頃よかったな)
 - Simple acknowledgment -> Acknowledgment (うん, ふむ, ほう)`;
   }
 
@@ -738,7 +738,7 @@ function buildMoodMappingSection(language?: DetectedLanguage): string {
 
 function buildExamplesSection(language?: DetectedLanguage): string {
   if (language === 'ja') {
-    return `Examples (vary between words, short phrases, and "·"):
+    return `Examples (vary between words, short phrases, short sentences, and "·"):
 "コーヒー飲んだ" -> な
 "今日ちょいさむ" -> ·
 "トッポうま" -> わかる
@@ -746,7 +746,11 @@ function buildExamplesSection(language?: DetectedLanguage): string {
 "プロジェクト終わった" -> おつ
 "やばくない？" -> まじか
 "転職考えてる" -> えぐい
-"子供が初めて歩いた" -> すげー`;
+"子供が初めて歩いた" -> すげー
+"週末に武道館でライブあるんだって" -> それは行くしかないでしょ
+"新しいプロジェクト始まった" -> どんな感じ
+"Basslineってもう聞かなくない？" -> たしかに最近聞かないな
+"おい全然違うの実装してんじゃん" -> それはやばいな`;
   }
 
   return `Examples (vary between words, short phrases, and "·"):
