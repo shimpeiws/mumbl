@@ -302,7 +302,10 @@ describe('extractVocabulary', () => {
   it('should merge tfidf keeping max value on duplicate grains', () => {
     const file: WordgrainFile = {
       name: 'test',
-      grains: [{ word: 'drip', tfidf: 0.3 }, { word: 'drip', tfidf: 0.8 }],
+      grains: [
+        { word: 'drip', tfidf: 0.3 },
+        { word: 'drip', tfidf: 0.8 },
+      ],
       bars: [],
     };
 
@@ -330,7 +333,10 @@ describe('extractVocabulary', () => {
   it('should OR isSlang across duplicate grains', () => {
     const file: WordgrainFile = {
       name: 'test',
-      grains: [{ word: 'drip', is_slang: false }, { word: 'drip', is_slang: true }],
+      grains: [
+        { word: 'drip', is_slang: false },
+        { word: 'drip', is_slang: true },
+      ],
       bars: [],
     };
 

@@ -48,9 +48,7 @@ export function getWordgrainFileInfo(filePath: string): WordgrainFileInfo | null
  * Validate a file path for registration as a wordgrain file.
  * Does not copy the file; only checks existence and format.
  */
-export function validateWordgrainFile(
-  filePath: string,
-): { success: boolean; error?: string } {
+export function validateWordgrainFile(filePath: string): { success: boolean; error?: string } {
   try {
     if (!fs.existsSync(filePath)) {
       return { success: false, error: 'File does not exist' };

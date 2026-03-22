@@ -21,9 +21,7 @@ export function WordgrainSection() {
       ) : (
         <Box flexDirection="column" paddingLeft={2}>
           <Text>
-            <Text color={isSelected ? 'cyan' : undefined}>
-              {isSelected ? '> ' : '  '}
-            </Text>
+            <Text color={isSelected ? 'cyan' : undefined}>{isSelected ? '> ' : '  '}</Text>
             <Text bold={isSelected}>{file.name}</Text>
             <Text dimColor>
               {' '}
@@ -39,8 +37,8 @@ export function WordgrainSection() {
 
           <Box marginTop={1} paddingLeft={2}>
             <Text dimColor>
-              {stats.totalGrains} grains ({stats.wordCount} words,{' '}
-              {stats.phraseCount} phrases, {stats.tagCount} tags)
+              {stats.totalGrains} grains ({stats.wordCount} words, {stats.phraseCount} phrases,{' '}
+              {stats.tagCount} tags)
               {stats.barCount > 0 ? `, ${stats.barCount} bars` : ''}
             </Text>
           </Box>

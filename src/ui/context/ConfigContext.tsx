@@ -104,21 +104,18 @@ export function ConfigProvider({ config, children }: ConfigProviderProps) {
     setError(null);
   }, []);
 
-  const setFile = useCallback(
-    (sourcePath: string) => {
-      const resolved = path.resolve(sourcePath);
-      const result = validateWordgrainFile(resolved);
-      if (!result.success) {
-        setError(result.error ?? 'Failed to set file');
-        return;
-      }
-      setWordgrainFile(resolved);
-      saveConfigFile({ wordgrainFile: resolved });
-      setError(null);
-      setSubMode('normal');
-    },
-    [],
-  );
+  const setFile = useCallback((sourcePath: string) => {
+    const resolved = path.resolve(sourcePath);
+    const result = validateWordgrainFile(resolved);
+    if (!result.success) {
+      setError(result.error ?? 'Failed to set file');
+      return;
+    }
+    setWordgrainFile(resolved);
+    saveConfigFile({ wordgrainFile: resolved });
+    setError(null);
+    setSubMode('normal');
+  }, []);
 
   const clearFile = useCallback(() => {
     setWordgrainFile(undefined);

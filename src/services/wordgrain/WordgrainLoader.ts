@@ -151,4 +151,3 @@ export function parseWordgrainFile(filePath: string): WordgrainFile | null {
     return null;
   }
 }
-

@@ -636,4 +636,3 @@ describe('parseWordgrainFile', () => {
     expect(result?.bars[1]?.text).toBe('also valid');
   });
 });
-

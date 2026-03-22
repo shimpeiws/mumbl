@@ -10,15 +10,8 @@ import { WordgrainSection } from './WordgrainSection.js';
 
 export function ConfigView() {
   const { switchToList } = useNavigation();
-  const {
-    file,
-    selectedIndex,
-    setSelectedIndex,
-    subMode,
-    setSubMode,
-    reloadFile,
-    toggleFeature,
-  } = useConfig();
+  const { file, selectedIndex, setSelectedIndex, subMode, setSubMode, reloadFile, toggleFeature } =
+    useConfig();
 
   // Items: wordgrain file (1 if set, 0 if not) + feature keys
   const fileItemCount = file ? 1 : 0;

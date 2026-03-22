@@ -1,13 +1,7 @@
 /**
  * Extract vocabulary from wordgrain files
  */
-import type {
-  Grain,
-  GrainPos,
-  VocabularySet,
-  VocabularyWord,
-  WordgrainFile,
-} from './types.js';
+import type { Grain, GrainPos, VocabularySet, VocabularyWord, WordgrainFile } from './types.js';
 
 interface WordMeta {
   pos?: GrainPos;
