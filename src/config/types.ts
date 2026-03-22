@@ -17,7 +17,7 @@ export interface MumblConfig {
   model?: string;
   provider?: Provider;
   baseUrl?: string;
-  wordgrainFiles?: string[];
+  wordgrainFile?: string;
   features?: MumblFeatures;
 }
 
@@ -28,7 +28,7 @@ export interface ResolvedConfig {
   model: string;
   provider: Provider;
   baseUrl?: string;
-  wordgrainFiles?: string[];
+  wordgrainFile?: string;
   features: MumblFeatures;
 }
 

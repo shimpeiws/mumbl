@@ -11,18 +11,20 @@ import { WordgrainSection } from './WordgrainSection.js';
 export function ConfigView() {
   const { switchToList } = useNavigation();
   const {
-    files,
-    selectedFileIndex,
-    setSelectedFileIndex,
+    file,
+    selectedIndex,
+    setSelectedIndex,
     subMode,
     setSubMode,
-    reloadFiles,
+    reloadFile,
     toggleFeature,
   } = useConfig();
 
-  const totalItems = files.length + FEATURE_KEYS.length;
-  const isFeatureSelected = selectedFileIndex >= files.length;
-  const featureIndex = selectedFileIndex - files.length;
+  // Items: wordgrain file (1 if set, 0 if not) + feature keys
+  const fileItemCount = file ? 1 : 0;
+  const totalItems = fileItemCount + FEATURE_KEYS.length;
+  const isFeatureSelected = selectedIndex >= fileItemCount;
+  const featureIndex = selectedIndex - fileItemCount;
 
   useInput(
     (input, key) => {
@@ -33,14 +35,14 @@ export function ConfigView() {
 
       if (input === 'j' || key.downArrow) {
         if (totalItems > 0) {
-          setSelectedFileIndex(Math.min(selectedFileIndex + 1, totalItems - 1));
+          setSelectedIndex(Math.min(selectedIndex + 1, totalItems - 1));
         }
         return;
       }
 
       if (input === 'k' || key.upArrow) {
         if (totalItems > 0) {
-          setSelectedFileIndex(Math.max(selectedFileIndex - 1, 0));
+          setSelectedIndex(Math.max(selectedIndex - 1, 0));
         }
         return;
       }
@@ -50,13 +52,13 @@ export function ConfigView() {
         return;
       }
 
-      if (input === 'd' && !isFeatureSelected && files.length > 0) {
+      if (input === 'd' && !isFeatureSelected && file) {
         setSubMode('delete-confirm');
         return;
       }
 
       if (input === 'r') {
-        reloadFiles();
+        reloadFile();
         return;
       }
 

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useConfig } from '../../context/ConfigContext.js';
 
 export function AddFileView() {
-  const { addFile, setSubMode, error, clearError } = useConfig();
+  const { setFile, setSubMode, error, clearError } = useConfig();
   const [inputPath, setInputPath] = useState('');
 
   useInput((input, key) => {
@@ -16,7 +16,7 @@ export function AddFileView() {
     if (key.return) {
       const trimmed = inputPath.trim();
       if (trimmed) {
-        addFile(trimmed);
+        setFile(trimmed);
       }
       return;
     }
@@ -35,7 +35,7 @@ export function AddFileView() {
     <Box flexDirection="column">
       <Box marginBottom={1}>
         <Text bold color="green">
-          Add Wordgrain File
+          Set Wordgrain File
         </Text>
       </Box>
 
@@ -51,7 +51,7 @@ export function AddFileView() {
       )}
 
       <Box marginTop={1}>
-        <Text dimColor>Enter: add | Esc: cancel</Text>
+        <Text dimColor>Enter: set | Esc: cancel</Text>
       </Box>
     </Box>
   );

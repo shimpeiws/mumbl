@@ -2,7 +2,6 @@
  * Extract vocabulary from wordgrain files
  */
 import type {
-  Bar,
   Grain,
   GrainPos,
   VocabularySet,
@@ -110,31 +109,18 @@ function buildRichWords(
 }
 
 /**
- * Extract a deduplicated, sorted VocabularySet from wordgrain files
- * @param files - Array of parsed WordgrainFile objects
- * @returns Consolidated vocabulary set
+ * Extract a deduplicated, sorted VocabularySet from a wordgrain file
+ * @param file - Parsed WordgrainFile object
+ * @returns Vocabulary set
  */
-export function extractVocabulary(files: WordgrainFile[]): VocabularySet {
+export function extractVocabulary(file: WordgrainFile): VocabularySet {
   const wordSet = new Set<string>();
   const phraseSet = new Set<string>();
   const tagSet = new Set<string>();
-  const sources: string[] = [];
   const wordMetaMap = new Map<string, WordMeta>();
-  const barTextSet = new Set<string>();
-  const bars: Bar[] = [];
 
-  for (const file of files) {
-    sources.push(file.name);
-    for (const grain of file.grains) {
-      processGrain(grain, wordSet, phraseSet, tagSet, wordMetaMap);
-    }
-    for (const bar of file.bars) {
-      const trimmed = bar.text.trim();
-      if (trimmed && !barTextSet.has(trimmed)) {
-        barTextSet.add(trimmed);
-        bars.push(bar);
-      }
-    }
+  for (const grain of file.grains) {
+    processGrain(grain, wordSet, phraseSet, tagSet, wordMetaMap);
   }
 
   const sortedWords = [...wordSet].sort();
@@ -143,8 +129,8 @@ export function extractVocabulary(files: WordgrainFile[]): VocabularySet {
     words: sortedWords,
     phrases: [...phraseSet].sort(),
     tags: [...tagSet].sort(),
-    source: sources.join(', '),
+    source: file.name,
     richWords: buildRichWords(sortedWords, wordMetaMap),
-    bars,
+    bars: file.bars,
   };
 }

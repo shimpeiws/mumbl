@@ -152,24 +152,3 @@ export function parseWordgrainFile(filePath: string): WordgrainFile | null {
   }
 }
 
-/**
- * Load wordgrain files from individual file paths
- * @param filePaths - Array of paths to .wg.json files
- * @returns Array of parsed WordgrainFile objects
- */
-export function loadWordgrainFiles(filePaths: string[]): WordgrainFile[] {
-  const results: WordgrainFile[] = [];
-
-  for (const filePath of filePaths) {
-    try {
-      const parsed = parseWordgrainFile(filePath);
-      if (parsed) {
-        results.push(parsed);
-      }
-    } catch {
-      // Skip files that can't be read
-    }
-  }
-
-  return results;
-}

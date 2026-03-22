@@ -98,11 +98,11 @@ Wordgrain files (`.wg.json`) let you infuse the AI's reactions with your own voc
 }
 ```
 
-Register files in Config mode (`c` → `a`) or in the config file:
+Set a file in Config mode (`c` → `a`) or in the config file:
 
 ```json
 {
-  "wordgrainFiles": ["/path/to/vocab.wg.json"]
+  "wordgrainFile": "/path/to/vocab.wg.json"
 }
 ```
 
@@ -127,7 +127,7 @@ Config file: `~/.config/mumbl/config.json`
 {
   "model": "llama3.1:8b",
   "baseUrl": "http://localhost:11434",
-  "wordgrainFiles": []
+  "wordgrainFile": ""
 }
 ```
 

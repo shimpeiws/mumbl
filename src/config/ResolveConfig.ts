@@ -30,7 +30,7 @@ export function resolveConfig(cliArgs?: string[]): ResolvedConfig {
 
   const baseUrl = sources.cli.baseUrl ?? sources.env.baseUrl ?? sources.file.baseUrl;
 
-  const wordgrainFiles = sources.file.wordgrainFiles;
+  const wordgrainFile = sources.file.wordgrainFile;
 
   const features: MumblFeatures = { ...DEFAULT_FEATURES, ...sources.file.features };
 
@@ -38,7 +38,7 @@ export function resolveConfig(cliArgs?: string[]): ResolvedConfig {
     provider: 'ollama',
     model,
     baseUrl,
-    wordgrainFiles,
+    wordgrainFile,
     features,
   };
 }

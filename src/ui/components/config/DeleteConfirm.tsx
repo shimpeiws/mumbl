@@ -3,12 +3,11 @@ import React from 'react';
 import { useConfig } from '../../context/ConfigContext.js';
 
 export function DeleteConfirm() {
-  const { files, selectedFileIndex, removeFile, setSubMode } = useConfig();
-  const file = files[selectedFileIndex];
+  const { file, clearFile, setSubMode } = useConfig();
 
   useInput((input, key) => {
     if (input === 'y' && file) {
-      removeFile(file.filename);
+      clearFile();
       return;
     }
 

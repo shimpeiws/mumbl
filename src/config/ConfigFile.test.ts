@@ -54,36 +54,57 @@ describe('config-file', () => {
       expect(result.baseUrl).toBe('http://localhost:8080');
     });
 
-    it('should parse valid config file with wordgrainFiles', () => {
+    it('should parse valid config file with wordgrainFile', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(
+        JSON.stringify({ wordgrainFile: '/path/to/a.wg.json' }),
+      );
+      const result = loadConfigFile();
+      expect(result.wordgrainFile).toBe('/path/to/a.wg.json');
+    });
+
+    it('should migrate old wordgrainFiles array to single wordgrainFile', () => {
       vi.mocked(fs.existsSync).mockReturnValue(true);
       vi.mocked(fs.readFileSync).mockReturnValue(
         JSON.stringify({ wordgrainFiles: ['/path/to/a.wg.json', '/path/to/b.wg.json'] }),
       );
       const result = loadConfigFile();
-      expect(result.wordgrainFiles).toEqual(['/path/to/a.wg.json', '/path/to/b.wg.json']);
+      expect(result.wordgrainFile).toBe('/path/to/a.wg.json');
     });
 
-    it('should ignore non-array wordgrainFiles values', () => {
+    it('should prefer new wordgrainFile over old wordgrainFiles', () => {
       vi.mocked(fs.existsSync).mockReturnValue(true);
-      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ wordgrainFiles: 'not-array' }));
+      vi.mocked(fs.readFileSync).mockReturnValue(
+        JSON.stringify({
+          wordgrainFile: '/path/to/new.wg.json',
+          wordgrainFiles: ['/path/to/old.wg.json'],
+        }),
+      );
       const result = loadConfigFile();
-      expect(result.wordgrainFiles).toBeUndefined();
+      expect(result.wordgrainFile).toBe('/path/to/new.wg.json');
     });
 
-    it('should filter non-string entries from wordgrainFiles', () => {
+    it('should ignore non-string wordgrainFile values', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ wordgrainFile: 123 }));
+      const result = loadConfigFile();
+      expect(result.wordgrainFile).toBeUndefined();
+    });
+
+    it('should migrate old array format filtering non-string entries', () => {
       vi.mocked(fs.existsSync).mockReturnValue(true);
       vi.mocked(fs.readFileSync).mockReturnValue(
         JSON.stringify({ wordgrainFiles: ['/valid.wg.json', 123, null] }),
       );
       const result = loadConfigFile();
-      expect(result.wordgrainFiles).toEqual(['/valid.wg.json']);
+      expect(result.wordgrainFile).toBe('/valid.wg.json');
     });
 
-    it('should not set wordgrainFiles for empty array after filtering', () => {
+    it('should not set wordgrainFile for empty array after filtering', () => {
       vi.mocked(fs.existsSync).mockReturnValue(true);
       vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ wordgrainFiles: [123, null] }));
       const result = loadConfigFile();
-      expect(result.wordgrainFiles).toBeUndefined();
+      expect(result.wordgrainFile).toBeUndefined();
     });
 
     it('should parse valid config file with all fields', () => {
@@ -93,14 +114,14 @@ describe('config-file', () => {
           model: 'qwen2.5-coder:7b',
           provider: 'ollama',
           baseUrl: 'http://localhost:8080',
-          wordgrainFiles: ['/path/to/vocab.wg.json'],
+          wordgrainFile: '/path/to/vocab.wg.json',
         }),
       );
       const result = loadConfigFile();
       expect(result.model).toBe('qwen2.5-coder:7b');
       expect(result.provider).toBe('ollama');
       expect(result.baseUrl).toBe('http://localhost:8080');
-      expect(result.wordgrainFiles).toEqual(['/path/to/vocab.wg.json']);
+      expect(result.wordgrainFile).toBe('/path/to/vocab.wg.json');
     });
 
     it('should return empty object for malformed JSON', () => {
@@ -196,7 +217,7 @@ describe('config-file', () => {
       vi.mocked(fs.mkdirSync).mockReturnValue(undefined);
       vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
 
-      saveConfigFile({ wordgrainFiles: ['/path/to/file.wg.json'] });
+      saveConfigFile({ wordgrainFile: '/path/to/file.wg.json' });
 
       expect(fs.mkdirSync).toHaveBeenCalledWith(path.join('/home/user', '.config', 'mumbl'), {
         recursive: true,
@@ -204,7 +225,7 @@ describe('config-file', () => {
       expect(fs.writeFileSync).toHaveBeenCalled();
       const writeCall = vi.mocked(fs.writeFileSync).mock.calls[0];
       const written = JSON.parse((writeCall?.[1] as string).trim());
-      expect(written.wordgrainFiles).toEqual(['/path/to/file.wg.json']);
+      expect(written.wordgrainFile).toBe('/path/to/file.wg.json');
     });
 
     it('should merge with existing config file', () => {
@@ -214,13 +235,28 @@ describe('config-file', () => {
       );
       vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
 
-      saveConfigFile({ wordgrainFiles: ['/path/to/file.wg.json'] });
+      saveConfigFile({ wordgrainFile: '/path/to/file.wg.json' });
 
       const writeCall = vi.mocked(fs.writeFileSync).mock.calls[0];
       const written = JSON.parse((writeCall?.[1] as string).trim());
       expect(written.model).toBe('llama2');
       expect(written.provider).toBe('ollama');
-      expect(written.wordgrainFiles).toEqual(['/path/to/file.wg.json']);
+      expect(written.wordgrainFile).toBe('/path/to/file.wg.json');
+    });
+
+    it('should clean up old wordgrainFiles key when saving wordgrainFile', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(
+        JSON.stringify({ wordgrainFiles: ['/old.wg.json'] }),
+      );
+      vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
+
+      saveConfigFile({ wordgrainFile: '/new.wg.json' });
+
+      const writeCall = vi.mocked(fs.writeFileSync).mock.calls[0];
+      const written = JSON.parse((writeCall?.[1] as string).trim());
+      expect(written.wordgrainFile).toBe('/new.wg.json');
+      expect(written.wordgrainFiles).toBeUndefined();
     });
 
     it('should handle malformed existing config gracefully', () => {
@@ -228,11 +264,11 @@ describe('config-file', () => {
       vi.mocked(fs.readFileSync).mockReturnValue('invalid json');
       vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
 
-      saveConfigFile({ wordgrainFiles: [] });
+      saveConfigFile({ wordgrainFile: '' });
 
       const writeCall = vi.mocked(fs.writeFileSync).mock.calls[0];
       const written = JSON.parse((writeCall?.[1] as string).trim());
-      expect(written.wordgrainFiles).toEqual([]);
+      expect(written.wordgrainFile).toBe('');
     });
 
     it('should save features to config file', () => {
