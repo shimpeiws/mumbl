@@ -12,28 +12,28 @@ export type {
   WordgrainType,
 } from './types.js';
 export { extractVocabulary } from './VocabularyExtractor.js';
-export { loadWordgrainFiles, parseWordgrainFile } from './WordgrainLoader.js';
+export { parseWordgrainFile } from './WordgrainLoader.js';
 export type { WordgrainFileInfo, WordgrainStats } from './WordgrainManager.js';
 export {
+  getWordgrainFileInfo,
   getWordgrainStats,
-  listWordgrainFiles,
-  registerWordgrainFile,
+  validateWordgrainFile,
 } from './WordgrainManager.js';
 
 import { extractVocabulary } from './VocabularyExtractor.js';
-import { loadWordgrainFiles } from './WordgrainLoader.js';
+import { parseWordgrainFile } from './WordgrainLoader.js';
 import type { VocabularySet } from './types.js';
 
 /**
- * Load vocabulary from individual .wg.json file paths
- * @param filePaths - Array of paths to .wg.json files
- * @returns VocabularySet or null if no valid files or vocabulary is empty
+ * Load vocabulary from a .wg.json file
+ * @param filePath - Path to .wg.json file
+ * @returns VocabularySet or null if file is invalid or vocabulary is empty
  */
-export function loadVocabulary(filePaths: string[]): VocabularySet | null {
-  const files = loadWordgrainFiles(filePaths);
-  if (files.length === 0) return null;
+export function loadVocabulary(filePath: string): VocabularySet | null {
+  const file = parseWordgrainFile(filePath);
+  if (!file) return null;
 
-  const vocabulary = extractVocabulary(files);
+  const vocabulary = extractVocabulary(file);
   if (
     vocabulary.words.length === 0 &&
     vocabulary.phrases.length === 0 &&

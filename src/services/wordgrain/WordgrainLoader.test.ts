@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { loadWordgrainFiles, parseWordgrainFile } from './WordgrainLoader.js';
+import { parseWordgrainFile } from './WordgrainLoader.js';
 
 describe('parseWordgrainFile', () => {
   let tmpDir: string;
@@ -634,57 +634,5 @@ describe('parseWordgrainFile', () => {
     expect(result?.bars).toHaveLength(2);
     expect(result?.bars[0]?.text).toBe('valid bar');
     expect(result?.bars[1]?.text).toBe('also valid');
-  });
-});
-
-describe('loadWordgrainFiles', () => {
-  let tmpDir: string;
-
-  beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wg-load-test-'));
-  });
-
-  afterEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
-  });
-
-  it('should load valid .wg.json files from paths', () => {
-    const fileA = path.join(tmpDir, 'a.wg.json');
-    const fileB = path.join(tmpDir, 'b.wg.json');
-    fs.writeFileSync(fileA, JSON.stringify({ name: 'rapper-a', grains: [{ word: 'flex' }] }));
-    fs.writeFileSync(fileB, JSON.stringify({ name: 'rapper-b', grains: [{ word: 'bars' }] }));
-
-    const result = loadWordgrainFiles([fileA, fileB]);
-
-    expect(result).toHaveLength(2);
-    const names = result.map((f) => f.name).sort();
-    expect(names).toEqual(['rapper-a', 'rapper-b']);
-  });
-
-  it('should return empty array for empty paths list', () => {
-    const result = loadWordgrainFiles([]);
-    expect(result).toEqual([]);
-  });
-
-  it('should skip non-existent files', () => {
-    const validFile = path.join(tmpDir, 'valid.wg.json');
-    fs.writeFileSync(validFile, JSON.stringify({ name: 'valid', grains: [{ word: 'fire' }] }));
-
-    const result = loadWordgrainFiles(['/nonexistent/path.wg.json', validFile]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0]?.name).toBe('valid');
-  });
-
-  it('should skip malformed files', () => {
-    const badFile = path.join(tmpDir, 'bad.wg.json');
-    const goodFile = path.join(tmpDir, 'good.wg.json');
-    fs.writeFileSync(badFile, '{ invalid json }');
-    fs.writeFileSync(goodFile, JSON.stringify({ name: 'valid', grains: [{ word: 'fire' }] }));
-
-    const result = loadWordgrainFiles([badFile, goodFile]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0]?.name).toBe('valid');
   });
 });

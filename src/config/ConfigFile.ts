@@ -51,10 +51,13 @@ export function loadConfigFile(): Partial<MumblConfig> {
       result.baseUrl = config['baseUrl'];
     }
 
-    if (Array.isArray(config['wordgrainFiles'])) {
+    // Support new single-file format and migrate old array format
+    if (typeof config['wordgrainFile'] === 'string') {
+      result.wordgrainFile = config['wordgrainFile'];
+    } else if (Array.isArray(config['wordgrainFiles'])) {
       const files = config['wordgrainFiles'].filter((f: unknown) => typeof f === 'string');
       if (files.length > 0) {
-        result.wordgrainFiles = files;
+        result.wordgrainFile = files[0];
       }
     }
 
@@ -107,8 +110,10 @@ export function saveConfigFile(update: Partial<MumblConfig>): void {
   if (update.model !== undefined) existing['model'] = update.model;
   if (update.provider !== undefined) existing['provider'] = update.provider;
   if (update.baseUrl !== undefined) existing['baseUrl'] = update.baseUrl;
-  if (update.wordgrainFiles !== undefined) {
-    existing['wordgrainFiles'] = update.wordgrainFiles;
+  if (update.wordgrainFile !== undefined) {
+    existing['wordgrainFile'] = update.wordgrainFile;
+    // Clean up old array format
+    delete existing['wordgrainFiles'];
   }
   if (update.features !== undefined) {
     const existingFeatures =

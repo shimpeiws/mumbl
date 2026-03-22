@@ -5,10 +5,10 @@ import type { MumblFeatures, ResolvedConfig } from '../../config/types.js';
 import {
   type WordgrainFileInfo,
   type WordgrainStats,
+  getWordgrainFileInfo,
   getWordgrainStats,
-  listWordgrainFiles,
   loadVocabulary,
-  registerWordgrainFile,
+  validateWordgrainFile,
 } from '../../services/wordgrain/index.js';
 import type { VocabularySet } from '../../services/wordgrain/types.js';
 import { useServices } from './ServiceContext.js';
@@ -17,17 +17,17 @@ export type ConfigSubMode = 'normal' | 'add-file' | 'delete-confirm';
 
 interface ConfigContextValue {
   config: ResolvedConfig;
-  files: WordgrainFileInfo[];
+  file: WordgrainFileInfo | null;
   stats: WordgrainStats;
-  selectedFileIndex: number;
-  setSelectedFileIndex: (index: number) => void;
+  selectedIndex: number;
+  setSelectedIndex: (index: number) => void;
   subMode: ConfigSubMode;
   setSubMode: (mode: ConfigSubMode) => void;
   error: string | null;
   clearError: () => void;
-  addFile: (sourcePath: string) => void;
-  removeFile: (filename: string) => void;
-  reloadFiles: () => void;
+  setFile: (sourcePath: string) => void;
+  clearFile: () => void;
+  reloadFile: () => void;
   features: MumblFeatures;
   toggleFeature: (key: keyof MumblFeatures) => void;
 }
@@ -48,7 +48,6 @@ interface ConfigProviderProps {
 }
 
 const emptyStats: WordgrainStats = {
-  totalFiles: 0,
   totalGrains: 0,
   wordCount: 0,
   phraseCount: 0,
@@ -67,77 +66,69 @@ const emptyVocabulary: VocabularySet = {
 
 export function ConfigProvider({ config, children }: ConfigProviderProps) {
   const { llmService, reactionService } = useServices();
-  const [wordgrainFiles, setWordgrainFiles] = useState<string[]>(config.wordgrainFiles ?? []);
-  const [files, setFiles] = useState<WordgrainFileInfo[]>([]);
+  const [wordgrainFile, setWordgrainFile] = useState<string | undefined>(config.wordgrainFile);
+  const [file, setFileInfo] = useState<WordgrainFileInfo | null>(null);
   const [stats, setStats] = useState<WordgrainStats>(emptyStats);
-  const [selectedFileIndex, setSelectedFileIndex] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [subMode, setSubMode] = useState<ConfigSubMode>('normal');
   const [error, setError] = useState<string | null>(null);
   const [features, setFeatures] = useState<MumblFeatures>(config.features);
 
-  const refreshFiles = useCallback(() => {
-    if (wordgrainFiles.length === 0) {
-      setFiles([]);
+  const refreshFile = useCallback(() => {
+    if (!wordgrainFile) {
+      setFileInfo(null);
       setStats(emptyStats);
       return;
     }
-    setFiles(listWordgrainFiles(wordgrainFiles));
-    setStats(getWordgrainStats(wordgrainFiles));
-  }, [wordgrainFiles]);
+    setFileInfo(getWordgrainFileInfo(wordgrainFile));
+    setStats(getWordgrainStats(wordgrainFile));
+  }, [wordgrainFile]);
 
   const hotReload = useCallback(() => {
-    if (wordgrainFiles.length === 0) {
+    if (!wordgrainFile) {
       llmService.setVocabulary(emptyVocabulary);
       reactionService.setVocabulary(emptyVocabulary);
       return;
     }
-    const vocabulary = loadVocabulary(wordgrainFiles);
+    const vocabulary = loadVocabulary(wordgrainFile);
     llmService.setVocabulary(vocabulary ?? emptyVocabulary);
     reactionService.setVocabulary(vocabulary ?? emptyVocabulary);
-  }, [wordgrainFiles, llmService, reactionService]);
+  }, [wordgrainFile, llmService, reactionService]);
 
   useEffect(() => {
-    refreshFiles();
+    refreshFile();
     hotReload();
-  }, [refreshFiles, hotReload]);
+  }, [refreshFile, hotReload]);
 
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
-  const addFile = useCallback(
-    (sourcePath: string) => {
-      const resolved = path.resolve(sourcePath);
-      const result = registerWordgrainFile(resolved, wordgrainFiles);
-      if (!result.success) {
-        setError(result.error ?? 'Failed to add file');
-        return;
-      }
-      const updated = [...wordgrainFiles, resolved];
-      setWordgrainFiles(updated);
-      saveConfigFile({ wordgrainFiles: updated });
-      setError(null);
-      setSubMode('normal');
-    },
-    [wordgrainFiles],
-  );
+  const setFile = useCallback((sourcePath: string) => {
+    const resolved = path.resolve(sourcePath);
+    const result = validateWordgrainFile(resolved);
+    if (!result.success) {
+      setError(result.error ?? 'Failed to set file');
+      return;
+    }
+    setWordgrainFile(resolved);
+    saveConfigFile({ wordgrainFile: resolved });
+    setError(null);
+    setSubMode('normal');
+  }, []);
 
-  const removeFile = useCallback(
-    (filename: string) => {
-      const updated = wordgrainFiles.filter((fp) => path.basename(fp) !== filename);
-      setWordgrainFiles(updated);
-      saveConfigFile({ wordgrainFiles: updated });
-      setError(null);
-      setSelectedFileIndex((prev) => Math.max(0, prev - 1));
-      setSubMode('normal');
-    },
-    [wordgrainFiles],
-  );
+  const clearFile = useCallback(() => {
+    setWordgrainFile(undefined);
+    saveConfigFile({ wordgrainFile: '' });
+    setError(null);
+    setSelectedIndex(0);
+    setSubMode('normal');
+  }, []);
 
-  const reloadFiles = useCallback(() => {
-    refreshFiles();
+  const reloadFile = useCallback(() => {
+    refreshFile();
     hotReload();
-  }, [refreshFiles, hotReload]);
+  }, [refreshFile, hotReload]);
 
   const toggleFeature = useCallback(
     (key: keyof MumblFeatures) => {
@@ -153,17 +144,17 @@ export function ConfigProvider({ config, children }: ConfigProviderProps) {
     <ConfigContext.Provider
       value={{
         config,
-        files,
+        file,
         stats,
-        selectedFileIndex,
-        setSelectedFileIndex,
+        selectedIndex,
+        setSelectedIndex,
         subMode,
         setSubMode,
         error,
         clearError,
-        addFile,
-        removeFile,
-        reloadFiles,
+        setFile,
+        clearFile,
+        reloadFile,
         features,
         toggleFeature,
       }}
