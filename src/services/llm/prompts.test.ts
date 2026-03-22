@@ -356,7 +356,7 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('test', undefined, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('YOUR VOCABULARY (use when it fits)');
+    expect(systemContent).toContain('YOUR VOCABULARY (MUST use in reactions)');
     expect(systemContent).toContain('Words: drip, vibe');
     expect(systemContent).toContain('Phrases: on god');
   });
@@ -365,7 +365,7 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('test', { language: 'en' }, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('genuinely fits the mood');
+    expect(systemContent).toContain('MUST use at least one vocabulary word');
     expect(systemContent).toContain('Do NOT mechanically slot words');
   });
 
@@ -373,7 +373,7 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('テスト', { language: 'ja' }, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('genuinely fits the mood');
+    expect(systemContent).toContain('MUST use at least one vocabulary word');
     expect(systemContent).toContain('Do NOT mechanically attach particles');
   });
 
@@ -382,7 +382,7 @@ describe('createReactionPrompt', () => {
     const systemContent = messages[0]?.content ?? '';
 
     expect(systemContent).toContain('Vocabulary usage examples:');
-    expect(systemContent).toContain('(no vocab fits) -> ·');
+    expect(systemContent).not.toContain('(no vocab fits) -> ·');
   });
 
   it('should include vocabulary usage examples in Japanese', () => {
@@ -390,8 +390,7 @@ describe('createReactionPrompt', () => {
     const systemContent = messages[0]?.content ?? '';
 
     expect(systemContent).toContain('Vocabulary usage examples:');
-    expect(systemContent).toContain('コーヒー飲んだ');
-    expect(systemContent).toContain('(no vocab fits) -> ·');
+    expect(systemContent).not.toContain('(no vocab fits) -> ·');
   });
 
   it('should include grammar guard instructions for Japanese vocabulary', () => {
@@ -425,7 +424,7 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('test', { language: 'en' }, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('YOUR VOCABULARY (use when it fits)');
+    expect(systemContent).toContain('YOUR VOCABULARY (MUST use in reactions)');
     expect(systemContent).toContain('Mood mapping');
     expect(systemContent).toContain('classify the entry');
   });
@@ -434,7 +433,7 @@ describe('createReactionPrompt', () => {
     const messages = createReactionPrompt('test', { language: 'en' }, testVocabulary);
     const systemContent = messages[0]?.content ?? '';
 
-    expect(systemContent).toContain('YOUR VOCABULARY (use when it fits)');
+    expect(systemContent).toContain('YOUR VOCABULARY (MUST use in reactions)');
     // Base examples are always included as grammar/format reference
     expect(systemContent).toContain('"snack was good" -> fire');
     expect(systemContent).toContain('"baby took first steps" -> no way');
@@ -488,7 +487,7 @@ describe('sampleVocabularyForReaction', () => {
     expect(new Set(resultWords).size).toBe(10);
   });
 
-  it('should default to sampling 20 words', () => {
+  it('should default to sampling 30 words', () => {
     const richWords = Array.from({ length: 50 }, (_, i) => ({ word: `w${i}` }));
     const words = richWords.map((rw) => rw.word);
     const vocab: VocabularySet = {
@@ -500,7 +499,7 @@ describe('sampleVocabularyForReaction', () => {
       bars: [],
     };
     const result = sampleVocabularyForReaction(vocab);
-    expect(result).toHaveLength(20);
+    expect(result).toHaveLength(30);
   });
 
   it('should return empty array when no short words exist', () => {

@@ -291,9 +291,9 @@ function buildRecentEntriesContext(recentEntries: string[], language?: DetectedL
   return `${header}\n${entriesText}`;
 }
 
-const MAX_VOCAB_WORD_LENGTH = 10;
-const MAX_VOCAB_SAMPLE_COUNT = 20;
-const MAX_VOCAB_PHRASE_COUNT = 5;
+const MAX_VOCAB_WORD_LENGTH = 20;
+const MAX_VOCAB_SAMPLE_COUNT = 30;
+const MAX_VOCAB_PHRASE_COUNT = 8;
 
 /**
  * Shuffle an array in-place using Fisher-Yates algorithm.
@@ -454,41 +454,38 @@ function buildVocabUsageInstruction(
   const vocabExamples = buildVocabExamples(sampleWords, language);
 
   if (language === 'ja') {
-    return `Your vocabulary words reflect your personal vibe. Let them inspire your reactions naturally.
+    return `You MUST use at least one vocabulary word in your reaction. A reaction using vocabulary is ALWAYS preferred over a generic one.
 
 How to use vocabulary:
-- Let the word's meaning and feeling guide your reaction, not a formula
-- Use a vocabulary word when it genuinely fits the mood of the entry
+- You MUST incorporate at least one vocabulary word in every reaction
+- Let the word's meaning and feeling guide your reaction
 - You can transform, conjugate, or embed words naturally in casual Japanese
 - A vocab word can stand alone if it captures the right feeling
-- Skip vocabulary entirely if forcing a word would sound unnatural
-- NEVER use dismissive or negative words when the user shares emotional, nostalgic, or significant moments. When in doubt, skip vocabulary.
+- NEVER use dismissive or negative words when the user shares emotional, nostalgic, or significant moments
+- Only output "·" for truly mundane, low-energy entries (e.g. "コーヒー飲んだ")
 ${vocabExamples}
 IMPORTANT:
 - Do NOT mechanically attach particles to vocabulary words. Repeating "word + だな/じゃん/よな" every time sounds robotic.
 - React like a real person would. If you'd never actually say it out loud, don't write it.
-- Prioritize sounding natural over using vocabulary. Bad Japanese is worse than no vocabulary.
 - Keep reactions SHORT (1-5 words). No full sentences or explanations.
-- Only skip vocabulary if the entry is so mundane that "うん" or "·" is enough.
 - NEVER output meaningless hiragana strings. If it does not sound like something a native speaker would actually say, use "·" instead.
 - Before outputting, self-check: "Would a native Japanese speaker actually say this?" If not, fall back to "·".`;
   }
 
-  return `Your vocabulary words reflect your personal vibe. Let them inspire your reactions naturally.
+  return `You MUST use at least one vocabulary word in your reaction. A reaction using vocabulary is ALWAYS preferred over a generic one.
 
 How to use vocabulary:
-- Let the word's meaning and feeling guide your reaction, not a formula
-- Use a vocabulary word when it genuinely fits the mood of the entry
+- You MUST incorporate at least one vocabulary word in every reaction
+- Let the word's meaning and feeling guide your reaction
 - You can adapt, riff on, or embed words naturally in slang
 - A vocab word can stand alone if it captures the right feeling
-- Skip vocabulary entirely if forcing a word would sound unnatural
-- NEVER use dismissive or negative words when the user shares emotional, nostalgic, or significant moments. When in doubt, skip vocabulary.
+- NEVER use dismissive or negative words when the user shares emotional, nostalgic, or significant moments
+- Only output "·" for truly mundane, low-energy entries (e.g. "had coffee")
 ${vocabExamples}
 IMPORTANT:
 - Do NOT mechanically slot words into "so [word]" / "not [word]" / "[word]!" patterns every time.
-- React like a real person would. If it sounds forced, skip the vocab.
-- Keep reactions SHORT (1-5 words). No full sentences or explanations.
-- Only skip vocabulary if the entry is so mundane that "word" or "·" is enough.`;
+- React like a real person would. Vary how you use vocabulary words.
+- Keep reactions SHORT (1-5 words). No full sentences or explanations.`;
 }
 
 /**
@@ -508,7 +505,9 @@ function buildVocabExamples(sampleWords: string[], language?: DetectedLanguage):
     if (words[1]) {
       lines.push(`"プロジェクト終わった" + vocab "${words[1]}" -> ${words[1]}`);
     }
-    lines.push('"コーヒー飲んだ" + (no vocab fits) -> ·');
+    if (words[2]) {
+      lines.push(`"最近どう" + vocab "${words[2]}" -> ${words[2]}じゃん`);
+    }
     return `${lines.join('\n')}\n`;
   }
 
@@ -519,7 +518,9 @@ function buildVocabExamples(sampleWords: string[], language?: DetectedLanguage):
   if (words[1]) {
     lines.push(`"project done" + vocab "${words[1]}" -> ${words[1]}`);
   }
-  lines.push('"had coffee" + (no vocab fits) -> ·');
+  if (words[2]) {
+    lines.push(`"what's new" + vocab "${words[2]}" -> so ${words[2]}`);
+  }
   return `${lines.join('\n')}\n`;
 }
 
@@ -605,8 +606,8 @@ function buildVocabularyPrioritySection(
 
   const header =
     language === 'ja'
-      ? '## あなたのボキャブラリー (自然に使って):'
-      : '## YOUR VOCABULARY (use when it fits):';
+      ? '## あなたのボキャブラリー (リアクションに必ず使うこと):'
+      : '## YOUR VOCABULARY (MUST use in reactions):';
   const parts: string[] = [header];
 
   parts.push(...buildVocabWordList(sampledWords));
@@ -693,10 +694,11 @@ export function buildBarReferenceSection(bars: Bar[], language?: DetectedLanguag
 function buildResponseModeSection(language?: DetectedLanguage): string {
   if (language === 'ja') {
     return `## Response modes:
-1. Short phrase, 3-8 chars (~40%): A casual reaction (e.g. だるいね, いいじゃん, まじか).
-2. Single word, 1-2 chars (~20%): One word that captures the vibe (e.g. な, うん, やば).
-3. "·" (~20%): For mundane, low-energy, or routine entries. Just a read receipt.
-4. Short sentence, 8-15 chars (~20%): A natural one-liner reaction (e.g. それはきついな, たしかに最近聞かないな).
+1. Short phrase with vocab, 3-8 chars (~30%): A casual reaction using a vocabulary word (e.g. だるいね, いいじゃん, まじか).
+2. Vocabulary word (~20%): Use one of YOUR vocabulary words directly as the reaction.
+3. Single word, 1-2 chars (~15%): One word that captures the vibe (e.g. な, うん, やば).
+4. "·" (~15%): For mundane, low-energy, or routine entries. Just a read receipt.
+5. Short sentence with vocab, 8-15 chars (~20%): A natural one-liner using a vocabulary word (e.g. それはきついな, たしかに最近聞かないな).
 
 BANNED in Japanese:
 - ですます調 (です、ます、でした、ました) — use タメ口 only
@@ -704,10 +706,11 @@ BANNED in Japanese:
   }
 
   return `## Response modes:
-1. Short phrase, 1-5 words (~40%): A casual reaction that feels natural.
-2. Single word (~20%): One word that captures the vibe.
-3. "·" (~20%): For mundane, low-energy, or routine entries. Just a read receipt.
-4. Short sentence, 1 casual sentence (~20%): A natural one-liner reaction. Not limited to emotional entries.`;
+1. Short phrase with vocab, 1-5 words (~30%): A casual reaction incorporating a vocabulary word.
+2. Vocabulary word (~20%): Use one of YOUR vocabulary words directly as the reaction.
+3. Single word (~15%): One word that captures the vibe.
+4. "·" (~15%): For mundane, low-energy, or routine entries. Just a read receipt.
+5. Short sentence with vocab, 1 casual sentence (~20%): A natural one-liner using a vocabulary word.`;
 }
 
 function buildMoodMappingSection(language?: DetectedLanguage): string {
@@ -825,6 +828,7 @@ export function createReactionPrompt(
 ## CRITICAL RULES:
 React ONLY to the current entry text. NEVER bring in topics, words, or content from previous mumbles. Each reaction must stand on its own based solely on what the user just said.
 Do NOT parrot or echo specific words, numbers, or phrases from the entry. React to the vibe/mood, not the literal content. Example: entry "新しいやつ試してる" -> good: "いいじゃん" / bad: "新しいやつ凄いじゃん"
+When vocabulary words are provided, your reaction MUST incorporate at least one. Vocabulary-based reactions are always preferred over generic ones.
 ${vocabInstruction}${barInstruction}
 ${buildResponseModeSection(language)}
 

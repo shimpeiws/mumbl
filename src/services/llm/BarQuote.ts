@@ -17,7 +17,7 @@ export interface BarQuoteResult {
  * Attempt to find a matching bar quote for the given entry text.
  *
  * Returns null if no match, probability gate rejects, or all matches are duplicates.
- * The probability gate skips ~40% of the time to keep bar quotes feeling organic.
+ * The probability gate skips ~30% of the time to keep bar quotes feeling organic.
  */
 export function tryBarQuote(
   entryText: string,
@@ -29,8 +29,8 @@ export function tryBarQuote(
   const matches = barIndex.lookup(entryText, language);
   if (matches.length === 0) return null;
 
-  // Probability gate: skip ~40% of the time
-  if ((random ?? Math.random)() > 0.6) return null;
+  // Probability gate: skip ~30% of the time
+  if ((random ?? Math.random)() > 0.7) return null;
 
   for (const bar of matches) {
     if (!isDuplicate(bar.text, recentReactions)) {

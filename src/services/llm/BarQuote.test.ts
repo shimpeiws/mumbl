@@ -25,18 +25,18 @@ describe('tryBarQuote', () => {
     expect(result?.source?.artist).toBe('Test');
   });
 
-  it('should return null when probability gate rejects (random > 0.6)', () => {
+  it('should return null when probability gate rejects (random > 0.7)', () => {
     const bar: Bar = { text: 'hustle hard every day' };
     const index = createMockIndex([bar]);
-    const result = tryBarQuote('test', index, [], 'en', () => 0.7);
+    const result = tryBarQuote('test', index, [], 'en', () => 0.8);
     expect(result).toBeNull();
   });
 
-  it('should return null at exactly 0.6 boundary (> 0.6 is reject)', () => {
+  it('should return null at exactly 0.7 boundary (> 0.7 is reject)', () => {
     const bar: Bar = { text: 'hustle hard every day' };
     const index = createMockIndex([bar]);
-    // 0.6 is NOT > 0.6, so it should pass
-    const result = tryBarQuote('test', index, [], 'en', () => 0.6);
+    // 0.7 is NOT > 0.7, so it should pass
+    const result = tryBarQuote('test', index, [], 'en', () => 0.7);
     expect(result).not.toBeNull();
   });
 
